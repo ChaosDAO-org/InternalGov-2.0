@@ -1,3 +1,5 @@
 discord_api_key:
 discord_server_id: 859496399108177920
 discord_forum_channel_id: 1064860396718133248
+substrate_wss: wss://kusama-rpc.polkadot.io
+polkassembly_graphql: https://kusama.polkassembly.io/v1/graphql
