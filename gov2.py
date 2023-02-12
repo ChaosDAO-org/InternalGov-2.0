@@ -184,7 +184,7 @@ class OpenGovernance2:
 
                         new_referenda[index]['onchain'] = onchain_info
 
-            #self.util.cache_data(filename='./data/governance.cache', data=referendum_info)
+            self.util.cache_data(filename='./data/governance.cache', data=referendum_info)
             return new_referenda
         return False
 
