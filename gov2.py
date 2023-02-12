@@ -114,7 +114,7 @@ class OpenGovernance2:
             # Define the GraphQL query
             query = f"""
             query {{
-              posts(where: {{onchain_link: {{onchain_proposal_id: {{_eq: {referendum_id}}} }}}}) {{
+              posts(where: {{onchain_link: {{onchain_referendumv2_id: {{_eq: {referendum_id}}} }}}}) {{
                 title
                 content
                 onchain_link {{
@@ -184,7 +184,7 @@ class OpenGovernance2:
 
                         new_referenda[index]['onchain'] = onchain_info
 
-            self.util.cache_data(filename='./data/governance.cache', data=referendum_info)
-            return json.dumps(new_referenda)
+            #self.util.cache_data(filename='./data/governance.cache', data=referendum_info)
+            return new_referenda
         return False
 
