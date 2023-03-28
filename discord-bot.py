@@ -1,7 +1,9 @@
 import yaml
-import json
 import discord
 import asyncio
+import logging
+import argparse
+from logging.handlers import TimedRotatingFileHandler
 from discord.ext import tasks
 from discord import app_commands
 from gov2 import OpenGovernance2
@@ -16,6 +18,33 @@ discord_forum_channel_id = int(config['discord_forum_channel_id'])
 guild = discord.Object(id=discord_server_id)  # replace with your guild id
 intents = discord.Intents.default()
 intents.guilds = True
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Governance Monitor Bot')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose logging')
+    args = parser.parse_args()
+    return args
+
+
+args = parse_arguments()
+
+
+def setup_logging(verbose=False):
+    log_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+    log_handler = TimedRotatingFileHandler('governance_bot.log', when='D', interval=30, backupCount=12)
+    log_handler.setFormatter(log_formatter)
+
+    logger = logging.getLogger()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(log_handler)
+
+
+setup_logging(args.verbose)
 
 
 class GovernanceMonitor(discord.Client):
@@ -42,7 +71,7 @@ class GovernanceMonitor(discord.Client):
 client = GovernanceMonitor(intents=intents)
 
 
-@tasks.loop(minutes=30)
+@tasks.loop(hours=6)
 async def check_governance():
     """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
     referendum on a Discord channel with a specified ID, and adds reactions to the thread.
@@ -66,32 +95,47 @@ async def check_governance():
     The loop is set to run every 30 minutes, so the bot will continuously check for new referendums
     and create threads for them on the Discord channel.
     """
-    new_referendums = OpenGovernance2().check_referendums()
+    try:
+        new_referendums = OpenGovernance2().check_referendums()
 
-    if new_referendums:
-        channel = client.get_channel(discord_forum_channel_id)
+        if new_referendums:
+            channel = client.get_channel(discord_forum_channel_id)
 
-        # go through each referendum if more than 1 was submitted in the given scheduled time
-        for index, values in new_referendums.items():
-            available_channel_tags = [tag for tag in channel.available_tags]
-            governance_origin = [v for i, v in values['onchain']['origin'].items()]
+            # go through each referendum if more than 1 was submitted in the given scheduled time
+            for index, values in new_referendums.items():
+                try:
+                    available_channel_tags = [tag for tag in channel.available_tags]
+                    governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
-            # Create forum tags if they don't already exist.
-            governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]), None)
-            if governance_tag is None:
-                governance_tag = await channel.create_tag(name=governance_origin[0])
+                    # Create forum tags if they don't already exist.
+                    governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]), None)
+                    if governance_tag is None:
+                        governance_tag = await channel.create_tag(name=governance_origin[0])
 
-            # Create a new thread on Discord
-            thread = await channel.create_thread(
-                name=f"{index}# {values['title']}",
-                content=f"{values['content'][:1900].strip()}...\n\n<https://kusama.polkassembly.io/referenda/{index}>",
-                applied_tags=[governance_tag]
-            )
+                    # Create a new thread on Discord
+                    thread = await channel.create_thread(
+                        name=f"{index}# {values['title'][:200].strip()}",
+                        content=f"{values['content'][:1900].strip()}...\n\n<https://kusama.polkassembly.io/referenda/{index}>",
+                        applied_tags=[governance_tag]
+                    )
 
-            await thread.message.add_reaction('👍')
-            await thread.message.add_reaction('⚪')
-            await thread.message.add_reaction('👎')
-            await asyncio.sleep(5)
+                    await thread.message.add_reaction('👍')
+                    await thread.message.add_reaction('⚪')
+                    await thread.message.add_reaction('👎')
+                    await asyncio.sleep(5)
+
+                except discord.errors.Forbidden as forbidden:
+                    logging.exception(f"Forbidden error occurred:  {forbidden}")
+                    raise forbidden
+                except discord.errors.HTTPException as http:
+                    logging.exception(f"HTTP exception occurred: {http}")
+                    raise http
+                except Exception as error:
+                    logging.exception(f"An unexpected error occurred: {error}")
+                    raise error
+    except Exception as error:
+        logging.exception(f"An unexpected error occurred: {error}")
+        raise error
 
 
 @client.event
