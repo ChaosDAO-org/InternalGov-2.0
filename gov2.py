@@ -1,4 +1,5 @@
 from substrateinterface import SubstrateInterface
+from typing import Union, Any
 import requests
 import deepdiff
 import yaml
@@ -78,70 +79,29 @@ class OpenGovernance2:
             return data
 
     @staticmethod
-    def polkassembly(referendum_id: int):
+    def fetch_referendum_data(referendum_id: int, network: str) -> Union[str, Any]:
         """
-        Retrieve information about a specific referendum from the Polkassembly API.
+        Retrieve information about a specific referendum from the Polkassembly API using a RESTful approach.
 
         Args:
-        - referendum_id (int): The ID of the referendum.
+            referendum_id (int): The ID of the referendum.
+            network (str): The network name for the API request (e.g., 'kusama', 'polkadot').
 
         Returns:
-        - dict: A dictionary containing the information about the post with the specified `referendum_id`.
-          The dictionary has the following keys:
-            - title (str): The title of the post.
-            - content (str): The content of the post.
-            - onchain_link (dict): A dictionary containing the onchain link information.
-                - proposer_address (str): The address of the proposer.
-            - comments (list): A list of dictionaries, each containing information about a comment.
-                - content (str): The content of the comment.
-                - created_at (str): The creation time of the comment.
-                - author (dict): A dictionary containing information about the author of the comment.
-                    - username (str): The username of the author.
-                - replies (list): A list of dictionaries, each containing information about a reply.
-                    - content (str): The content of the reply.
-                    - author (dict): A dictionary containing information about the author of the reply.
-                        - username (str): The username of the reply author.
+            dict: A dictionary containing the information about the referendum with the specified `referendum_id`.
 
         Raises:
-        - HTTPError: If an HTTP error occurs.
-        - ConnectionError: If there's an error connecting to the API.
-        - Timeout: If the connection times out.
-        - RequestException: If there's a general error when making the request.
+            - HTTPError: If an HTTP error occurs.
+            - ConnectionError: If there's an error connecting to the API.
+            - Timeout: If the connection times out.
+            - RequestException: If there's a general error when making the request.
         """
+        url = f"https://api.polkassembly.io/api/v1/posts/on-chain-post?postId={referendum_id}&proposalType=referendums_v2"
+        headers = {'x-network': network}
+
         try:
-            headers = {"Content-Type": "application/json"}
-
-            # Define the GraphQL query
-            query = f"""
-            query {{
-              posts(where: {{onchain_link: {{onchain_referendumv2_id: {{_eq: {referendum_id}}} }}}}) {{
-                title
-                content
-                onchain_link {{
-                    proposer_address
-                }}
-                comments {{
-                    content
-                    created_at
-                    author {{
-                       username
-                    }}
-                    replies {{
-                       content
-                       author {{
-                         username
-                      }}
-                    }}
-                 }}
-              }}
-            }}
-            """
-
-            # Make the request
-            response = requests.post(config['polkassembly_graphql'], json={'query': query}, headers=headers)
+            response = requests.get(url, headers=headers)
             response.raise_for_status()
-
-            # Print the response
             return response.json()
         except requests.exceptions.HTTPError as http_error:
             return f"HTTP Error: {http_error}"
@@ -176,7 +136,7 @@ class OpenGovernance2:
                     for index in results['dictionary_item_added']:
                         index = index.strip('root').replace("['", "").replace("']", "")
                         onchain_info = referendum_info[index]['Ongoing']
-                        polkassembly_info = self.polkassembly(index)['data']['posts'][0]
+                        polkassembly_info = self.fetch_referendum_data(referendum_id=index, network='kusama')
 
                         new_referenda.update({
                             f"{index}": polkassembly_info
