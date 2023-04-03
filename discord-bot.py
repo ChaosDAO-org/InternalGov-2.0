@@ -20,6 +20,7 @@ with open("config.yaml", "r") as file:
 discord_api_key = config['discord_api_key']
 discord_server_id = int(config['discord_server_id'])
 discord_forum_channel_id = int(config['discord_forum_channel_id'])
+discord_role = config['discord_role']
 
 guild = discord.Object(id=discord_server_id)
 intents = discord.Intents.default()
@@ -119,17 +120,6 @@ class GovernanceMonitor(discord.Client):
         self.vote_counts = self.load_vote_counts()
         self.user_votes = {}
 
-    def load_vote_counts(self):
-        try:
-            with open("vote_counts.json", "r") as file:
-                return json.load(file)
-        except FileNotFoundError:
-            return {}
-
-    def save_vote_counts(self):
-        with open("vote_counts.json", "w") as file:
-            json.dump(self.vote_counts, file)
-
     @staticmethod
     def calculate_vote_result(aye_votes: int, nay_votes: int, abstain_votes: int, threshold: float = 0.66) -> str:
         total_votes = aye_votes + nay_votes + abstain_votes
@@ -144,10 +134,31 @@ class GovernanceMonitor(discord.Client):
         else:
             return "The vote is inconclusive with {:.2%} **AYE**, {:.2%} **NAY** & {:.2%} **ABSTAIN**".format(aye_percentage, nay_percentage, abstain_percentage)
 
+    @staticmethod
+    def load_vote_counts():
+        try:
+            with open("vote_counts.json", "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            return {}
+
+    def save_vote_counts(self):
+        with open("vote_counts.json", "w") as file:
+            json.dump(self.vote_counts, file)
+
     async def on_interaction(self, interaction: discord.Interaction):
         if interaction.data and interaction.data.get("component_type") == 2:
             custom_id = interaction.data.get("custom_id")
             user_id = interaction.user.id
+            member = await interaction.guild.fetch_member(user_id)
+            roles = member.roles
+
+            if discord_role and not any(role.name == discord_role for role in roles):
+                await interaction.response.send_message(f"You don't have the appropriate role set to participate. Required role: {discord_role}", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.delete_original_response()
+                return
+
             message_id = str(interaction.message.id)
 
             current_time = time.time()
