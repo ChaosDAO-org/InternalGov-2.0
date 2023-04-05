@@ -131,13 +131,13 @@ class GovernanceMonitor(discord.Client):
     @staticmethod
     def load_vote_counts():
         try:
-            with open("vote_counts.json", "r") as file:
+            with open("./data/vote_counts.json", "r") as file:
                 return json.load(file)
         except FileNotFoundError:
             return {}
 
     def save_vote_counts(self):
-        with open("vote_counts.json", "w") as file:
+        with open("./data/vote_counts.json", "w") as file:
             json.dump(self.vote_counts, file, indent=4)
 
     async def on_interaction(self, interaction: discord.Interaction):
@@ -156,7 +156,7 @@ class GovernanceMonitor(discord.Client):
             message_id = str(interaction.message.id)
 
             current_time = time.time()
-            cooldown_time = button_cooldowns.get(user_id, 0) + 60
+            cooldown_time = button_cooldowns.get(user_id, 0) + 30
 
             if custom_id in ["aye_button", "nay_button", "abstain_button"] and current_time >= cooldown_time:
                 button_cooldowns[user_id] = current_time
