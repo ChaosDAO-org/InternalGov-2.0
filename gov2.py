@@ -103,14 +103,54 @@ class OpenGovernance2:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.HTTPError as http_error:
-            return f"HTTP Error: {http_error}"
+        except requests.exceptions.HTTPError:
+            return {"title": f"None",
+                    "content": f"{response.status_code} - Unable to retrieve details from Polkassembly"}
         except requests.exceptions.ConnectionError as connection_error:
             return f"Error Connecting: {connection_error}"
         except requests.exceptions.Timeout as timeout_error:
             return f"Timeout Error: {timeout_error}"
         except requests.exceptions.RequestException as request_error:
             return f"Something went wrong: {request_error}"
+
+    def time_until_block(self, target_block: int) -> int:
+        """
+        Calculate the estimated time in minutes until the specified target block is reached on the Kusama network.
+
+        Args:
+            target_block (int): The target block number for which the remaining time needs to be calculated.
+
+        Returns:
+            int: The estimated time remaining in minutes until the target block is reached. If the target block has
+            already been reached, the function will return None.
+
+        Raises:
+            Exception: If any error occurs while trying to calculate the time remaining until the target block.
+        """
+        try:
+            # Get the current block number
+            current_block = self.substrate.get_block_number(block_hash=self.substrate.block_hash)
+            if target_block <= current_block:
+                print("The target block has already been reached.")
+                return None
+
+            # Calculate the difference in blocks
+            block_difference = target_block - current_block
+
+            # Get the average block time (6 seconds for Kusama)
+            avg_block_time = 6
+
+            # Calculate the remaining time in seconds
+            remaining_time = block_difference * avg_block_time
+
+            # Convert seconds to minutes
+            minutes = remaining_time / 60
+
+            return int(minutes)
+
+        except Exception as error:
+            print(
+                f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
 
     def check_referendums(self):
         """
@@ -129,6 +169,7 @@ class OpenGovernance2:
 
         referendum_info = self.referendumInfoFor()
         results = self.util.cache_difference(filename='governance.cache', data=referendum_info)
+        self.util.cache_data(filename='./data/governance.cache', data=referendum_info)
 
         if results:
             for key, value in results.items():
@@ -144,7 +185,6 @@ class OpenGovernance2:
 
                         new_referenda[index]['onchain'] = onchain_info
 
-            self.util.cache_data(filename='./data/governance.cache', data=referendum_info)
             return new_referenda
         return False
 
