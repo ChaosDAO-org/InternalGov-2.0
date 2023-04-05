@@ -1,7 +1,11 @@
 # InternalGov-2.0
-Create a discussion forum for your discord server to discuss each upcoming referendums. The purpose of this forum is to allow members to share their thoughts and opinions on the referendum before a designated proxy account casts the official vote on behalf of the people/DAO.
+A dedicated discussion forum within your Discord server, specifically designed to facilitate thoughtful and constructive conversations around incoming proposals. This interactive platform empowers members to openly share their insights, perspectives, and opinions on each referendum prior to the submission of an official vote by the designated proxy account on behalf of the collective or DAO.
 
-![alt text](https://i.imgur.com/c1c7mMs.png)
+The primary objective of this forum is to foster an environment of collaboration and informed decision-making, ensuring that every voice within the community is acknowledged and taken into consideration. By harnessing the collective wisdom of your community, you can make well-informed decisions that truly represent the best interests of the entire group.
+
+We encourage everyone to actively participate in these discussions, as your input and feedback are invaluable in shaping the direction and outcomes of your collectives endeavors. Together, we can forge a stronger, more unified community that thrives on the principles of transparency, cooperation, and shared vision.
+
+![alt text](https://i.imgur.com/6pzTU9f.png)
 
 ## Prereq(s)
 #### Installing discord.py
@@ -19,13 +23,16 @@ Create a discussion forum for your discord server to discuss each upcoming refer
 1. First, you'll need to create a new application on the [Discord Developer Portal](https://discord.com/developers/applications). If you don't already have an account, you'll need to sign up for one.
 
 
-2. Once you're logged in to the [Discord Developer Portal](https://discord.com/developers/applications), click on the "New Application" button in the top right corner. Give your application a name and click "Create".
+2. Once you're logged in to the [Discord Developer Portal](https://discord.com/developers/applications), click on the "New Application" button in the top right corner. Give your application a name and click "Create".  
+![alt text](https://i.imgur.com/bHTgBIX.png)
 
 
-3. Next, click on the "Bot" section in the left-hand menu and then click "Add Bot". Give your bot a username and profile picture, and click "Save Changes".
+3. Next, click on the "Bot" section in the left-hand menu and then click "Add Bot". Give your bot a username and profile picture, and click "Save Changes".  
+![alt text](https://i.imgur.com/kxHZxsV.png)
 
 
-4. Under the "Token" section, click the "Copy" button to copy the API key. This key is what you'll use to authenticate your bot and allow it to interact with the Discord API.
+4. Under the "Token" section, click the "Copy" button to copy the API key. This key is what you'll use to authenticate your bot and allow it to interact with the Discord API.  
+![alt text](https://i.imgur.com/2zhE3qT.png)
 
 
 5. Be sure to keep your API key secret! Don't share it with anyone or include it in any public code repositories.
@@ -42,11 +49,13 @@ Create a discussion forum for your discord server to discuss each upcoming refer
 
 ```yaml
 discord_api_key: <api-secret>
-discord_server_id: <server-id>
-discord_forum_channel_id: <channel-id>
+discord_server_id: <discord-server-id>
+discord_forum_channel_id: <discord-forum-id>
+discord_role: null
 substrate_wss: wss://kusama-rpc.polkadot.io
 polkassembly_graphql: https://kusama.polkassembly.io/v1/graphql
 ```
+note: `discord_role` is optional. If left as `null` it will allow anyone to cast a vote.
 
 ###### Daemonize the bot to run 24/7 with PM2
 ```shell
@@ -59,9 +68,10 @@ pm2 save
 
 ### Objectives
 - [X] Initial creation
-- [X] Automatically create tags for threads based on Origin of referendum. `[SmallTipper, Root, MediumSpender, BigSpender,  WhitelistedCaller, AuctionAdmin, Treasurer]`
-- [ ] Run for 1 - 2 weeks (starting 13/02/2023), resolve any issues. Push to git.
-- [ ] Auto archive a thread using onchain data
-- [ ] Only allow a specific role to vote
-- [ ] A setting to anonymize votes by recording who votes what locally and using onchain data of when a referendum ends to show the results at the end of the thread
+- [X] Automatically create tags for threads based on origin of referendum. `[SmallTipper, Root, MediumSpender, BigSpender,  WhitelistedCaller, AuctionAdmin, Treasurer]`
+- [X] Run for 1 - 2 weeks (starting 13/02/2023), resolve any issues. Push to git.
+- [X] Limit who can vote by role (optional)
+- [X] Replace the old emoji system with interactive buttons
+- [ ] Auto archive/lock a thread depending on when the proposal ends
+- [ ] Generate extrinsic for proxy account
 - [ ] Requests
