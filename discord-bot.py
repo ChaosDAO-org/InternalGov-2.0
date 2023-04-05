@@ -74,19 +74,13 @@ class InternalGov(View):
         await message.edit(content=results_message)
 
     async def on_aye_button(self, interaction: discord.Interaction):
-        #await interaction.message.add_reaction("👍")
         await interaction.response.defer()
-       # await self.update_vote_count(interaction, "👍")
 
     async def on_abstain_button(self, interaction: discord.Interaction):
-        #await interaction.message.add_reaction("⚪")
         await interaction.response.defer()
-        #await self.update_vote_count(interaction, "⚪")
 
     async def on_nay_button(self, interaction: discord.Interaction):
-        #await interaction.message.add_reaction("👎")
         await interaction.response.defer()
-        #await self.update_vote_count(interaction, "👎")
 
     async def update_vote_count(self, interaction: discord.Interaction, vote_type: str):
         if self.message_id not in self.bot_instance.vote_counts:
@@ -144,7 +138,7 @@ class GovernanceMonitor(discord.Client):
 
     def save_vote_counts(self):
         with open("vote_counts.json", "w") as file:
-            json.dump(self.vote_counts, file)
+            json.dump(self.vote_counts, file, indent=4)
 
     async def on_interaction(self, interaction: discord.Interaction):
         if interaction.data and interaction.data.get("component_type") == 2:
@@ -169,7 +163,7 @@ class GovernanceMonitor(discord.Client):
                 vote_type = "👍" if custom_id == "aye_button" else "⚪" if custom_id == "abstain_button" else "👎"
 
                 if message_id not in self.vote_counts:
-                    self.vote_counts[message_id] = {"👍": 0, "⚪": 0, "👎": 0, "users": {}}
+                    self.vote_counts[message_id] = {"👍": 0, "⚪": 0, "👎": 0, "users": {}, "epoch": int(time.time())}
 
                 # Check if the user has already voted
                 if str(user_id) in self.vote_counts[message_id]["users"]:
@@ -252,7 +246,8 @@ async def check_governance():
     and create threads for them on the Discord channel.
     """
     try:
-        new_referendums = OpenGovernance2().check_referendums()
+        opengov2 = OpenGovernance2()
+        new_referendums = opengov2.check_referendums()
 
         if new_referendums:
             channel = client.get_channel(discord_forum_channel_id)
@@ -260,19 +255,24 @@ async def check_governance():
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 try:
+                    proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
+
                     available_channel_tags = [tag for tag in channel.available_tags]
                     governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
                     # Create forum tags if they don't already exist.
-                    governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]),
-                                          None)
+                    governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]), None)
                     if governance_tag is None:
                         governance_tag = await channel.create_tag(name=governance_origin[0])
 
                     # Create a new thread on Discord
                     thread = await channel.create_thread(
                         name=f"{index}# {values['title'][:200].strip()}",
-                        content=f"{values['content'][:1900].strip()}...\n\n<https://kusama.polkassembly.io/referenda/{index}>",
+                        content=f"{values['content'][:1700].strip()}{'...**Character limit exceeded. For further details, please refer to the links below.**' if len(values['content']) > 1700 else ''}\n\n"
+                                f"**External links**"
+                                f"\n<https://kusama.polkassembly.io/referenda/{index}>"
+                                f"\n<https://kusama.subsquare.io/referenda/referendum/{index}>"
+                                f"\n<https://kusama.subscan.io/referenda_v2/{index}>",
                         reason='Created by an incoming proposal on the Kusama network',
                         applied_tags=[governance_tag]
                     )
@@ -280,17 +280,14 @@ async def check_governance():
                     # Send an initial results message in the thread
                     initial_results_message = "👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0"
 
-                    ct = channel.get_thread(thread.message.id)
-                    results_message = await ct.send(content=initial_results_message)
+                    channel_thread = channel.get_thread(thread.message.id)
+                    results_message = await channel_thread.send(content=initial_results_message)
                     results_message_id = results_message.id
 
                     message_id = thread.message.id
                     view = InternalGov(client, message_id, results_message_id)  # Pass the results_message_id
-                    await thread.message.edit(view=view)  # Update the thread message with the new view
-
-                    await thread.message.add_reaction('👍')
-                    await thread.message.add_reaction('⚪')
-                    await thread.message.add_reaction('👎')
+                    await thread.message.edit(view=view)                        # Update the thread message with the new view
+#
                     await asyncio.sleep(5)
 
                 except discord.errors.Forbidden as forbidden:
