@@ -84,7 +84,7 @@ class InternalGov(View):
 
     async def update_vote_count(self, interaction: discord.Interaction, vote_type: str):
         if self.message_id not in self.bot_instance.vote_counts:
-            self.bot_instance.vote_counts[self.message_id] = {"👍": 0, "⚪": 0, "👎": 0}
+            self.bot_instance.vote_counts[self.message_id] = {"aye": 0, "abstain": 0, "nay": 0}
 
         self.bot_instance.vote_counts[self.message_id][vote_type] += 1
         self.bot_instance.save_vote_counts()
@@ -96,8 +96,8 @@ class InternalGov(View):
         await results_message.edit(content=new_results_message)
 
     def generate_results_message(self):
-        counts = self.bot_instance.vote_counts.get(self.message_id, {"👍": 0, "⚪": 0, "👎": 0})
-        return f"AYE: {counts['👍']}\nABSTAIN: {counts['⚪']}\nNAY: {counts['👎']}"
+        counts = self.bot_instance.vote_counts.get(self.message_id, {"aye": 0, "abstain": 0, "nay": 0})
+        return f"AYE: {counts['aye']}\nABSTAIN: {counts['abstain']}\nNAY: {counts['nay']}"
 
 
 class GovernanceMonitor(discord.Client):
@@ -160,10 +160,10 @@ class GovernanceMonitor(discord.Client):
 
             if custom_id in ["aye_button", "nay_button", "abstain_button"] and current_time >= cooldown_time:
                 button_cooldowns[user_id] = current_time
-                vote_type = "👍" if custom_id == "aye_button" else "⚪" if custom_id == "abstain_button" else "👎"
+                vote_type = "aye" if custom_id == "aye_button" else "abstain" if custom_id == "abstain_button" else "nay"
 
                 if message_id not in self.vote_counts:
-                    self.vote_counts[message_id] = {"👍": 0, "⚪": 0, "👎": 0, "users": {}, "epoch": int(time.time())}
+                    self.vote_counts[message_id] = {"aye": 0, "abstain": 0, "nay": 0, "users": {}, "epoch": int(time.time())}
 
                 # Check if the user has already voted
                 if str(user_id) in self.vote_counts[message_id]["users"]:
@@ -193,8 +193,8 @@ class GovernanceMonitor(discord.Client):
                 else:
                     results_message = await thread.send("👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0")
 
-                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['👍']}    |    ⚪ ABSTAIN: {self.vote_counts[message_id]['⚪']}    |    👎 NAY: {self.vote_counts[message_id]['👎']}\n" \
-                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['👍'], abstain_votes=self.vote_counts[message_id]['⚪'], nay_votes=self.vote_counts[message_id]['👎'])}"
+                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    ⚪ ABSTAIN: {self.vote_counts[message_id]['abstain']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}\n" \
+                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], abstain_votes=self.vote_counts[message_id]['abstain'], nay_votes=self.vote_counts[message_id]['nay'])}"
                 await results_message.edit(content=new_results_message)
 
                 # Acknowledge the vote and delete the message 10 seconds later
