@@ -240,7 +240,7 @@ async def check_governance():
         new_referendums = opengov2.check_referendums()
 
         if new_referendums:
-            logging.info(f"{len(new_referendums)} New proposal(s) found")
+            logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(discord_forum_channel_id)
 
             # go through each referendum if more than 1 was submitted in the given scheduled time
@@ -304,6 +304,8 @@ async def check_governance():
                 except Exception as error:
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
+        else:
+            logging.info("0 proposals found since last checking")
     except Exception as error:
         logging.exception(f"An unexpected error occurred: {error}")
         raise error
