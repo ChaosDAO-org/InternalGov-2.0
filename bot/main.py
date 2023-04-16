@@ -8,6 +8,7 @@ from logging.handlers import TimedRotatingFileHandler
 
 import asyncio
 import discord
+import requests
 from discord.ext import tasks
 from discord import app_commands
 from discord.ui import Button, View
@@ -100,7 +101,42 @@ class GovernanceMonitor(discord.Client):
         elif nay_percentage >= threshold:
             return "The vote is currently unsuccessful with {:.2%} **NAY**".format(nay_percentage)
         else:
-            return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY** & {:.2%} **ABSTAIN**".format(aye_percentage, nay_percentage, abstain_percentage)
+            return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY** & {:.2%} **ABSTAIN**".format(
+                aye_percentage, nay_percentage, abstain_percentage)
+
+    @staticmethod
+    def get_asset_price(asset_id, currencies='usd,gbp,eur'):
+        """
+        Fetches the price of an asset in the specified currencies from the CoinGecko API.
+
+        Args:
+            asset_id (str): The ID of the asset for which to fetch the price (e.g., "bitcoin").
+            currencies (str, optional): A comma-separated string of currency symbols
+                                         (default is 'usd,gbp,eur').
+
+        Returns:
+            dict: A dictionary containing the prices in the specified currencies, or None
+                  if an error occurred or the asset ID was not found.
+        """
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={asset_id}&vs_currencies={currencies}"
+
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            print(f"An HTTP error occurred: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            print(f"A request error occurred: {e}")
+            return None
+
+        data = response.json()
+
+        if asset_id not in data:
+            print(f"Asset ID '{asset_id}' not found in CoinGecko.")
+            return None
+
+        return data[asset_id]
 
     @staticmethod
     def load_vote_counts():
@@ -128,8 +164,10 @@ class GovernanceMonitor(discord.Client):
             roles = member.roles
 
             if discord_role and not any(role.name == discord_role for role in roles):
-                logging.warning(f"{username } doesn't have the appropriate role set to participate. Required role: {discord_role}")
-                await interaction.response.send_message(f"You don't have the appropriate role set to participate. Required role: {discord_role}", ephemeral=True)
+                logging.warning(f"{username} doesn't have the necessary role assigned to participate:: {discord_role}")
+                await interaction.response.send_message(
+                    f"To participate, please ensure that you have the necessary role assigned: {discord_role}. This is a prerequisite for engaging in this activity.",
+                    ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.delete_original_response()
                 return
@@ -145,13 +183,14 @@ class GovernanceMonitor(discord.Client):
                 vote_type = "aye" if custom_id == "aye_button" else "abstain" if custom_id == "abstain_button" else "nay"
 
                 if message_id not in list(self.vote_counts.keys()):
-                    self.vote_counts[message_id] = {"index": 'Proposal detected; corresponding vote_count.json entry absent, now added using first vote interaction.',
-                                                    "title": discord_thread.name,
-                                                    "aye": 0,
-                                                    "abstain": 0,
-                                                    "nay": 0,
-                                                    "users": {},
-                                                    "epoch": int(time.time())}
+                    self.vote_counts[message_id] = {
+                        "index": 'Proposal detected; corresponding vote_count.json entry absent, now added using first vote interaction.',
+                        "title": discord_thread.name,
+                        "aye": 0,
+                        "abstain": 0,
+                        "nay": 0,
+                        "users": {},
+                        "epoch": int(time.time())}
 
                 # Check if the user has already voted
                 if str(user_id) in self.vote_counts[message_id]["users"]:
@@ -159,7 +198,9 @@ class GovernanceMonitor(discord.Client):
 
                     # If the user has voted for the same option, ignore the vote
                     if previous_vote == vote_type:
-                        await interaction.response.send_message("You have already voted for this option.", ephemeral=True)
+                        await interaction.response.send_message(
+                            "Your vote for this option has already been recorded. If you wish to change your decision, please feel free to choose an alternative option.",
+                            ephemeral=True)
                         await asyncio.sleep(5)
                         await interaction.delete_original_response()
                         return
@@ -188,7 +229,9 @@ class GovernanceMonitor(discord.Client):
 
                 # Acknowledge the vote and delete the message 10 seconds later
                 # (this notification is only visible to the user that interacts with AYE, NAY & ABSTAIN
-                await interaction.response.send_message(f"Vote casted! You have voted **{vote_type}**", ephemeral=True)
+                await interaction.response.send_message(
+                    f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
+                    ephemeral=True)
                 await asyncio.sleep(10)
                 await interaction.delete_original_response()
             else:
@@ -196,7 +239,7 @@ class GovernanceMonitor(discord.Client):
                 remaining_time = cooldown_time - current_time
                 seconds = int(remaining_time)
 
-                await interaction.response.send_message(f"You need to wait {seconds} seconds before casting your vote again!", ephemeral=True)
+                await interaction.response.send_message(f"A {seconds}-second waiting period is required before you may cast your vote again. We appreciate your patience and understanding.", ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.delete_original_response()
 
@@ -242,9 +285,11 @@ async def check_governance():
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(discord_forum_channel_id)
+            current_price = client.get_asset_price(asset_id=config['network'])
 
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
+                requested_spend = ""
                 try:
                     proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
 
@@ -256,14 +301,38 @@ async def check_governance():
                     if governance_tag is None:
                         governance_tag = await channel.create_tag(name=governance_origin[0])
 
-                    title = values['title'][:200].strip()
+                    #  Written to accommodate differences in returned JSON between Polkassembly & Subsquare
+                    if values['successful_url']:
+                        logging.info(f"Getting on-chain data from: {values['successful_url']}")
+
+                        if 'polkassembly' in values['successful_url'] and 'proposed_call' in list(values.keys()):
+                            if values['proposed_call']['method'] == 'spend':
+                                amount = int(values['proposed_call']['args']['amount']) / 1e12
+                                requested_spend = f"```yaml\n" \
+                                                  f"This proposal seeks approval for the allocation of {amount} KSM\n\n" \
+                                                  f"USD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+
+                        elif 'subsquare' in values['successful_url'] and 'proposal' in list(values['onchainData'].keys()):
+                            if values['onchainData']['proposal'] is not None and values['onchainData']['proposal']['call']['method'] == 'spend':
+                                amount = int(values['onchainData']['proposal']['call']['args'][0]['value']) / 1e12
+                                requested_spend = f"```yaml\n" \
+                                                  f"This proposal seeks approval for the allocation of {amount} KSM\n\n" \
+                                                  f"USD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                        else:
+                            logging.error(f"Unable to pull information from data sources")
+                            requested_spend = ""
+                    else:
+                        logging.error(f"Unable to pull information from data sources")
+                        requested_spend = ""
+
+                    title = values['title'][:95].strip()
                     content = values['content'][:1700].strip()
                     logging.info(f"Creating thread on Discord: {title}")
 
                     # Create a new thread on Discord
                     thread = await channel.create_thread(
                         name=f"{index}# {title}",
-                        content=f"{content}{'...**Character limit exceeded. For further details, please refer to the links below.**' if len(content) > 1700 else ''}\n\n"
+                        content=f"{requested_spend}{content}{'...**Character limit exceeded. For further details, please refer to the links below.**' if len(content) > 1700 else ''}\n\n"
                                 f"**External links**"
                                 f"\n<https://kusama.polkassembly.io/referenda/{index}>"
                                 f"\n<https://kusama.subsquare.io/referenda/referendum/{index}>"
@@ -272,7 +341,7 @@ async def check_governance():
                         applied_tags=[governance_tag]
                     )
 
-                    logging.info(f"Discord thread created: {thread.message.id}")
+                    logging.info(f"Thread created: {thread.message.id}")
 
                     # Send an initial results message in the thread
                     initial_results_message = "👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0"
@@ -292,7 +361,8 @@ async def check_governance():
 
                     message_id = thread.message.id
                     view = InternalGov(client, message_id, results_message_id)  # Pass the results_message_id
-                    await thread.message.edit(view=view)                        # Update the thread message with the new view
+                    logging.info(f"Vote results message added: {message_id}")
+                    await thread.message.edit(view=view)  # Update the thread message with the new view
                     await asyncio.sleep(5)
 
                 except discord.errors.Forbidden as forbidden:

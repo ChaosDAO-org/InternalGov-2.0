@@ -48,21 +48,6 @@ class OpenGovernance2:
 
     @staticmethod
     def fetch_referendum_data(referendum_id: int, network: str) -> Union[str, Any]:
-        """
-        Fetches referendum data from multiple sources and returns the JSON response containing
-        a non-empty title if found. If no response with a non-empty title is found, it returns
-        the first successful response or a default response with a title of "None" if neither
-        URL is successful.
-
-        Args:
-            referendum_id (int): The ID of the referendum to fetch data for.
-            network (str): The network to use for the request (e.g. "polkadot" or "kusama").
-
-        Returns:
-            Union[str, Any]: A JSON response containing referendum data with a non-empty title,
-                             the first successful response, or a default response with a title
-                             of "None" if neither URL is successful.
-        """
         urls = [
             f"https://api.polkassembly.io/api/v1/posts/on-chain-post?postId={referendum_id}&proposalType=referendums_v2",
             f"https://kusama.subsquare.io/api/gov2/referendums/{referendum_id}",
@@ -70,6 +55,7 @@ class OpenGovernance2:
 
         headers = {"x-network": network}
         successful_response = None
+        successful_url = None
 
         for url in urls:
             try:
@@ -82,18 +68,22 @@ class OpenGovernance2:
 
                 if json_response["title"] is None:
                     return {"title": "None",
-                            "content": "Unable to retrieve details from both sources"}
+                            "content": "Unable to retrieve details from both sources",
+                            "successful_url": None}
 
                 if successful_response is None:
                     successful_response = json_response
+                    successful_url = url
 
-            except requests.exceptions.HTTPError as e:
-                print(f"HTTPError for {url}: {e}")
+            except requests.exceptions.HTTPError as http_error:
+                raise f"HTTP exception occurred: {http_error}"
 
         if successful_response is not None and successful_response["title"] == "None":
             return {"title": "None",
-                    "content": "Unable to retrieve details from both sources"}
+                    "content": "Unable to retrieve details from both sources",
+                    "successful_url": None}
         else:
+            successful_response["successful_url"] = successful_url
             return successful_response
 
     def time_until_block(self, target_block: int) -> int:
