@@ -1,4 +1,5 @@
 import os
+import time
 import json
 from typing import Dict, Any
 import deepdiff
@@ -37,3 +38,32 @@ class CacheManager:
             return {}
         else:
             return result
+
+    @staticmethod
+    def delete_old_keys_and_archive(json_data, days=14, archive_filename="archived_votes.json"):
+        current_time = int(time.time())
+        time_threshold = days * 24 * 60 * 60  # Convert days to seconds
+
+        keys_to_delete = []
+
+        for key, value in json_data.items():
+            if current_time - value["epoch"] > time_threshold:
+                keys_to_delete.append(key)
+
+        # Load archived data or create an empty dictionary if the file doesn't exist
+        if os.path.exists(archive_filename):
+            with open(archive_filename, "r") as archive_file:
+                archived_data = json.load(archive_file)
+        else:
+            archived_data = {}
+
+        # Archive keys to be deleted
+        for key in keys_to_delete:
+            archived_data[key] = json_data[key]
+            del json_data[key]
+
+        # Save the archived data to the file
+        with open(archive_filename, "w") as archive_file:
+            json.dump(archived_data, archive_file, indent=2)
+
+        return json_data
