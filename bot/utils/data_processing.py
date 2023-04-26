@@ -40,9 +40,13 @@ class CacheManager:
             return result
 
     @staticmethod
-    def delete_old_keys_and_archive(json_data, days=14, archive_filename="archived_votes.json"):
+    def delete_old_keys_and_archive(json_file_path, days=14, archive_filename="archived_votes.json"):
         current_time = int(time.time())
         time_threshold = days * 24 * 60 * 60  # Convert days to seconds
+
+        # Load JSON data from the file
+        with open(json_file_path, "r") as json_file:
+            json_data = json.load(json_file)
 
         keys_to_delete = []
 
@@ -66,4 +70,9 @@ class CacheManager:
         with open(archive_filename, "w") as archive_file:
             json.dump(archived_data, archive_file, indent=2)
 
-        return json_data
+        # Save the updated JSON data back to the original file
+        with open(json_file_path, "w") as json_file:
+            json.dump(json_data, json_file, indent=2)
+
+        # Return the list of archived keys
+        return keys_to_delete
