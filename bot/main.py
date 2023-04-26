@@ -14,6 +14,7 @@ from discord import app_commands
 from discord.ui import Button, View
 
 from utils.gov2 import OpenGovernance2
+from utils.data_processing import CacheManager
 
 with open("../config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -21,6 +22,7 @@ with open("../config.yaml", "r") as file:
 discord_api_key = config['discord_api_key']
 discord_server_id = int(config['discord_server_id'])
 discord_forum_channel_id = int(config['discord_forum_channel_id'])
+discord_lock_thread = int(config['discord_lock_thread'])
 discord_role = config['discord_role']
 
 guild = discord.Object(id=discord_server_id)
@@ -149,6 +151,31 @@ class GovernanceMonitor(discord.Client):
     def save_vote_counts(self):
         with open("../data/vote_counts.json", "w") as file:
             json.dump(self.vote_counts, file, indent=4)
+
+    @staticmethod
+    async def lock_threads_by_message_ids(guild_id, message_ids):
+        if not isinstance(message_ids, list):
+            message_ids = [message_ids]
+
+        server = client.get_guild(guild_id)
+
+        # Check if the bot has the required permissions
+        bot_member = server.get_member(client.user.id)
+        if not bot_member.guild_permissions.manage_threads:
+            logging.error("The bot lacks the necessary permissions to lock threads. Please update the permissions.")
+            return
+
+        for message_id in message_ids:
+            # Get the thread from the forum by the message ID
+            thread = client.get_channel(int(message_id))
+
+            if not thread:
+                logging.error(f"Invalid Discord forum thread ID: {message_id}")
+                continue
+
+            # Lock the thread
+            logging.info(f"Discord forum thread '{thread.name}' is >= {discord_lock_thread} days old, locking thread from future interactions.")
+            await thread.edit(locked=True)
 
     async def on_interaction(self, interaction: discord.Interaction):
 
@@ -282,6 +309,14 @@ async def check_governance():
         opengov2 = OpenGovernance2()
         new_referendums = opengov2.check_referendums()
 
+        # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
+        # lock threads once archived (prevents regular users from continueing to vote).
+        threads_to_lock = CacheManager().delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=discord_lock_thread, archive_filename='../data/archived_votes.json')
+        if threads_to_lock:
+            logging.info(f"{len(threads_to_lock)} threads have been archived")
+            await client.lock_threads_by_message_ids(guild_id=discord_server_id, message_ids=threads_to_lock)
+            logging.info(f"The following threads have been locked: {threads_to_lock}")
+
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(discord_forum_channel_id)
@@ -379,6 +414,8 @@ async def check_governance():
     except Exception as error:
         logging.exception(f"An unexpected error occurred: {error}")
         raise error
+
+
 
 
 @client.event
