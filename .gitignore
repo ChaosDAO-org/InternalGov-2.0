@@ -1,0 +1,8 @@
+# Ignore log files
+*.log
+
+# Ignore YAML files
+*.yaml
+
+# Ignore Python bytecode files
+__pycache__/
