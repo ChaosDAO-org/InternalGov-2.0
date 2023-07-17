@@ -13,7 +13,7 @@ from discord import app_commands
 from discord.ui import Button, View
 
 from utils.gov2 import OpenGovernance2
-from utils.data_processing import CacheManager
+from utils.data_processing import CacheManager, Text
 
 with open("../config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -85,6 +85,7 @@ class InternalGov(View):
         self.add_item(Button(label="AYE", custom_id="aye_button", style=discord.ButtonStyle.green))
         self.add_item(Button(label="ABSTAIN", custom_id="abstain_button", style=discord.ButtonStyle.grey))
         self.add_item(Button(label="NAY", custom_id="nay_button", style=discord.ButtonStyle.red))
+        self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary))
 
     async def on_aye_button(self, interaction: discord.Interaction):
         await interaction.response.defer()
@@ -93,6 +94,9 @@ class InternalGov(View):
         await interaction.response.defer()
 
     async def on_nay_button(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+
+    async def on_recuse_button(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
 
@@ -184,6 +188,11 @@ class GovernanceMonitor(discord.Client):
 
         """
         total_votes = aye_votes + nay_votes + abstain_votes
+
+        # Handle the edge case where total_votes is zero
+        if total_votes == 0:
+            return "No on-chain votes have been casted."
+
         aye_percentage = aye_votes / total_votes
         nay_percentage = nay_votes / total_votes
         abstain_percentage = abstain_votes / total_votes
@@ -383,9 +392,10 @@ class GovernanceMonitor(discord.Client):
             current_time = time.time()
             cooldown_time = button_cooldowns.get(user_id, 0) + 15
 
-            if custom_id in ["aye_button", "nay_button", "abstain_button"] and current_time >= cooldown_time:
+            if custom_id in ["aye_button", "nay_button", "abstain_button", "recuse_button"] and current_time >= cooldown_time:
+                self.vote_counts = self.load_vote_counts()  # tmp-workaround for reloading vote_counts to avoid memory caching
                 button_cooldowns[user_id] = current_time
-                vote_type = "aye" if custom_id == "aye_button" else "abstain" if custom_id == "abstain_button" else "nay"
+                vote_type = "aye" if custom_id == "aye_button" else "abstain" if custom_id == "abstain_button" else "recuse" if custom_id == "recuse_button" else "nay"
 
                 if message_id not in list(self.vote_counts.keys()):
                     self.vote_counts[message_id] = {
@@ -394,6 +404,7 @@ class GovernanceMonitor(discord.Client):
                         "aye": 0,
                         "abstain": 0,
                         "nay": 0,
+                        "recuse": 0,
                         "users": {},
                         "epoch": int(time.time())}
 
@@ -426,9 +437,9 @@ class GovernanceMonitor(discord.Client):
                         results_message = message
                         break
                 else:
-                    results_message = await thread.send("👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0")
+                    results_message = await thread.send("👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
-                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    ⚪ ABSTAIN: {self.vote_counts[message_id]['abstain']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}\n" \
+                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    ⚪ ABSTAIN: {self.vote_counts[message_id]['abstain']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
                                       f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], abstain_votes=self.vote_counts[message_id]['abstain'], nay_votes=self.vote_counts[message_id]['nay'])}"
                 await results_message.edit(content=new_results_message)
 
@@ -486,7 +497,7 @@ async def check_governance():
         new_referendums = opengov2.check_referendums()
 
         # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
-        # lock threads once archived (prevents regular users from continueing to vote).
+        # lock threads once archived (prevents regular users from continuing to vote).
         threads_to_lock = CacheManager().delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=discord_lock_thread, archive_filename='../data/archived_votes.json')
         if threads_to_lock:
             logging.info(f"{len(threads_to_lock)} threads have been archived")
@@ -502,7 +513,7 @@ async def check_governance():
             for index, values in new_referendums.items():
                 requested_spend = ""
                 try:
-                    proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
+                    #proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
 
                     available_channel_tags = [tag for tag in channel.available_tags]
                     governance_origin = [v for i, v in values['onchain']['origin'].items()]
@@ -549,7 +560,7 @@ async def check_governance():
                     #   The string ends with two newline characters.
                     thread = await channel.create_thread(
                         name=f"{index}# {title}",
-                        content=f"""{requested_spend}{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
+                        content=f"""{requested_spend}{Text.convert_markdown_to_discord(content) if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
                                 f"**External links**"
                                 f"\n<https://{config['network']}.polkassembly.io/referenda/{index}>"
                                 f"\n<https://{config['network']}.subsquare.io/referenda/referendum/{index}>"
@@ -559,9 +570,8 @@ async def check_governance():
                     )
 
                     logging.info(f"Thread created: {thread.message.id}")
-
                     # Send an initial results message in the thread
-                    initial_results_message = "👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0"
+                    initial_results_message = "👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0"
 
                     channel_thread = channel.get_thread(thread.message.id)
                     client.vote_counts[str(thread.message.id)] = {"index": index,
@@ -569,6 +579,7 @@ async def check_governance():
                                                                   "aye": 0,
                                                                   "abstain": 0,
                                                                   "nay": 0,
+                                                                  "recuse": 0,
                                                                   "users": {},
                                                                   "epoch": int(time.time())}
                     client.save_vote_counts()
@@ -663,7 +674,7 @@ async def recheck_proposals():
             await client.edit_thread(forum_channel=discord_forum_channel_id,
                                      message_id=key,
                                      name=f"{proposal_index}# {opengov['title']}",
-                                     content=f"""{requested_spend}{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
+                                     content=f"""{requested_spend}{Text.convert_markdown_to_discord(content) if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
                                              f"**External links**"
                                              f"\n<https://{config['network']}.polkassembly.io/referenda/{proposal_index}>"
                                              f"\n<https://{config['network']}.subsquare.io/referenda/referendum/{proposal_index}>"
