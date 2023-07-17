@@ -3,6 +3,24 @@ import time
 import json
 from typing import Dict, Any
 import deepdiff
+import re
+
+
+class Text:
+    @staticmethod
+    def convert_markdown_to_discord(markdown_text):
+        def replacer(match):
+            link_text = match.group(1)
+            url = match.group(2)
+            if link_text == url:
+                return f'<{url}>'
+            else:
+                return f'{link_text}: <{url}>'
+
+        markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer, markdown_text)
+
+        # Return the modified text.
+        return markdown_text
 
 
 class CacheManager:
@@ -42,7 +60,7 @@ class CacheManager:
     @staticmethod
     def delete_old_keys_and_archive(json_file_path, days=14, archive_filename="archived_votes.json"):
         current_time = int(time.time())
-        time_threshold = days * 24 * 60 * 60  # Convert days to seconds
+        time_threshold = int(days) * 24 * 60 * 60  # Convert days to seconds
 
         # Load JSON data from the file
         with open(json_file_path, "r") as json_file:
