@@ -48,30 +48,20 @@ We encourage everyone to actively participate in these discussions, as your inpu
 
 
 ```yaml
-discord_api_key: <api-secret>
-discord_server_id: <discord-server-id>
-discord_forum_channel_id: <discord-forum-id>
-discord_role: null
-substrate_wss: wss://kusama-rpc.polkadot.io
-polkassembly_graphql: https://kusama.polkassembly.io/v1/graphql
+discord_api_key: <api-key>
+discord_server_id: <server-id>
+discord_forum_channel_id: <forum-id>
+discord_lock_thread: 14
+discord_role: <discord-role/leave blank for anyone to vote>
+network: polkadot
+token_decimal: 1e10
+symbol: DOT
+substrate_wss: wss://
 ```
 note: `discord_role` is optional. If left as `null` it will allow anyone to cast a vote.
 
 ###### Daemonize the bot to run 24/7 with PM2
 ```shell
-pm2 start discord-bot.py --name opengov2 --interpreter python3
+pm2 start main.py --name dotgov2 --interpreter python3
 pm2 save
 ```
-
-
----
-
-### Objectives
-- [X] Initial creation
-- [X] Automatically create tags for threads based on origin of referendum. `[SmallTipper, Root, MediumSpender, BigSpender,  WhitelistedCaller, AuctionAdmin, Treasurer]`
-- [X] Run for 1 - 2 weeks (starting 13/02/2023), resolve any issues. Push to git.
-- [X] Limit who can vote by role (optional)
-- [X] Replace the old emoji system with interactive buttons
-- [ ] Auto archive/lock a thread depending on when the proposal ends
-- [ ] Generate extrinsic for proxy account
-- [ ] Requests
