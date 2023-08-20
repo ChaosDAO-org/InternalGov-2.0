@@ -515,7 +515,11 @@ async def check_governance():
                 try:
                     #proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
 
-                    available_channel_tags = [tag for tag in channel.available_tags]
+                    if channel is not None:
+                        available_channel_tags = [tag for tag in channel.available_tags]
+                    else:
+                        logging.error(f"Channel with ID {discord_forum_channel_id} not found")
+                        # Handle the error as appropriate for your application
                     governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
                     # Create forum tags if they don't already exist.
