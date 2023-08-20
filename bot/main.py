@@ -585,6 +585,7 @@ async def check_governance():
                     client.save_vote_counts()
 
                     results_message = await channel_thread.send(content=initial_results_message)
+                    await thread.message.pin()
                     await results_message.pin()
                     results_message_id = results_message.id
 
