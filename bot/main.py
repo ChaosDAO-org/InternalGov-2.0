@@ -448,7 +448,7 @@ class GovernanceMonitor(discord.Client):
                 await interaction.response.send_message(
                     f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
-                await asyncio.sleep(10)
+                await asyncio.sleep(60*60*24*14)
                 # await interaction.delete_original_response()
             else:
                 # block the user from pressing the AYE, NAY & ABSTAIN to prevent unnecessary spam
