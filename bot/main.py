@@ -360,6 +360,12 @@ class GovernanceMonitor(discord.Client):
         if interaction.data and interaction.data.get("component_type") == 2:
             custom_id = interaction.data.get("custom_id")
 
+            if custom_id == 'abstain_button':
+                await interaction.response.send_message(f"Choose Aye, Nay, or Recuse if there's a conflict of interest. Abstain has been removed", ephemeral=True)
+                await asyncio.sleep(10)
+                await interaction.delete_original_response()
+                return
+
             user_id = interaction.user.id
             username = interaction.user.name + '#' + interaction.user.discriminator
 
