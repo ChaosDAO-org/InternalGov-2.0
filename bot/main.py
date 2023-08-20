@@ -608,6 +608,10 @@ async def check_governance():
                     results_message = await channel_thread.send(content=initial_results_message)
                     await thread.message.pin()
                     await results_message.pin()
+                    await asyncio.sleep(1)
+                    async for message in channel_thread.history(limit=5):
+                        if message.type == discord.MessageType.pins_add:
+                            await message.delete()
 
                     if guild is None:
                         logging.error(f"Guild with ID {guild_id} not found")
