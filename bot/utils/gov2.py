@@ -1,6 +1,7 @@
 import yaml
 import json
 import requests
+import aiohttp
 from typing import Union, Any
 from utils.data_processing import CacheManager
 from substrateinterface import SubstrateInterface
@@ -46,7 +47,7 @@ class OpenGovernance2:
             return data
 
     @staticmethod
-    def fetch_referendum_data(referendum_id: int, network: str):
+    async def fetch_referendum_data(referendum_id: int, network: str):
         """
         Fetches referendum data from a set of URLs using a given referendum ID and network name.
 
@@ -79,25 +80,26 @@ class OpenGovernance2:
         successful_response = None
         successful_url = None
 
-        for url in urls:
-            try:
-                response = requests.get(url, headers=headers)
-                response.raise_for_status()
-                json_response = response.json()
+        async with aiohttp.ClientSession() as session:
+            for url in urls:
+                try:
+                    response = requests.get(url, headers=headers)
+                    response.raise_for_status()
+                    json_response = response.json()
 
-                # Add 'title' key if it doesn't exist
-                if "title" not in json_response.keys():
-                    json_response["title"] = "None"
+                    # Add 'title' key if it doesn't exist
+                    if "title" not in json_response.keys():
+                        json_response["title"] = "None"
 
-                # Check if 'title' is not None or empty string
-                if json_response["title"] not in {None, "None", ""}:
-                    successful_response = json_response
-                    successful_url = url
-                    # Once a successful response is found, no need to continue checking other URLs
-                    break
+                    # Check if 'title' is not None or empty string
+                    if json_response["title"] not in {None, "None", ""}:
+                        successful_response = json_response
+                        successful_url = url
+                        # Once a successful response is found, no need to continue checking other URLs
+                        break
 
-            except requests.exceptions.HTTPError as http_error:
-                print(f"HTTP exception occurred while accessing {url}: {http_error}")
+                except requests.exceptions.HTTPError as http_error:
+                    print(f"HTTP exception occurred while accessing {url}: {http_error}")
 
         if successful_response is None:
             return {"title": "None",
@@ -145,7 +147,7 @@ class OpenGovernance2:
         except Exception as error:
             print( f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
 
-    def check_referendums(self):
+    async def check_referendums(self):
         """
         Check the referendums and return any new referendums as a JSON string.
 
@@ -170,7 +172,7 @@ class OpenGovernance2:
                     for index in results['dictionary_item_added']:
                         index = index.strip('root').replace("['", "").replace("']", "")
                         onchain_info = referendum_info[index]['Ongoing']
-                        polkassembly_info = self.fetch_referendum_data(referendum_id=index, network=config['network'])
+                        polkassembly_info = await self.fetch_referendum_data(referendum_id=index, network=config['network'])
 
                         new_referenda.update({
                             f"{index}": polkassembly_info

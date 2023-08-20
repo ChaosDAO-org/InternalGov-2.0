@@ -494,7 +494,7 @@ async def check_governance():
     try:
         logging.info("Checking for new proposals")
         opengov2 = OpenGovernance2()
-        new_referendums = opengov2.check_referendums()
+        new_referendums = await opengov2.check_referendums()
 
         # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
         # lock threads once archived (prevents regular users from continuing to vote).
@@ -639,7 +639,7 @@ async def recheck_proposals():
     for key, value in proposals_without_context.items():
         requested_spend = ""
         proposal_index = value['index']
-        opengov = opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config['network'])
+        opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config['network'])
 
         if opengov['title'] != 'None':
             logging.info(f"Proposals have been found in the past where no title was set. Rechecking for title + content")
