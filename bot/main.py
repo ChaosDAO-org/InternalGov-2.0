@@ -621,7 +621,7 @@ async def check_governance():
                             await channel_thread.send(content=
                             f"<@&{role.id}>"
                             f"\n**INSTRUCTIONS:**"
-                            f"\n- Vote **AYE** if you do want to see this proposal pass"
+                            f"\n- Vote **AYE** if you want to see this proposal pass"
                             f"\n- Vote **NAY** if you want to see this proposal fail"
                             f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
                             )
