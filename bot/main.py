@@ -448,7 +448,7 @@ class GovernanceMonitor(discord.Client):
                 await interaction.response.send_message(
                     f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
-                await asyncio.sleep(10)
+                await asyncio.sleep(60*60*24*14)
                 # await interaction.delete_original_response()
             else:
                 # block the user from pressing the AYE, NAY & ABSTAIN to prevent unnecessary spam
@@ -469,6 +469,25 @@ class GovernanceMonitor(discord.Client):
 
 client = GovernanceMonitor(intents=intents)
 
+
+async def create_or_get_role(guild, role_name, client):
+    # Check if the role already exists
+    existing_role = discord.utils.get(guild.roles, name=role_name)
+
+    if existing_role:
+        return existing_role
+
+    # If the role doesn't exist, try to create it
+    try:
+        # Create the role with the specified name
+        new_role = await guild.create_role(name=role_name)
+        return new_role
+    except discord.Forbidden:
+        logging.error(f"Permission error: Unable to create role {role_name} in guild {guild.id}")
+        raise  # You can raise the exception or return None based on your use case
+    except discord.HTTPException as e:
+        logging.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
+        raise  # You can raise the exception or return None based on your use case
 
 @tasks.loop(hours=6)
 async def check_governance():
@@ -508,14 +527,27 @@ async def check_governance():
             logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(discord_forum_channel_id)
             current_price = client.get_asset_price(asset_id=config['network'])
+                    
+            # Get the guild object where the role is located
+            guild = client.get_guild(discord_server_id)  # Replace discord_guild_id with the actual guild ID
+
+            # Construct the role name based on the symbol in config
+            role_name = f"{config['symbol']}-GOV"
+
+            # Find the role by its name
+            role = discord.utils.get(guild.roles, name=role_name)
 
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 requested_spend = ""
                 try:
                     #proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
-
-                    available_channel_tags = [tag for tag in channel.available_tags]
+                    available_channel_tags = []
+                    if channel is not None:
+                        available_channel_tags = [tag for tag in channel.available_tags]
+                    else:
+                        logging.error(f"Channel with ID {discord_forum_channel_id} not found")
+                        # Handle the error as appropriate for your application
                     governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
                     # Create forum tags if they don't already exist.
@@ -585,7 +617,16 @@ async def check_governance():
                     client.save_vote_counts()
 
                     results_message = await channel_thread.send(content=initial_results_message)
+                    await thread.message.pin()
                     await results_message.pin()
+
+                    if guild is None:
+                        logging.error(f"Guild with ID {guild_id} not found")
+                    else:
+                        role = await create_or_get_role(guild, role_name, client)
+                        if role:
+                            await channel_thread.send(content=f"<@&{role.id}>")
+                    
                     results_message_id = results_message.id
 
                     message_id = thread.message.id

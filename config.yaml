@@ -2,6 +2,8 @@ discord_api_key: <apikey>
 discord_server_id: <serverid>
 discord_forum_channel_id: <forumid>
 discord_lock_thread: 14
-discord_role: verified
-network: kusama
-substrate_wss: wss://kusama-rpc.polkadot.io
+token_decimal: 1e10
+symbol: DOT
+discord_role: <discord-role/leave blank for anyone to vote>
+network: polkadot
+substrate_wss: wss://rpc.polkadot.io

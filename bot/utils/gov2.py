@@ -83,22 +83,22 @@ class OpenGovernance2:
         async with aiohttp.ClientSession() as session:
             for url in urls:
                 try:
-                    response = requests.get(url, headers=headers)
-                    response.raise_for_status()
-                    json_response = response.json()
+                    async with session.get(url, headers=headers) as response:
+                        response.raise_for_status()
+                        json_response = await response.json()
 
-                    # Add 'title' key if it doesn't exist
-                    if "title" not in json_response.keys():
-                        json_response["title"] = "None"
+                        # Add 'title' key if it doesn't exist
+                        if "title" not in json_response.keys():
+                            json_response["title"] = "None"
 
-                    # Check if 'title' is not None or empty string
-                    if json_response["title"] not in {None, "None", ""}:
-                        successful_response = json_response
-                        successful_url = url
-                        # Once a successful response is found, no need to continue checking other URLs
-                        break
+                        # Check if 'title' is not None or empty string
+                        if json_response["title"] not in {None, "None", ""}:
+                            successful_response = json_response
+                            successful_url = url
+                            # Once a successful response is found, no need to continue checking other URLs
+                            break
 
-                except requests.exceptions.HTTPError as http_error:
+                except aiohttp.ClientResponseError as http_error:
                     print(f"HTTP exception occurred while accessing {url}: {http_error}")
 
         if successful_response is None:
