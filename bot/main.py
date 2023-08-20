@@ -582,7 +582,7 @@ async def check_governance():
                     title = values['title'][:95].strip() if values['title'] is not None else None
                     content = values['content'][:1451].strip() if values['content'] is not None else None
 
-                    char_exceed_msg = "```fix\nCharacter count exceeded. For more insights, kindly visit the provided links\n```"
+                    char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
                     logging.info(f"Creating thread on Discord: {index}# {title}")
 
                     # Create Discord thread
@@ -705,7 +705,7 @@ async def recheck_proposals():
             content = opengov['content'][:1451].strip()
 
             # governance_tag = next((tag for tag in available_channel_tags if tag.name == opengov['origin']), None)
-            char_exceed_msg = "```fix\nCharacter count exceeded. For more insights, kindly visit the provided links\n```"
+            char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
 
             # set title on thread id contained in vote_counts.json
             client.vote_counts[key]['title'] = title
