@@ -83,14 +83,10 @@ class InternalGov(View):
         self.message_id = message_id
         self.results_message_id = results_message_id
         self.add_item(Button(label="AYE", custom_id="aye_button", style=discord.ButtonStyle.green))
-        self.add_item(Button(label="ABSTAIN", custom_id="abstain_button", style=discord.ButtonStyle.grey))
         self.add_item(Button(label="NAY", custom_id="nay_button", style=discord.ButtonStyle.red))
         self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary))
 
     async def on_aye_button(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-
-    async def on_abstain_button(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
     async def on_nay_button(self, interaction: discord.Interaction):
@@ -156,12 +152,12 @@ class GovernanceMonitor(discord.Client):
         return items_with_title_none
 
     @staticmethod
-    def calculate_vote_result(aye_votes: int, nay_votes: int, abstain_votes: int, threshold: float = 0.66) -> str:
+    def calculate_vote_result(aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
         """
-        Calculate and return the result of a vote based on the numbers of 'aye', 'nay', and 'abstain' votes,
+        Calculate and return the result of a vote based on the numbers of 'aye', 'nay' votes,
         and a specified threshold.
 
-        This function takes in the number of 'aye', 'nay', and 'abstain' votes, and calculates the percentages
+        This function takes in the number of 'aye', 'nay' votes, and calculates the percentages
         of each. It then compares the percentage of 'aye' votes to a specified threshold to determine if the
         vote is successful. If the 'aye' percentage is below the threshold, it checks if the 'nay' percentage
         meets the threshold to determine if the vote is unsuccessful. If neither 'aye' nor 'nay' meets the threshold,
@@ -170,24 +166,20 @@ class GovernanceMonitor(discord.Client):
         Parameters:
         aye_votes (int): The number of 'aye' votes. Must be non-negative.
         nay_votes (int): The number of 'nay' votes. Must be non-negative.
-        abstain_votes (int): The number of 'abstain' votes. Must be non-negative.
         threshold (float, optional): The percentage threshold required for the vote to be successful. Defaults to 0.66.
                                     Must be between 0 and 1.
 
         Returns:
         str: A string describing the result of the vote. The string contains the status of the vote (successful,
-             unsuccessful, or inconclusive) and the percentages of 'aye', 'nay', and 'abstain' votes.
+             unsuccessful, or inconclusive) and the percentages of 'aye', 'nay' votes.
 
         Example:
 
-        >>> calculate_vote_result(70, 20, 10)
+        >>> calculate_vote_result(70, 30)
         >>>'The vote is currently successful with 70.00% **AYE**'
 
-        >>> calculate_vote_result(50, 40, 10, threshold=0.6)
-        >>>'The vote is currently inconclusive with 50.00% **AYE**, 40.00% **NAY** & 10.00% **ABSTAIN**'
-
         """
-        total_votes = aye_votes + nay_votes + abstain_votes
+        total_votes = aye_votes + nay_votes
 
         # Handle the edge case where total_votes is zero
         if total_votes == 0:
@@ -195,15 +187,14 @@ class GovernanceMonitor(discord.Client):
 
         aye_percentage = aye_votes / total_votes
         nay_percentage = nay_votes / total_votes
-        abstain_percentage = abstain_votes / total_votes
 
         if aye_percentage >= threshold:
             return "The vote is currently successful with {:.2%} **AYE**".format(aye_percentage)
         elif nay_percentage >= threshold:
             return "The vote is currently unsuccessful with {:.2%} **NAY**".format(nay_percentage)
         else:
-            return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY** & {:.2%} **ABSTAIN**".format(
-                aye_percentage, nay_percentage, abstain_percentage)
+            return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
+                aye_percentage, nay_percentage)
 
     @staticmethod
     def get_asset_price(asset_id, currencies='usd,gbp,eur'):
@@ -353,7 +344,7 @@ class GovernanceMonitor(discord.Client):
         - Fetches member and their roles from the guild.
         - Checks if the user has the necessary role to participate.
         - If the user doesn’t have the required role, sends a message informing them.
-        - Handles vote counting for "aye", "nay", and "abstain" buttons.
+        - Handles vote counting for "aye", "nay" buttons.
         - Throttles the user's ability to vote within a 15-second interval to prevent spam.
         - Updates the vote counts and informs the user of a successful vote.
 
@@ -364,7 +355,7 @@ class GovernanceMonitor(discord.Client):
         - Ensure that 'self.fetch_channel' and 'self.save_vote_counts' methods are
           defined in the class where this function is.
         - Ensure that 'self.calculate_vote_result' method is defined, it should take
-          aye_votes, abstain_votes, and nay_votes as parameters and return a string.
+          aye_votes, and nay_votes as parameters and return a string.
         """
         if interaction.data and interaction.data.get("component_type") == 2:
             custom_id = interaction.data.get("custom_id")
@@ -392,17 +383,16 @@ class GovernanceMonitor(discord.Client):
             current_time = time.time()
             cooldown_time = button_cooldowns.get(user_id, 0) + 15
 
-            if custom_id in ["aye_button", "nay_button", "abstain_button", "recuse_button"] and current_time >= cooldown_time:
+            if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
                 self.vote_counts = self.load_vote_counts()  # tmp-workaround for reloading vote_counts to avoid memory caching
                 button_cooldowns[user_id] = current_time
-                vote_type = "aye" if custom_id == "aye_button" else "abstain" if custom_id == "abstain_button" else "recuse" if custom_id == "recuse_button" else "nay"
+                vote_type = "aye" if custom_id == "aye_button" else "recuse" if custom_id == "recuse_button" else "nay"
 
                 if message_id not in list(self.vote_counts.keys()):
                     self.vote_counts[message_id] = {
                         "index": 'Proposal detected; corresponding vote_count.json entry absent, now added using first vote interaction.',
                         "title": discord_thread.name,
                         "aye": 0,
-                        "abstain": 0,
                         "nay": 0,
                         "recuse": 0,
                         "users": {},
@@ -437,21 +427,21 @@ class GovernanceMonitor(discord.Client):
                         results_message = message
                         break
                 else:
-                    results_message = await thread.send("👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
+                    results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
-                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    ⚪ ABSTAIN: {self.vote_counts[message_id]['abstain']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
-                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], abstain_votes=self.vote_counts[message_id]['abstain'], nay_votes=self.vote_counts[message_id]['nay'])}"
+                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
+                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
                 await results_message.edit(content=new_results_message)
 
                 # Acknowledge the vote and delete the message 10 seconds later
-                # (this notification is only visible to the user that interacts with AYE, NAY & ABSTAIN
+                # (this notification is only visible to the user that interacts with AYE, NAY
                 await interaction.response.send_message(
                     f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
                 await asyncio.sleep(60*60*24*14)
                 # await interaction.delete_original_response()
             else:
-                # block the user from pressing the AYE, NAY & ABSTAIN to prevent unnecessary spam
+                # block the user from pressing the AYE, NAY to prevent unnecessary spam
                 remaining_time = cooldown_time - current_time
                 seconds = int(remaining_time)
 
@@ -582,7 +572,7 @@ async def check_governance():
                     title = values['title'][:95].strip() if values['title'] is not None else None
                     content = values['content'][:1451].strip() if values['content'] is not None else None
 
-                    char_exceed_msg = "```fix\nCharacter count exceeded. For more insights, kindly visit the provided links\n```"
+                    char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
                     logging.info(f"Creating thread on Discord: {index}# {title}")
 
                     # Create Discord thread
@@ -603,13 +593,12 @@ async def check_governance():
 
                     logging.info(f"Thread created: {thread.message.id}")
                     # Send an initial results message in the thread
-                    initial_results_message = "👍 AYE: 0    |    ⚪ ABSTAIN: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0"
+                    initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0"
 
                     channel_thread = channel.get_thread(thread.message.id)
                     client.vote_counts[str(thread.message.id)] = {"index": index,
                                                                   "title": values['title'][:200].strip(),
                                                                   "aye": 0,
-                                                                  "abstain": 0,
                                                                   "nay": 0,
                                                                   "recuse": 0,
                                                                   "users": {},
@@ -619,13 +608,23 @@ async def check_governance():
                     results_message = await channel_thread.send(content=initial_results_message)
                     await thread.message.pin()
                     await results_message.pin()
+                    await asyncio.sleep(1)
+                    async for message in channel_thread.history(limit=5):
+                        if message.type == discord.MessageType.pins_add:
+                            await message.delete()
 
                     if guild is None:
                         logging.error(f"Guild with ID {guild_id} not found")
                     else:
                         role = await create_or_get_role(guild, role_name, client)
                         if role:
-                            await channel_thread.send(content=f"<@&{role.id}>")
+                            await channel_thread.send(content=
+                            f"<@&{role.id}>"
+                            f"\n**INSTRUCTIONS:**"
+                            f"\n- Vote **AYE** if you want to see this proposal pass"
+                            f"\n- Vote **NAY** if you want to see this proposal fail"
+                            f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
+                            )
                     
                     results_message_id = results_message.id
 
@@ -705,7 +704,7 @@ async def recheck_proposals():
             content = opengov['content'][:1451].strip()
 
             # governance_tag = next((tag for tag in available_channel_tags if tag.name == opengov['origin']), None)
-            char_exceed_msg = "```fix\nCharacter count exceeded. For more insights, kindly visit the provided links\n```"
+            char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
 
             # set title on thread id contained in vote_counts.json
             client.vote_counts[key]['title'] = title
