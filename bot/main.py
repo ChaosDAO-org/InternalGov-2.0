@@ -693,8 +693,11 @@ async def on_ready():
     for server in client.guilds:
         print(f"- {server.name} (ID: {server.id})")
 
-    check_governance.start()
-    recheck_proposals.start()
+    if not check_governance.is_running():
+        check_governance.start()
+
+    if not recheck_proposals.is_running():
+        recheck_proposals.start()
 
 
 if __name__ == '__main__':
