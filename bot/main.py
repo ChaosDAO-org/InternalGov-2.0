@@ -514,7 +514,7 @@ async def check_governance():
                 requested_spend = ""
                 try:
                     #proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
-
+                    available_channel_tags = []
                     if channel is not None:
                         available_channel_tags = [tag for tag in channel.available_tags]
                     else:
