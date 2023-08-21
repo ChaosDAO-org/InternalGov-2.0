@@ -212,7 +212,8 @@ async def check_governance():
                         requested_spend = ""
 
                     title = values['title'][:95].strip() if values['title'] is not None else None
-                    content = values['content'][:1451].strip() if values['content'] is not None else None
+                    content = Text.convert_markdown_to_discord(values['content'])[:1451].strip() if values['content'] is not None else None
+                    #content = values['content'][:1451].strip() if values['content'] is not None else None
 
                     char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
                     logging.info(f"Creating thread on Discord: {index}# {title}")
@@ -224,7 +225,7 @@ async def check_governance():
                     #   The string ends with two newline characters.
                     thread = await channel.create_thread(
                         name=f"{index}# {title}",
-                        content=f"""{requested_spend}{Text.convert_markdown_to_discord(content) if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
+                        content=f"""{requested_spend}{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
                                 f"**External links**"
                                 f"\n<https://{config['network']}.polkassembly.io/referenda/{index}>"
                                 f"\n<https://{config['network']}.subsquare.io/referenda/referendum/{index}>"
