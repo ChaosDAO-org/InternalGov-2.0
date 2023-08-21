@@ -24,6 +24,7 @@ discord_server_id = int(config['discord_server_id'])
 discord_forum_channel_id = int(config['discord_forum_channel_id'])
 discord_lock_thread = int(config['discord_lock_thread'])
 discord_role = config['discord_role']
+tag_role_name = f"{config['symbol']}-GOV"
 
 guild = discord.Object(id=discord_server_id)
 intents = discord.Intents.default()
@@ -99,9 +100,9 @@ class InternalGov(View):
 
 client = GovernanceMonitor(guild=guild,discord_role=discord_role,button_cooldowns=button_cooldowns, intents=intents)
 
-async def create_or_get_role(guild, role_name, client):
+async def create_or_get_role(guild, tag_role_name, client):
     # Check if the role already exists
-    existing_role = discord.utils.get(guild.roles, name=role_name)
+    existing_role = discord.utils.get(guild.roles, name=tag_role_name)
 
     if existing_role:
         return existing_role
@@ -109,13 +110,13 @@ async def create_or_get_role(guild, role_name, client):
     # If the role doesn't exist, try to create it
     try:
         # Create the role with the specified name
-        new_role = await guild.create_role(name=role_name)
+        new_role = await guild.create_role(name=tag_role_name)
         return new_role
     except discord.Forbidden:
-        logging.error(f"Permission error: Unable to create role {role_name} in guild {guild.id}")
+        logging.error(f"Permission error: Unable to create role {tag_role_name} in guild {guild.id}")
         raise  # You can raise the exception or return None based on your use case
     except discord.HTTPException as e:
-        logging.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
+        logging.error(f"HTTP error while creating role {tag_role_name} in guild {guild.id}: {e}")
         raise  # You can raise the exception or return None based on your use case
 
 @tasks.loop(hours=6)
@@ -143,7 +144,13 @@ async def check_governance():
         logging.info("Checking for new proposals")
         opengov2 = OpenGovernance2()
         new_referendums = await opengov2.check_referendums()
-
+        channel = client.get_channel(discord_forum_channel_id)
+        # Get the guild object where the role is located
+        guild = client.get_guild(discord_server_id)
+        # Construct the role name based on the symbol in config
+        
+        # Find the role by its name
+        role = discord.utils.get(guild.roles, name=tag_role_name)
         # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
         # lock threads once archived (prevents regular users from continuing to vote).
         threads_to_lock = CacheManager().delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=discord_lock_thread, archive_filename='../data/archived_votes.json')
@@ -161,10 +168,6 @@ async def check_governance():
             guild = client.get_guild(discord_server_id)  # Replace discord_guild_id with the actual guild ID
 
             # Construct the role name based on the symbol in config
-            role_name = f"{config['symbol']}-GOV"
-
-            # Find the role by its name
-            role = discord.utils.get(guild.roles, name=role_name)
 
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
@@ -247,7 +250,8 @@ async def check_governance():
                     results_message = await channel_thread.send(content=initial_results_message)
                     await thread.message.pin()
                     await results_message.pin()
-                    await asyncio.sleep(1)
+                    #await asyncio.sleep(1)
+                    # Searches the last 5 messages
                     async for message in channel_thread.history(limit=5):
                         if message.type == discord.MessageType.pins_add:
                             await message.delete()
@@ -255,7 +259,7 @@ async def check_governance():
                     if guild is None:
                         logging.error(f"Guild with ID {guild_id} not found")
                     else:
-                        role = await create_or_get_role(guild, role_name, client)
+                        role = await create_or_get_role(guild, tag_role_name, client)
                         if role:
                             await channel_thread.send(content=
                             f"<@&{role.id}>"
@@ -271,7 +275,7 @@ async def check_governance():
                     view = InternalGov(client, message_id, results_message_id)  # Pass the results_message_id
                     logging.info(f"Vote results message added: {message_id}")
                     await thread.message.edit(view=view)  # Update the thread message with the new view
-                    await asyncio.sleep(5)
+                    #await asyncio.sleep(1)
 
                 except discord.errors.Forbidden as forbidden:
                     logging.exception(f"Forbidden error occurred:  {forbidden}")
