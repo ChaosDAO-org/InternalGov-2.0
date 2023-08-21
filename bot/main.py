@@ -97,8 +97,7 @@ class InternalGov(View):
         await interaction.response.defer()
 
 
-client = GovernanceMonitor(guild=guild,intents=intents)
-
+client = GovernanceMonitor(guild=guild,discord_role=discord_role,button_cooldowns=button_cooldowns, intents=intents)
 
 async def create_or_get_role(guild, role_name, client):
     # Check if the role already exists

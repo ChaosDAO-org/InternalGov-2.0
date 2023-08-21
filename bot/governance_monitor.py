@@ -11,7 +11,7 @@ from discord import app_commands
 
 
 class GovernanceMonitor(discord.Client):
-    def __init__(self, guild, *, intents: discord.Intents):
+    def __init__(self, guild,  discord_role, button_cooldowns, *, intents: discord.Intents):
         super().__init__(intents=intents)
         # A CommandTree is a special type that holds all the application command
         # state required to make it work. This is a separate class because it
@@ -21,16 +21,10 @@ class GovernanceMonitor(discord.Client):
         # Note: When using commands.Bot instead of discord.Client, the bot will
         # maintain its own tree instead.
         self.guild = guild
+        self.button_cooldowns = button_cooldowns
+        self.discord_role = discord_role
         self.tree = app_commands.CommandTree(self)
         self.vote_counts = self.load_vote_counts()
-
-
-    # Synchronize the app commands to one guild.
-    async def setup_hook(self):
-        # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=guild_id)
-        await self.tree.sync(guild=guild_id)
-
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -165,6 +159,43 @@ class GovernanceMonitor(discord.Client):
         with open("../data/vote_counts.json", "w") as file:
             json.dump(self.vote_counts, file, indent=4)
 
+ #   async def set_buttons_lock_status(client, channel_id, message_ids, lock_status=True):
+ #       for message_id in message_ids:
+ #           message = await message_id.fetch_message(message_id)
+ #           view = message.view
+ #           # Set the disabled status of the buttons
+ #           for button in view.children:
+ #               button.disabled = lock_status
+ #           # Update the message with the new view
+ #           await message.edit(view=view)
+
+    async def set_buttons_lock_status(self, channel, message_ids, lock_status):
+        print(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
+        print(f"Channel type: {type(channel)}, attributes: {dir(channel)}")  # Debug print
+
+        for message_id in message_ids:
+            print(f"Fetching message with ID {message_id}")
+
+            message = channel.get_thread(message_id)
+            if message is None:
+                print(f"Error: Could not find thread for message ID {message_id}")  # Debug print
+                continue
+
+            view = message.view
+            print(f"Current view: {view}")
+
+            # Set the disabled status of the buttons
+            #for button in view.children:
+            #    print(f"Setting disabled status of button {button.label} to {lock_status}")
+            #    button.disabled = lock_status
+
+            # Update the message with the new view
+            print(f"Editing message with new view: {view}")
+            await message.edit(view=view)
+
+        print("Finished setting buttons lock status")
+
+
     @staticmethod
     async def lock_threads_by_message_ids(guild_id, message_ids):
         """
@@ -297,10 +328,10 @@ class GovernanceMonitor(discord.Client):
             member = await interaction.guild.fetch_member(user_id)
             roles = member.roles
 
-            if discord_role and not any(role.name == discord_role for role in roles):
-                logging.warning(f"{username} doesn't have the necessary role assigned to participate:: {discord_role}")
+            if self.discord_role and not any(role.name == self.discord_role for role in roles):
+                logging.warning(f"{username} doesn't have the necessary role assigned to participate:: {self.discord_role}")
                 await interaction.response.send_message(
-                    f"To participate, please ensure that you have the necessary role assigned: {discord_role}. This is a prerequisite for engaging in this activity.",
+                    f"To participate, please ensure that you have the necessary role assigned: {self.discord_role}. This is a prerequisite for engaging in this activity.",
                     ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.delete_original_response()
@@ -310,11 +341,11 @@ class GovernanceMonitor(discord.Client):
             discord_thread = interaction.message.channel
 
             current_time = time.time()
-            cooldown_time = button_cooldowns.get(user_id, 0) + 15
+            cooldown_time = self.button_cooldowns.get(user_id, 0) + 2
 
             if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
                 self.vote_counts = self.load_vote_counts()  # tmp-workaround for reloading vote_counts to avoid memory caching
-                button_cooldowns[user_id] = current_time
+                self.button_cooldowns[user_id] = current_time
                 vote_type = "aye" if custom_id == "aye_button" else "recuse" if custom_id == "recuse_button" else "nay"
 
                 if message_id not in list(self.vote_counts.keys()):
@@ -378,6 +409,7 @@ class GovernanceMonitor(discord.Client):
                                                         ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.delete_original_response()
+
 
     # Synchronize the app commands to one guild.
     async def setup_hook(self):
