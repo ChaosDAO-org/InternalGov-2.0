@@ -4,12 +4,12 @@ import json
 from typing import Dict, Any
 import deepdiff
 import re
-
+import markdownify
 
 class Text:
     @staticmethod
     def convert_markdown_to_discord(markdown_text):
-        def replacer(match):
+        def replacer_link(match):
             link_text = match.group(1)
             url = match.group(2)
             if link_text == url:
@@ -17,10 +17,23 @@ class Text:
             else:
                 return f'{link_text}: <{url}>'
 
-        markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer, markdown_text)
+        def replacer_image(match):
+            url = match.group(1)
+            return url
+
+        markdown_text = markdownify.markdownify(markdown_text)
+        markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer_link, markdown_text)
+        markdown_text = re.sub(r'!\[[^\]]*\]\(([^)]+)\)', replacer_image, markdown_text)
+        markdown_text = re.sub(r'\n{2,}', '\n', markdown_text) # Replace two or more newlines with just one
 
         # Return the modified text.
         return markdown_text
+
+
+
+
+
+
 
 
 class CacheManager:
