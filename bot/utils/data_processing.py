@@ -9,13 +9,16 @@ import markdownify
 class Text:
     @staticmethod
     def convert_markdown_to_discord(markdown_text):
+        base_url = "https://polkadot.subsquare.io/referenda/referendum/"
         def replacer_link(match):
-            link_text = match.group(1)
-            url = match.group(2)
-            if link_text == url:
-                return f'<{url}>'
-            else:
-                return f'{link_text}: <{url}>'
+                link_text = match.group(1)
+                url = match.group(2)
+                if url.isdigit():  # If the URL is just a positive integer
+                    url = base_url + url
+                if link_text == url:
+                    return f'<{url}>'
+                else:
+                    return f'{link_text}: <{url}>'
 
         def replacer_image(match):
             url = match.group(1)
@@ -24,17 +27,10 @@ class Text:
         markdown_text = markdownify.markdownify(markdown_text)
         markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer_link, markdown_text)
         markdown_text = re.sub(r'!\[[^\]]*\]\(([^)]+)\)', replacer_image, markdown_text)
-        markdown_text = re.sub(r'\n{2,}', '\n', markdown_text) # Replace two or more newlines with just one
+        markdown_text = re.sub(r'\n{3,}', '\n', markdown_text) # Replace three or more newlines with just one
 
         # Return the modified text.
         return markdown_text
-
-
-
-
-
-
-
 
 class CacheManager:
     @staticmethod
