@@ -28,6 +28,7 @@ class Text:
         markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer_link, markdown_text)
         markdown_text = re.sub(r'!\[[^\]]*\]\(([^)]+)\)', replacer_image, markdown_text)
         markdown_text = re.sub(r'\n{3,}', '\n', markdown_text) # Replace three or more newlines with just one
+        markdown_text = markdown_text.rstrip('\n') # Remove trailing line breaks
 
         # Return the modified text.
         return markdown_text
