@@ -4,24 +4,31 @@ import json
 from typing import Dict, Any
 import deepdiff
 import re
-
+import markdownify
 
 class Text:
     @staticmethod
     def convert_markdown_to_discord(markdown_text):
-        def replacer(match):
+        base_url = "https://polkadot.subsquare.io/referenda/referendum/"
+        def replacer_link(match):
             link_text = match.group(1)
             url = match.group(2)
-            if link_text == url:
-                return f'<{url}>'
-            else:
-                return f'{link_text}: <{url}>'
+            if url.isdigit():  # If the URL is just a positive integer
+                url = base_url + url
+            return f'[{link_text}]({url})'  # Updated to use the desired format
 
-        markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer, markdown_text)
+        def replacer_image(match):
+            url = match.group(1)
+            return url
+
+        markdown_text = markdownify.markdownify(markdown_text)
+        markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer_link, markdown_text)
+        markdown_text = re.sub(r'!\[[^\]]*\]\(([^)]+)\)', replacer_image, markdown_text)
+        markdown_text = re.sub(r'(?:\s*\n){3,}', '\n\n', markdown_text) # Replace three or more newlines with optional spaces with just one newline
+        markdown_text = markdown_text.rstrip('\n') # Remove trailing line breaks
 
         # Return the modified text.
         return markdown_text
-
 
 class CacheManager:
     @staticmethod
