@@ -365,7 +365,7 @@ class GovernanceMonitor(discord.Client):
                     # If the user has voted for the same option, ignore the vote
                     if previous_vote == vote_type:
                         await interaction.response.send_message(
-                            "Your vote for this option has already been recorded. If you wish to change your decision, please feel free to choose an alternative option.",
+                            "Your vote of {previous_vote} has already been recorded. To change it, select an alternative option.",
                             ephemeral=True)
                         await asyncio.sleep(5)
                         # await interaction.delete_original_response()
