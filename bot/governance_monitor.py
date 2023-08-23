@@ -196,8 +196,7 @@ class GovernanceMonitor(discord.Client):
         print("Finished setting buttons lock status")
 
 
-    @staticmethod
-    async def lock_threads_by_message_ids(guild_id, message_ids):
+    async def lock_threads_by_message_ids(self, guild_id, message_ids):
         """
         Locks Discord threads by their associated message IDs in a given guild (server).
 
@@ -233,24 +232,25 @@ class GovernanceMonitor(discord.Client):
         if not isinstance(message_ids, list):
             message_ids = [message_ids]
 
-        server = client.get_guild(guild_id)
+        server = self.get_guild(guild_id)
 
         # Check if the bot has the required permissions
-        bot_member = server.get_member(client.user.id)
+        bot_member = server.get_member(self.user.id)
+
         if not bot_member.guild_permissions.manage_threads:
             logging.error("The bot lacks the necessary permissions to lock threads. Please update the permissions.")
             return
 
         for message_id in message_ids:
             # Get the thread from the forum by the message ID
-            thread = client.get_channel(int(message_id))
+            thread = self.get_channel(int(message_id))
 
             if not thread:
                 logging.error(f"Invalid Discord forum thread ID: {message_id}")
                 continue
 
             # Lock the thread
-            logging.info(f"Discord forum thread '{thread.name}' is >= {discord_lock_thread} days old, locking thread from future interactions.")
+            logging.info(f"Discord forum thread '{thread.name}' is >= threshold set in config, locking thread from future interactions.")
             await thread.edit(locked=True)
 
     async def edit_thread(self, forum_channel: int, message_id: int, name: str, content: str) -> bool:
