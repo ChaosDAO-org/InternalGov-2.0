@@ -48,6 +48,8 @@ We encourage everyone to actively participate in these discussions, as your inpu
 
 - Manage Threads
 
+- Mention Everyone (This is required so that it can mention the notification role)
+
 ![](bot_permissions.png)
 
 NOTE: `Manage Roles` is only needed initially to create the [SYMBOL]-GOV role to notify members to vote. You can either create the role yourself or remove `Manage Roles` permission once the role is created to limit any attack surface. The created role has no inherent permission and is only used for tagging.
