@@ -1,17 +1,16 @@
-import json
 import time
 import requests
 import logging
-from logging.handlers import TimedRotatingFileHandler
-
-import asyncio
+import json
 import discord
+import asyncio
+from logging.handlers import TimedRotatingFileHandler
 from discord.ext import tasks
-from discord import app_commands
+
 
 
 class GovernanceMonitor(discord.Client):
-    def __init__(self, guild,  discord_role, button_cooldowns, *, intents: discord.Intents):
+    def __init__(self, guild,  discord_role,  *, intents: discord.Intents = None):
         super().__init__(intents=intents)
         # A CommandTree is a special type that holds all the application command
         # state required to make it work. This is a separate class because it
@@ -21,9 +20,9 @@ class GovernanceMonitor(discord.Client):
         # Note: When using commands.Bot instead of discord.Client, the bot will
         # maintain its own tree instead.
         self.guild = guild
-        self.button_cooldowns = button_cooldowns
+        self.button_cooldowns = {}
         self.discord_role = discord_role
-        self.tree = app_commands.CommandTree(self)
+        #self.tree = app_commands.CommandTree(self)
         self.vote_counts = self.load_vote_counts()
 
     @staticmethod
@@ -365,7 +364,7 @@ class GovernanceMonitor(discord.Client):
                     # If the user has voted for the same option, ignore the vote
                     if previous_vote == vote_type:
                         await interaction.response.send_message(
-                            "Your vote of {previous_vote} has already been recorded. To change it, select an alternative option.",
+                            f"Your vote of **{previous_vote}** has already been recorded. To change it, select an alternative option.",
                             ephemeral=True)
                         await asyncio.sleep(5)
                         # await interaction.delete_original_response()
@@ -412,7 +411,7 @@ class GovernanceMonitor(discord.Client):
 
 
     # Synchronize the app commands to one guild.
-    async def setup_hook(self):
-        # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=self.guild)
-        await self.tree.sync(guild=self.guild)
+  # async def setup_hook(self):
+  #     # This copies the global commands over to your guild.
+  #     self.tree.copy_global_to(guild=self.guild)
+  #     await self.tree.sync(guild=self.guild)
