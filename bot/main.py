@@ -19,8 +19,6 @@ def get_requested_spend(data, current_price):
     requested_spend = ""
     
     if data.get('title') != 'None':
-        logging.info(f"Proposals have been found in the past where no title was set. Rechecking for title + content")
-        
         if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
             if data['proposed_call']['method'] == 'spend':
                 amount = int(data['proposed_call']['args']['amount']) / float(config.TOKEN_DECIMAL)
@@ -75,19 +73,23 @@ async def create_or_get_role(guild, role_name):
         logging.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
         raise  # You can raise the exception or return None based on your use case
 
-async def manage_discord_thread(channel, operation, title, index, content, governance_tag, key, client):
+async def manage_discord_thread(channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
     thread = None
     char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
+   
+    content = Text.convert_markdown_to_discord(content)[:BODY_MAX_LENGTH].strip() if content is not None else None
+
     try:
-        thread_content = f"""{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
+        thread_content = f"""{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= BODY_MAX_LENGTH-1 else ''}\n\n"""
         thread_content += f"**External links**"
         thread_content += f"\n<https://{config.NETWORK_NAME}.polkassembly.io/referenda/{index}>"
         thread_content += f"\n<https://{config.NETWORK_NAME}.subsquare.io/referenda/referendum/{index}>"
         thread_content += f"\n<https://{config.NETWORK_NAME}.subscan.io/referenda_v2/{index}>"
+        thread_title = f"{index}: {title}"
         
         if operation == 'create':
             thread = await channel.create_thread(
-                name=f"#{index}: {title}",
+                name=thread_title,
                 content=thread_content,
                 reason=f"Created by an incoming proposal on the {config.NETWORK_NAME} network",
                 applied_tags=[governance_tag]
@@ -95,17 +97,16 @@ async def manage_discord_thread(channel, operation, title, index, content, gover
         elif operation == 'edit' and client is not None and key is not None:
             await client.edit_thread(
                 forum_channel=config.DISCORD_FORUM_CHANNEL_ID,
-                message_id=key,
-                name=f"#{index}: {title}",
+                message_id=message_id,
+                name=thread_title,
                 content=thread_content
             )
             logging.info(f"Title updated from None -> {title} in vote_counts.json")
-            logging.info(f"Discord thread successfully amended")
+            logging.info("Discord thread successfully amended")
         else:
             logging.error(f"Invalid operation or missing parameters for {operation}")
     except Exception as e:
         logging.error(f"Failed to manage Discord thread: {e}")
-
     return thread
 
 
@@ -135,7 +136,6 @@ async def check_governance():
         opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
         
-        
         # Get the guild object where the role is located
         guild = client.get_guild(config.DISCORD_SERVER_ID)
         # Construct the role name based on the symbol in config
@@ -159,8 +159,6 @@ async def check_governance():
             current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
                     
             # Get the guild object where the role is located
-            guild = client.get_guild(config.DISCORD_SERVER_ID)  # Replace discord_guild_id with the actual guild ID
-
             # Construct the role name based on the symbol in config
 
             # go through each referendum if more than 1 was submitted in the given scheduled time
@@ -178,17 +176,17 @@ async def check_governance():
 
                     # Create forum tags if they don't already exist.
                     governance_tag = await get_or_create_governance_tag(available_channel_tags, governance_origin, channel)
-
                     #  Written to accommodate differences in returned JSON between Polkassembly & Subsquare
                     if values['successful_url']:
                         logging.info(f"Getting on-chain data from: {values['successful_url']}")
 
                         requested_spend = get_requested_spend(values, current_price)
+                    else:
+                        logging.error(f"Unable to pull information from data sources")
+                        requested_spend = ""
 
-                    title = values['title'][:95].strip() if values['title'] is not None else None
-                    content = Text.convert_markdown_to_discord(values['content'])[:1451].strip() if values['content'] is not None else None
+                    title = values['title'][:TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
 
-                    char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
                     logging.info(f"Creating thread on Discord: {index}# {title}")
 
                     # Create Discord thread
@@ -196,14 +194,14 @@ async def check_governance():
                     #   followed by `content` (or an empty string if `content` is None).
                     #   If `content` is long enough (1450 characters or more), it appends '...' and `char_exceed_msg`.
                     #   The string ends with two newline characters.
-                    try:
-                        thread = await manage_discord_thread(channel, 'create', title, index, requested_spend, governance_tag, key='', client=client)
+                    try:                        
+                        thread = await manage_discord_thread(channel, 'create', title, index, requested_spend, values['content'], governance_tag, message_id=None, client=client)
                         logging.info(f"Thread created: {thread.message.id}")
                     except Exception as e:
                         logging.error(f"Failed to create thread: {e}")
                         return None  # Make sure to return None if an exception occurs
                     # Send an initial results message in the thread
-                    initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0"
+                    initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
 
                     channel_thread = channel.get_thread(thread.message.id)
                     client.vote_counts[str(thread.message.id)] = {"index": index,
@@ -218,7 +216,6 @@ async def check_governance():
                     results_message = await channel_thread.send(content=initial_results_message)
                     await thread.message.pin()
                     await results_message.pin()
-                    #await asyncio.sleep(1)
                     # Searches the last 5 messages
                     async for message in channel_thread.history(limit=5):
                         if message.type == discord.MessageType.pins_add:
@@ -240,10 +237,9 @@ async def check_governance():
                     results_message_id = results_message.id
 
                     message_id = thread.message.id
-                    buttons = ButtonHandler(client, message_id)  # Pass the results_message_id
+                    buttons = ButtonHandler(client, message_id)
                     logging.info(f"Vote results message added: {message_id}")
                     await thread.message.edit(view=buttons)  # Update the thread message with the new view
-                    #await asyncio.sleep(1)
 
                 except discord.errors.Forbidden as forbidden:
                     logging.exception(f"Forbidden error occurred:  {forbidden}")
@@ -287,24 +283,23 @@ async def recheck_proposals():
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
-    for key, value in proposals_without_context.items():
+    for message_id, value in proposals_without_context.items():
         requested_spend = ""
         proposal_index = value['index']
         opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config.NETWORK_NAME)
 
         if opengov['title'] != 'None':
             requested_spend = get_requested_spend(opengov, current_price)
-            title = opengov['title'][:95].strip()
-            content = Text.convert_markdown_to_discord(opengov['content'])[:1451].strip() if opengov['content'] is not None else None
+            client.vote_counts[message_id]['title'] = title = opengov['title'][:TITLE_MAX_LENGTH].strip()
+            #content = Text.convert_markdown_to_discord(opengov['content'])[:BODY_MAX_LENGTH].strip() if opengov['content'] is not None else None
             # set title on thread id contained in vote_counts.json
-            client.vote_counts[key]['title'] = title
             client.save_vote_counts()
 
             # Edit existing thread with new data found from Polkassembly or SubSquare
             logging.info(f"Editing discord thread with title + content: {proposal_index}# {title}")
             
             try:
-                await manage_discord_thread(channel, 'edit', opengov['title'], proposal_index, requested_spend, "", key=key, client=client)
+                await manage_discord_thread(channel, 'edit', title, proposal_index, requested_spend, opengov['content'], "", message_id=message_id, client=client)
                 logging.info(f"Title updated from None -> {title} in vote_counts.json")
                 logging.info(f"Discord thread successfully amended")
             except Exception as e:
@@ -318,6 +313,8 @@ if __name__ == '__main__':
     arguments = ArgumentParser()
     Logger(arguments.args.verbose)
     client = GovernanceMonitor(guild=guild,discord_role=config.DISCORD_VOTER_ROLE)
+    TITLE_MAX_LENGTH = 95
+    BODY_MAX_LENGTH = 1451
     
     @client.event
     async def on_ready():
