@@ -105,9 +105,9 @@ class GovernanceMonitor(discord.Client):
         nay_percentage = nay_votes / total_votes
 
         if aye_percentage >= threshold:
-            return "The vote is currently successful with {:.2%} **AYE**".format(aye_percentage)
+            return "The vote currently meets or exceeds the threshold for **AYE** with {:.2%}".format(aye_percentage)
         elif nay_percentage >= threshold:
-            return "The vote is currently unsuccessful with {:.2%} **NAY**".format(nay_percentage)
+            return "The vote currently meets or exceeds the threshold for **NAY** with {:.2%}".format(nay_percentage)
         else:
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
