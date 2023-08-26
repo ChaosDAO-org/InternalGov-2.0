@@ -15,6 +15,47 @@ from logging.handlers import TimedRotatingFileHandler
 from governance_monitor import GovernanceMonitor
 from discord.ext import tasks
 
+def get_requested_spend(data, current_price):
+    requested_spend = ""
+    
+    if data.get('title') != 'None':
+        logging.info(f"Proposals have been found in the past where no title was set. Rechecking for title + content")
+        
+        if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
+            if data['proposed_call']['method'] == 'spend':
+                amount = int(data['proposed_call']['args']['amount']) / float(config.TOKEN_DECIMAL)
+                requested_spend = f"```yaml\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+        
+        elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
+            if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
+                amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(config.TOKEN_DECIMAL)
+                requested_spend = f"```yaml\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+        
+        else:
+            logging.error("Unable to pull information from data sources")
+            requested_spend = ""
+    else:
+        logging.error("Title is None. Unable to pull information from data sources")
+        requested_spend = ""
+    
+    return requested_spend
+
+async def get_or_create_governance_tag(available_channel_tags, governance_origin, channel):
+    try:
+        governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]), None)
+    except Exception as e:
+        logging.error(f"Error while searching for tag: {e}")
+        governance_tag = None
+
+    if governance_tag is None:
+        try:
+            governance_tag = await channel.create_tag(name=governance_origin[0])
+        except Exception as e:
+            logging.error(f"Failed to create tag: {e}")
+            governance_tag = None
+
+    return governance_tag
+
 async def create_or_get_role(guild, role_name):
     # Check if the role already exists
     existing_role = discord.utils.get(guild.roles, name=role_name)
@@ -33,6 +74,40 @@ async def create_or_get_role(guild, role_name):
     except discord.HTTPException as e:
         logging.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
         raise  # You can raise the exception or return None based on your use case
+
+async def manage_discord_thread(channel, operation, title, index, content, governance_tag, key, client):
+    thread = None
+    char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
+    try:
+        thread_content = f"""{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
+        thread_content += f"**External links**"
+        thread_content += f"\n<https://{config.NETWORK_NAME}.polkassembly.io/referenda/{index}>"
+        thread_content += f"\n<https://{config.NETWORK_NAME}.subsquare.io/referenda/referendum/{index}>"
+        thread_content += f"\n<https://{config.NETWORK_NAME}.subscan.io/referenda_v2/{index}>"
+        
+        if operation == 'create':
+            thread = await channel.create_thread(
+                name=f"#{index}: {title}",
+                content=thread_content,
+                reason=f"Created by an incoming proposal on the {config.NETWORK_NAME} network",
+                applied_tags=[governance_tag]
+            )
+        elif operation == 'edit' and client is not None and key is not None:
+            await client.edit_thread(
+                forum_channel=config.DISCORD_FORUM_CHANNEL_ID,
+                message_id=key,
+                name=f"#{index}: {title}",
+                content=thread_content
+            )
+            logging.info(f"Title updated from None -> {title} in vote_counts.json")
+            logging.info(f"Discord thread successfully amended")
+        else:
+            logging.error(f"Invalid operation or missing parameters for {operation}")
+    except Exception as e:
+        logging.error(f"Failed to manage Discord thread: {e}")
+
+    return thread
+
 
 @tasks.loop(hours=6)
 async def check_governance():
@@ -59,7 +134,8 @@ async def check_governance():
         logging.info("Checking for new proposals")
         opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
-        channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+        
+        
         # Get the guild object where the role is located
         guild = client.get_guild(config.DISCORD_SERVER_ID)
         # Construct the role name based on the symbol in config
@@ -71,8 +147,11 @@ async def check_governance():
         threads_to_lock = CacheManager().delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
         if threads_to_lock:
             logging.info(f"{len(threads_to_lock)} threads have been archived")
-            await client.lock_threads_by_message_ids(guild_id=config.DISCORD_SERVER_ID, message_ids=threads_to_lock)
-            logging.info(f"The following threads have been locked: {threads_to_lock}")
+            try:
+                await client.lock_threads_by_message_ids(guild_id=config.DISCORD_SERVER_ID, message_ids=threads_to_lock)
+                logging.info(f"The following threads have been locked: {threads_to_lock}")
+            except Exception as e:
+                logging.error(f"Failed to lock threads: {threads_to_lock}. Error: {e}")
 
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
@@ -98,37 +177,16 @@ async def check_governance():
                     governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
                     # Create forum tags if they don't already exist.
-                    governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]), None)
-                    if governance_tag is None:
-                        governance_tag = await channel.create_tag(name=governance_origin[0])
+                    governance_tag = await get_or_create_governance_tag(available_channel_tags, governance_origin, channel)
 
                     #  Written to accommodate differences in returned JSON between Polkassembly & Subsquare
                     if values['successful_url']:
                         logging.info(f"Getting on-chain data from: {values['successful_url']}")
 
-                        if 'polkassembly' in values['successful_url'] and 'proposed_call' in list(values.keys()):
-                            if values['proposed_call']['method'] == 'spend':
-                                amount = int(values['proposed_call']['args']['amount']) / config.TOKEN_DECIMAL
-                                requested_spend = f"```yaml\n" \
-                                                  f"{config.SYMBOL}: {amount}\n" \
-                                                  f"USD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-
-                        elif 'subsquare' in values['successful_url'] and 'proposal' in list(values['onchainData'].keys()):
-                            if values['onchainData']['proposal'] is not None and values['onchainData']['proposal']['call']['method'] == 'spend':
-                                amount = int(values['onchainData']['proposal']['call']['args'][0]['value']) / config.TOKEN_DECIMAL
-                                requested_spend = f"```yaml\n" \
-                                                  f"{config.SYMBOL}: {amount}\n" \
-                                                  f"USD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-                        else:
-                            logging.error(f"Unable to pull information from data sources")
-                            requested_spend = ""
-                    else:
-                        logging.error(f"Unable to pull information from data sources")
-                        requested_spend = ""
+                        requested_spend = get_requested_spend(values, current_price)
 
                     title = values['title'][:95].strip() if values['title'] is not None else None
                     content = Text.convert_markdown_to_discord(values['content'])[:1451].strip() if values['content'] is not None else None
-                    #content = values['content'][:1451].strip() if values['content'] is not None else None
 
                     char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
                     logging.info(f"Creating thread on Discord: {index}# {title}")
@@ -138,18 +196,12 @@ async def check_governance():
                     #   followed by `content` (or an empty string if `content` is None).
                     #   If `content` is long enough (1450 characters or more), it appends '...' and `char_exceed_msg`.
                     #   The string ends with two newline characters.
-                    thread = await channel.create_thread(
-                        name=f"#{index}: {title}",
-                        content=f"""{requested_spend}{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
-                                f"**External links**"
-                                f"\n<https://{config.NETWORK_NAME}.polkassembly.io/referenda/{index}>"
-                                f"\n<https://{config.NETWORK_NAME}.subsquare.io/referenda/referendum/{index}>"
-                                f"\n<https://{config.NETWORK_NAME}.subscan.io/referenda_v2/{index}>",
-                        reason=f"Created by an incoming proposal on the {config.NETWORK_NAME} network",
-                        applied_tags=[governance_tag]
-                    )
-
-                    logging.info(f"Thread created: {thread.message.id}")
+                    try:
+                        thread = await manage_discord_thread(channel, 'create', title, index, requested_spend, governance_tag, key='', client=client)
+                        logging.info(f"Thread created: {thread.message.id}")
+                    except Exception as e:
+                        logging.error(f"Failed to create thread: {e}")
+                        return None  # Make sure to return None if an exception occurs
                     # Send an initial results message in the thread
                     initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0"
 
@@ -232,7 +284,7 @@ async def recheck_proposals():
     logging.info("Checking past proposals where title/content is None to populate them with relevant data")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
     opengov2 = OpenGovernance2(config)
-
+    channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
     for key, value in proposals_without_context.items():
@@ -241,29 +293,9 @@ async def recheck_proposals():
         opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config.NETWORK_NAME)
 
         if opengov['title'] != 'None':
-            logging.info(f"Proposals have been found in the past where no title was set. Rechecking for title + content")
-            if 'polkassembly' in opengov['successful_url'] and 'proposed_call' in list(opengov.keys()):
-                if opengov['proposed_call']['method'] == 'spend':
-                    amount = int(opengov['proposed_call']['args']['amount']) / config.TOKEN_DECIMAL
-                    requested_spend = f"```yaml\n" \
-                                      f"{config.SYMBOL}: {amount}\n" \
-                                      f"USD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-
-            elif 'subsquare' in opengov['successful_url'] and 'proposal' in list(opengov['onchainData'].keys()):
-                if opengov['onchainData']['proposal'] is not None and opengov['onchainData']['proposal']['call']['method'] == 'spend':
-                    amount = int(opengov['onchainData']['proposal']['call']['args'][0]['value']) / config.TOKEN_DECIMAL
-                    requested_spend = f"```yaml\n" \
-                                      f"{config.SYMBOL}: {amount}\n" \
-                                      f"USD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-            else:
-                logging.error(f"Unable to pull information from data sources")
-                requested_spend = ""
-
+            requested_spend = get_requested_spend(opengov, current_price)
             title = opengov['title'][:95].strip()
-            content = Text.convert_markdown_to_discord(values['content'])[:1451].strip() if values['content'] is not None else None
-            # governance_tag = next((tag for tag in available_channel_tags if tag.name == opengov['origin']), None)
-            char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
-
+            content = Text.convert_markdown_to_discord(opengov['content'])[:1451].strip() if opengov['content'] is not None else None
             # set title on thread id contained in vote_counts.json
             client.vote_counts[key]['title'] = title
             client.save_vote_counts()
@@ -271,16 +303,12 @@ async def recheck_proposals():
             # Edit existing thread with new data found from Polkassembly or SubSquare
             logging.info(f"Editing discord thread with title + content: {proposal_index}# {title}")
             
-            await client.edit_thread(forum_channel=config.DISCORD_FORUM_CHANNEL_ID,
-                                     message_id=key,
-                                     name=f"#{proposal_index}: {opengov['title']}",
-                                     content=f"""{requested_spend}{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= 1450 else ''}\n\n"""
-                                             f"**External links**"
-                                             f"\n<https://{config.NETWORK_NAME}.polkassembly.io/referenda/{proposal_index}>"
-                                             f"\n<https://{config.NETWORK_NAME}.subsquare.io/referenda/referendum/{proposal_index}>"
-                                             f"\n<https://{config.NETWORK_NAME}.subscan.io/referenda_v2/{proposal_index}>")
-            logging.info(f"Title updated from None -> {title} in vote_counts.json")
-            logging.info(f"Discord thread successfully amended")
+            try:
+                await manage_discord_thread(channel, 'edit', opengov['title'], proposal_index, requested_spend, "", key=key, client=client)
+                logging.info(f"Title updated from None -> {title} in vote_counts.json")
+                logging.info(f"Discord thread successfully amended")
+            except Exception as e:
+                logging.error(f"Failed to edit Discord thread: {e}")
         else:
             continue
 
