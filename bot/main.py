@@ -57,7 +57,7 @@ async def check_governance():
     """
     try:
         logging.info("Checking for new proposals")
-        opengov2 = OpenGovernance2()
+        opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
         channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
         # Get the guild object where the role is located
@@ -231,7 +231,7 @@ async def recheck_proposals():
     """
     logging.info("Checking past proposals where title/content is None to populate them with relevant data")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
-    opengov2 = OpenGovernance2()
+    opengov2 = OpenGovernance2(config)
 
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
