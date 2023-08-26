@@ -30,12 +30,31 @@ We encourage everyone to actively participate in these discussions, as your inpu
 3. Next, click on the "Bot" section in the left-hand menu and then click "Add Bot". Give your bot a username and profile picture, and click "Save Changes".  
 ![alt text](https://i.imgur.com/kxHZxsV.png)
 
+4. The bot does not need require any Privileged Gateway Intents.
 
-4. Under the "Token" section, click the "Copy" button to copy the API key. This key is what you'll use to authenticate your bot and allow it to interact with the Discord API.  
+
+5. Under the "Token" section, click the "Copy" button to copy the API key. This key is what you'll use to authenticate your bot and allow it to interact with the Discord API.  
 ![alt text](https://i.imgur.com/2zhE3qT.png)
 
+6. Under Oauth2 -> URL Generator select `bot` and then select: 
 
-5. Be sure to keep your API key secret! Don't share it with anyone or include it in any public code repositories.
+- Manage Roles
+
+- Create Public Threads
+
+- Send Messages in Threads
+
+- Manage Messages
+
+- Manage Threads
+
+- Mention Everyone (This is required so that it can mention the notification role)
+
+![](bot_permissions.png)
+
+NOTE: `Manage Roles` is only needed initially to create the [SYMBOL]-GOV role to notify members to vote. You can either create the role yourself or remove `Manage Roles` permission once the role is created to limit any attack surface. The created role has no inherent permission and is only used for tagging.
+
+7. Be sure to keep your API key secret! Don't share it with anyone or include it in any public code repositories.
 
 ###### server / forum id
 1. Open Discord and click on the gear icon next to your username in the bottom left corner of your screen.
