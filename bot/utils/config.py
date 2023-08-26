@@ -10,7 +10,7 @@ class Config:
             self.DISCORD_API_KEY = os.getenv('DISCORD_API_KEY') or self.raise_error("Missing DISCORD_API_KEY")
             self.DISCORD_FORUM_CHANNEL_ID = int(os.getenv('DISCORD_FORUM_CHANNEL_ID') or self.raise_error("Missing DISCORD_FORUM_CHANNEL_ID"))
             self.DISCORD_LOCK_THREAD = int(os.getenv('DISCORD_LOCK_THREAD') or self.raise_error("Missing DISCORD_LOCK_THREAD"))
-            self.DISCORD_ROLE = os.getenv('DISCORD_ROLE') or self.raise_error("Missing DISCORD_ROLE")
+            self.DISCORD_VOTER_ROLE = os.getenv('DISCORD_VOTER_ROLE') or self.raise_error("Missing DISCORD_VOTER_ROLE")
             self.DISCORD_SERVER_ID = int(os.getenv('DISCORD_SERVER_ID') or self.raise_error("Missing DISCORD_SERVER_ID"))
             self.NETWORK_NAME = f"{os.getenv('NETWORK')}" or self.raise_error("Missing NETWORK")
             self.SUBSTRATE_WSS = os.getenv('SUBSTRATE_WSS') or self.raise_error("Missing SUBSTRATE_WSS")

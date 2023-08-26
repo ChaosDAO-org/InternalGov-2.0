@@ -289,7 +289,7 @@ if __name__ == '__main__':
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     Logger(arguments.args.verbose)
-    client = GovernanceMonitor(guild=guild,discord_role=config.DISCORD_ROLE)
+    client = GovernanceMonitor(guild=guild,discord_role=config.DISCORD_VOTER_ROLE)
     
     @client.event
     async def on_ready():
