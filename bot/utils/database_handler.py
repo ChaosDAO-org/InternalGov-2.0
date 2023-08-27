@@ -1,5 +1,6 @@
 import psycopg2
 import time
+import json
 from typing import Dict, Any
 
 class DatabaseHandler:
@@ -26,7 +27,6 @@ class DatabaseHandler:
                 return result
             else:
                 return 0, 0, 0
-
 
     # Updated save_or_update_vote method to ensure that the thread_id exists in the referenda_thread table before inserting into users.
     def save_or_update_vote(self, referenda_id: str, user_id: str, vote_id: int, username: str):
@@ -99,7 +99,7 @@ class DatabaseHandler:
                     recuse INT,
                     abstain INT,
                     epoch INT,
-                    archive_bit BOOLEAN DEFAULT FALSE
+                    archived BOOLEAN DEFAULT FALSE
                 );
             """)
 
@@ -110,6 +110,7 @@ class DatabaseHandler:
                     username TEXT,
                     vote_type INT,
                     thread_id TEXT,
+                    UNIQUE(user_id, thread_id),
                     FOREIGN KEY(thread_id) REFERENCES referenda_thread(thread_id),
                     FOREIGN KEY(vote_type) REFERENCES vote_options(vote_id)
                 );
@@ -117,15 +118,52 @@ class DatabaseHandler:
 
             self.conn.commit()
 
+    def migrate_data(self, json_file_path, archived):
+        cursor = self.conn.cursor()
+        
+        # Read JSON data from file
+        with open(json_file_path, 'r') as f:
+            json_data = json.load(f)
+        
+        # Migrate data to PostgreSQL
+        for thread_id, data in json_data.items():
+            cursor.execute("""
+                INSERT INTO referenda_thread (thread_id, aye, nay, recuse, epoch, archived)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (thread_id)
+                DO UPDATE SET aye=EXCLUDED.aye, nay=EXCLUDED.nay, recuse=EXCLUDED.recuse, epoch=EXCLUDED.epoch, archived=%s;
+            """, (thread_id, data['aye'], data['nay'], data['recuse'], data['epoch'], archived, archived))
 
             
-        # Need to fix this
-   #def archive_referenda(self, days=14):
-   #    current_time = int(time.time())
-   #    time_threshold = days * 24 * 60 * 60  # Convert days to seconds
+            for user_id, user_data in data.get('users', {}).items():
+                # Debugging print
+                print(user_id, user_data.get('username'), user_data.get('vote_type'), thread_id)
 
-   #    with self.conn.cursor() as cursor:
-   #        query = """UPDATE referenda SET archive_bit = TRUE
-   #                   WHERE %s - epoch > %s;"""
-   #        cursor.execute(query, (current_time, time_threshold))
-   #        self.conn.commit()
+                # Check for None values
+                if None in [user_id, user_data.get('username'), user_data.get('vote_type'), thread_id]:
+                    print("Skipping due to None value")
+                    continue
+
+                cursor.execute("""
+                    INSERT INTO users (user_id, username, vote_type, thread_id)
+                    VALUES (%s, %s,
+                        (SELECT vote_id FROM vote_options WHERE description = %s),
+                        %s)
+                    ON CONFLICT (user_id, thread_id)
+                    DO UPDATE SET username=EXCLUDED.username, vote_type=EXCLUDED.vote_type;
+                """, (user_id, user_data['username'], user_data['vote_type'], thread_id))
+
+        
+        # Commit changes
+        self.conn.commit()
+
+    def migrated_check(self):
+        # Check if data is already migrated
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM referenda_thread;")
+        if cursor.fetchone()[0] == 0:
+            # Migrate live and archived vote data
+            self.migrate_data('../data/vote_counts.json', archived=False)
+            self.migrate_data('../data/archived_votes.json', archived=True)
+            
+        

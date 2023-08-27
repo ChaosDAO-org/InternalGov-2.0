@@ -328,6 +328,7 @@ if __name__ == '__main__':
 
     # Create an instance of DatabaseHandler
     db_handler = DatabaseHandler(db_params)
+    db_handler.migrated_check()
     client = GovernanceMonitor(
         guild=guild,
         discord_role=config.DISCORD_VOTER_ROLE,
