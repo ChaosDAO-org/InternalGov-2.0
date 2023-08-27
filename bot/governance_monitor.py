@@ -10,20 +10,14 @@ from discord.ext import tasks
 
 
 class GovernanceMonitor(discord.Client):
-    def __init__(self, guild,  discord_role, permission_checker,  *, intents: discord.Intents = None):
+    def __init__(self, guild,  discord_role, permission_checker, db_handler,  intents: discord.Intents = None):
         super().__init__(intents=intents)
-        # A CommandTree is a special type that holds all the application command
-        # state required to make it work. This is a separate class because it
-        # allows all the extra state to be opt-in.
-        # Whenever you want to work with application commands, your tree is used
-        # to store and work with them.
-        # Note: When using commands.Bot instead of discord.Client, the bot will
-        # maintain its own tree instead.
         self.guild = guild
+        self.db_handler = db_handler
         self.button_cooldowns = {}
         self.discord_role = discord_role
         #self.tree = app_commands.CommandTree(self)
-        self.vote_counts = self.load_vote_counts()
+        self.vote_counts = self.load_vote_counts() # 0xTaylor - We can probably remove this?
         self.permission_checker = permission_checker
 
     @staticmethod
@@ -343,43 +337,23 @@ class GovernanceMonitor(discord.Client):
             current_time = time.time()
             cooldown_time = self.button_cooldowns.get(user_id, 0) + 2
 
+
             if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
-                self.vote_counts = self.load_vote_counts()  # tmp-workaround for reloading vote_counts to avoid memory caching
                 self.button_cooldowns[user_id] = current_time
-                vote_type = "aye" if custom_id == "aye_button" else "recuse" if custom_id == "recuse_button" else "nay"
+                vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
 
-                if message_id not in list(self.vote_counts.keys()):
-                    self.vote_counts[message_id] = {
-                        "index": 'Proposal detected; corresponding vote_count.json entry absent, now added using first vote interaction.',
-                        "title": discord_thread.name,
-                        "aye": 0,
-                        "nay": 0,
-                        "recuse": 0,
-                        "users": {},
-                        "epoch": int(time.time())}
+                # Save or update vote in the database
+                already_voted, previous_vote = self.db_handler.save_or_update_vote(message_id, user_id, vote_id, username)
 
-                # Check if the user has already voted
-                if str(user_id) in self.vote_counts[message_id]["users"]:
-                    previous_vote = self.vote_counts[message_id]["users"][str(user_id)]["vote_type"]
+                if already_voted and previous_vote == vote_id:
+                    await interaction.response.send_message(
+                        f"Your vote of **{self.db_handler.vote_options[vote_id]}** has already been recorded. To change it, select an alternative option.",
+                        ephemeral=True)
+                    await asyncio.sleep(5)
+                    return
 
-                    # If the user has voted for the same option, ignore the vote
-                    if previous_vote == vote_type:
-                        await interaction.response.send_message(
-                            f"Your vote of **{previous_vote}** has already been recorded. To change it, select an alternative option.",
-                            ephemeral=True)
-                        await asyncio.sleep(5)
-                        # await interaction.delete_original_response()
-                        return
-                    else:
-                        # Remove the previous vote
-                        self.vote_counts[message_id][previous_vote] -= 1
-
-                # Update the vote count and save the user's vote
-                self.vote_counts[message_id][vote_type] += 1
-                self.vote_counts[message_id]["users"][str(user_id)] = {"username": username,
-                                                                       "vote_type": vote_type}
-                self.save_vote_counts()
-
+                # Fetch updated vote counts from the database for this message
+                aye_count, nay_count, recuse_count = self.db_handler.fetch_vote_counts_from_db(message_id)
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
                 async for message in thread.history(oldest_first=True):
@@ -389,19 +363,19 @@ class GovernanceMonitor(discord.Client):
                 else:
                     results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
-                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
-                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
+                new_results_message = f"👍 AYE: {aye_count}    |    👎 NAY: {nay_count}    |    ☯ RECUSE: {recuse_count}\n" \
+                                    f"{self.calculate_vote_result(aye_votes=aye_count, nay_votes=nay_count)}"
                 await results_message.edit(content=new_results_message)
-
+                
                 # Acknowledge the vote and delete the message 10 seconds later
                 # (this notification is only visible to the user that interacts with AYE, NAY
                 await interaction.response.send_message(
-                    f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
+                    f"Your vote of **{self.db_handler.vote_options[vote_id]}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
                 await asyncio.sleep(60*60*24*14)
                 # await interaction.delete_original_response()
             else:
-                # block the user from pressing the AYE, NAY to prevent unnecessary spam
+                # Block the user from pressing the AYE, NAY to prevent unnecessary spam
                 remaining_time = cooldown_time - current_time
                 seconds = int(remaining_time)
 
@@ -410,6 +384,14 @@ class GovernanceMonitor(discord.Client):
                 await asyncio.sleep(5)
                 await interaction.delete_original_response()
 
+    async def on_error(self, event, *args, **kwargs):
+        _, exc = sys.exc_info()
+        
+        if isinstance(exc, HTTPException) and exc.status == 429:
+            print(f"We are being rate-limited. Waiting for {exc.retry_after} seconds.")
+        else:
+            # Handle other types of exceptions or log them
+            print(f"An error occurred: {exc}")
 
     # Synchronize the app commands to one guild.
   # async def setup_hook(self):
