@@ -10,7 +10,7 @@ from discord.ext import tasks
 
 
 class GovernanceMonitor(discord.Client):
-    def __init__(self, guild,  discord_role,  *, intents: discord.Intents = None):
+    def __init__(self, guild,  discord_role, permission_checker,  *, intents: discord.Intents = None):
         super().__init__(intents=intents)
         # A CommandTree is a special type that holds all the application command
         # state required to make it work. This is a separate class because it
@@ -24,6 +24,7 @@ class GovernanceMonitor(discord.Client):
         self.discord_role = discord_role
         #self.tree = app_commands.CommandTree(self)
         self.vote_counts = self.load_vote_counts()
+        self.permission_checker = permission_checker
 
     @staticmethod
     def proposals_with_no_context(filename):

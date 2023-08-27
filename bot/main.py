@@ -11,6 +11,7 @@ from utils.data_processing import CacheManager, Text
 from utils.config import Config
 from utils.button_handler import ButtonHandler
 from utils.argument_parser import ArgumentParser
+from utils.permission_check import PermissionCheck
 from logging.handlers import TimedRotatingFileHandler
 from governance_monitor import GovernanceMonitor
 from discord.ext import tasks
@@ -144,7 +145,7 @@ async def check_governance():
         role = discord.utils.get(guild.roles, name=config.TAG_ROLE_NAME)
         # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
         # lock threads once archived (prevents regular users from continuing to vote).
-        threads_to_lock = CacheManager().delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
+        threads_to_lock = CacheManager.delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
         if threads_to_lock:
             logging.info(f"{len(threads_to_lock)} threads have been archived")
             try:
@@ -176,13 +177,13 @@ async def check_governance():
 
                     # Create forum tags if they don't already exist.
                     governance_tag = await get_or_create_governance_tag(available_channel_tags, governance_origin, channel)
-                    #  Written to accommodate differences in returned JSON between Polkassembly & Subsquare
+                    
                     if values['successful_url']:
                         logging.info(f"Getting on-chain data from: {values['successful_url']}")
-
+                        #  get_requested_spend handles the differences in returned JSON between Polkassembly & Subsquare
                         requested_spend = get_requested_spend(values, current_price)
                     else:
-                        logging.error(f"Unable to pull information from data sources")
+                        logging.error(f"No value: ", values['successful_url'])
                         requested_spend = ""
 
                     title = values['title'][:TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
@@ -311,8 +312,9 @@ if __name__ == '__main__':
     config = Config()
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
-    Logger(arguments.args.verbose)
-    client = GovernanceMonitor(guild=guild,discord_role=config.DISCORD_VOTER_ROLE)
+    logging = Logger(arguments.args.verbose)
+    permission_checker = PermissionCheck(logging)
+    client = GovernanceMonitor(guild=guild,discord_role=config.DISCORD_VOTER_ROLE,permission_checker=permission_checker)
     TITLE_MAX_LENGTH = 95
     BODY_MAX_LENGTH = 1451
     
@@ -322,6 +324,7 @@ if __name__ == '__main__':
         print("Connected to the following servers:")
         for server in client.guilds:
             print(f"- {server.name} (ID: {server.id})")
+            await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID) 
 
         if not check_governance.is_running():
             check_governance.start()
