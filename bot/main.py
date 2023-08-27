@@ -14,7 +14,10 @@ from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
 from logging.handlers import TimedRotatingFileHandler
 from governance_monitor import GovernanceMonitor
+from utils.database_handler import DatabaseHandler
 from discord.ext import tasks
+import psycopg2
+from psycopg2 import extras
 
 def get_requested_spend(data, current_price):
     requested_spend = ""
@@ -314,7 +317,23 @@ if __name__ == '__main__':
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
     permission_checker = PermissionCheck(logging)
-    client = GovernanceMonitor(guild=guild,discord_role=config.DISCORD_VOTER_ROLE,permission_checker=permission_checker)
+    db_params = {
+        'dbname': config.DB_NAME,
+        'user': config.DB_USER,
+        'password': config.DB_PASSWORD,
+        'host': config.DB_HOST,
+        'port': config.DB_PORT,
+        'options': '-c password_encryption=scram-sha-256'
+    }
+
+    # Create an instance of DatabaseHandler
+    db_handler = DatabaseHandler(db_params)
+    db_handler.migrated_check()
+    client = GovernanceMonitor(
+        guild=guild,
+        discord_role=config.DISCORD_VOTER_ROLE,
+        permission_checker=permission_checker, 
+        db_handler=db_handler)
     TITLE_MAX_LENGTH = 95
     BODY_MAX_LENGTH = 1451
     
@@ -324,6 +343,7 @@ if __name__ == '__main__':
         print("Connected to the following servers:")
         for server in client.guilds:
             print(f"- {server.name} (ID: {server.id})")
+            # Check permissions for the bot to read/write to the forum channel
             await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID) 
 
         if not check_governance.is_running():
