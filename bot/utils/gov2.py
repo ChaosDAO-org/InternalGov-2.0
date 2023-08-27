@@ -6,16 +6,13 @@ from typing import Union, Any
 from utils.data_processing import CacheManager
 from substrateinterface import SubstrateInterface
 
-with open("../config.yaml", "r") as file:
-    config = yaml.safe_load(file)
-
-
 class OpenGovernance2:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.util = CacheManager
         self.substrate = SubstrateInterface(
-            url=config['substrate_wss'],
-            type_registry_preset=config['network']
+            url=self.config.SUBSTRATE_WSS,
+            type_registry_preset=self.config.NETWORK_NAME
         )
 
     def referendumInfoFor(self, index=None):
@@ -172,7 +169,7 @@ class OpenGovernance2:
                     for index in results['dictionary_item_added']:
                         index = index.strip('root').replace("['", "").replace("']", "")
                         onchain_info = referendum_info[index]['Ongoing']
-                        polkassembly_info = await self.fetch_referendum_data(referendum_id=index, network=config['network'])
+                        polkassembly_info = await self.fetch_referendum_data(referendum_id=index, network=self.config.NETWORK_NAME)
 
                         new_referenda.update({
                             f"{index}": polkassembly_info
