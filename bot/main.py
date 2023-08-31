@@ -2,6 +2,7 @@ import time
 import requests
 import logging
 import json
+import re
 import discord
 import asyncio
 import argparse
@@ -9,7 +10,7 @@ from utils.logger import Logger
 from utils.gov2 import OpenGovernance2
 from utils.data_processing import CacheManager, Text
 from utils.config import Config
-from utils.button_handler import ButtonHandler
+from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
 from logging.handlers import TimedRotatingFileHandler
@@ -18,7 +19,7 @@ from utils.database_handler import DatabaseHandler
 from discord.ext import tasks
 import psycopg2
 from psycopg2 import extras
-from discord import app_commands
+from discord import app_commands, Embed
 
 
 def get_requested_spend(data, current_price):
@@ -81,16 +82,20 @@ async def create_or_get_role(guild, role_name):
 
 async def manage_discord_thread(channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
     thread = None
-    char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
+    char_exceed_msg = "\n```For more insights, visit the provided links below.```"
    
-    content = Text.convert_markdown_to_discord(content)[:BODY_MAX_LENGTH].strip() if content is not None else None
-
+    content = Text.convert_markdown_to_discord(content) if content is not None else None
+    
     try:
-        thread_content = f"""{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= BODY_MAX_LENGTH-1 else ''}\n\n"""
-        thread_content += f"**External links**"
-        thread_content += f"\n<https://{config.NETWORK_NAME}.polkassembly.io/referenda/{index}>"
-        thread_content += f"\n<https://{config.NETWORK_NAME}.subsquare.io/referenda/referendum/{index}>"
-        thread_content += f"\n<https://{config.NETWORK_NAME}.subscan.io/referenda_v2/{index}>"
+        
+        other_components_length = len(requested_spend + "\n\n")  # Newlines are 2 characters
+        final_content = content or ''
+        if len(final_content) + other_components_length > BODY_MAX_LENGTH:
+            available_space = BODY_MAX_LENGTH - other_components_length - len(char_exceed_msg + "...")
+            truncated_content = re.sub(r'\s+\S+$', '', final_content[:available_space])
+            final_content = f"{truncated_content}...{char_exceed_msg}"
+
+        thread_content = f"{requested_spend}{final_content}\n\n"
         thread_title = f"{index}: {title}"
         
         if operation == 'create':
@@ -254,8 +259,8 @@ async def check_governance():
                                                                   "users": {},
                                                                   "epoch": int(time.time())}
                     client.save_vote_counts()
-
-                    results_message = await channel_thread.send(content=initial_results_message)
+                    external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                    results_message = await channel_thread.send(content=initial_results_message,view=external_links)
                     await thread.message.pin()
                     await results_message.pin()
                     # Searches the last 5 messages
@@ -373,7 +378,7 @@ if __name__ == '__main__':
         permission_checker=permission_checker, 
         )
     TITLE_MAX_LENGTH = 95
-    BODY_MAX_LENGTH = 1451
+    BODY_MAX_LENGTH = 2000
     
     @client.event
     async def on_ready():
