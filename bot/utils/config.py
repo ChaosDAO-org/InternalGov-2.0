@@ -12,7 +12,7 @@ class Config:
             self.DISCORD_LOCK_THREAD = int(os.getenv('DISCORD_LOCK_THREAD') or self.raise_error("Missing DISCORD_LOCK_THREAD"))
             self.DISCORD_VOTER_ROLE = os.getenv('DISCORD_VOTER_ROLE') or self.raise_error("Missing DISCORD_VOTER_ROLE")
             self.DISCORD_SERVER_ID = int(os.getenv('DISCORD_SERVER_ID') or self.raise_error("Missing DISCORD_SERVER_ID"))
-            self.NETWORK_NAME = f"{os.getenv('NETWORK')}" or self.raise_error("Missing NETWORK")
+            self.NETWORK_NAME = f"{os.getenv('NETWORK_NAME')}" or self.raise_error("Missing NETWORK_NAME")
             self.SUBSTRATE_WSS = os.getenv('SUBSTRATE_WSS') or self.raise_error("Missing SUBSTRATE_WSS")
             self.SYMBOL = os.getenv('SYMBOL') or self.raise_error("Missing SYMBOL")
             self.TAG_ROLE_NAME = f"{os.getenv('SYMBOL')}-GOV" or self.raise_error("Missing SYMBOL")
