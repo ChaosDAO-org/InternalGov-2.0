@@ -6,19 +6,26 @@ import discord
 import asyncio
 from logging.handlers import TimedRotatingFileHandler
 from discord.ext import tasks
+import interactions
+from discord import app_commands
 
 
-
-class GovernanceMonitor(discord.Client):
+class GovernanceMonitor(discord.Client, interactions.Client):
     def __init__(self, guild,  discord_role, permission_checker, db_handler,  intents: discord.Intents = None):
         super().__init__(intents=intents)
-        self.guild = guild
-        self.db_handler = db_handler
         self.button_cooldowns = {}
+        self.db_handler = db_handler
         self.discord_role = discord_role
-        #self.tree = app_commands.CommandTree(self)
-        self.vote_counts = self.load_vote_counts() # 0xTaylor - We can probably remove this?
+        self.guild = guild
         self.permission_checker = permission_checker
+        self.tree = app_commands.CommandTree(self)
+        self.vote_counts = self.load_vote_counts()
+        
+
+    async def setup_hook(self):
+        self.tree.copy_global_to(guild=self.guild)
+        await self.tree.sync(guild=self.guild)        
+    
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -165,30 +172,23 @@ class GovernanceMonitor(discord.Client):
 
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
         print(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
-        print(f"Channel type: {type(channel)}, attributes: {dir(channel)}")  # Debug print
+        print(f"Channel type: {type(channel)}, attributes: {dir(channel)}") 
 
         for message_id in message_ids:
             print(f"Fetching message with ID {message_id}")
 
             message = channel.get_thread(message_id)
             if message is None:
-                print(f"Error: Could not find thread for message ID {message_id}")  # Debug print
+                print(f"Error: Could not find thread for message ID {message_id}")
                 continue
 
             view = message.view
             print(f"Current view: {view}")
 
-            # Set the disabled status of the buttons
-            #for button in view.children:
-            #    print(f"Setting disabled status of button {button.label} to {lock_status}")
-            #    button.disabled = lock_status
-
-            # Update the message with the new view
             print(f"Editing message with new view: {view}")
             await message.edit(view=view)
 
         print("Finished setting buttons lock status")
-
 
     async def lock_threads_by_message_ids(self, guild_id, message_ids):
         """
@@ -343,7 +343,7 @@ class GovernanceMonitor(discord.Client):
                 vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
 
                 # Save or update vote in the database
-                already_voted, previous_vote = self.db_handler.save_or_update_vote(message_id, user_id, vote_id, username)
+                already_voted, previous_vote = self.db_handler.sync_vote(message_id, user_id, vote_id, username)
 
                 if already_voted and previous_vote == vote_id:
                     await interaction.response.send_message(

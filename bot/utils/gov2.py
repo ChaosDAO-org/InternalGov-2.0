@@ -7,9 +7,10 @@ from utils.data_processing import CacheManager
 from substrateinterface import SubstrateInterface
 
 class OpenGovernance2:
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self.config = config
         self.util = CacheManager
+        self.logger = logger
         self.substrate = SubstrateInterface(
             url=self.config.SUBSTRATE_WSS,
             type_registry_preset=self.config.NETWORK_NAME
@@ -40,7 +41,6 @@ class OpenGovernance2:
 
             sort = json.dumps(referendum, sort_keys=True)
             data = json.loads(sort)
-
             return data
 
     @staticmethod
@@ -160,6 +160,7 @@ class OpenGovernance2:
         new_referenda = {}
 
         referendum_info = self.referendumInfoFor()
+        #self.db_handler.sync_ref_data(self.referendumInfoFor())
         results = self.util.get_cache_difference(filename='../data/governance.cache', data=referendum_info)
         self.util.save_data_to_cache(filename='../data/governance.cache', data=referendum_info)
 

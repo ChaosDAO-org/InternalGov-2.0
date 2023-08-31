@@ -20,3 +20,9 @@ class ButtonHandler(View):
 
     async def on_recuse_button(self, interaction: discord.Interaction):
         await interaction.response.defer()
+        
+    def set_buttons_lock_status(self, lock_status: bool):
+        for item in self.children:
+            if isinstance(item, Button):
+                item.disabled = lock_status
+

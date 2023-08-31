@@ -4,9 +4,10 @@ import json
 from typing import Dict, Any
 
 class DatabaseHandler:
-    def __init__(self, db_params: Dict[str, Any]):
+    def __init__(self, db_params: Dict[str, Any], logger):
         self.conn = psycopg2.connect(**db_params)
         self.ensure_tables_exist()
+        self.logger = logger
         # Define the mapping for vote_ids to column names
         self.vote_options = {
             1: 'aye',
