@@ -29,12 +29,12 @@ def get_requested_spend(data, current_price):
         if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
             if data['proposed_call']['method'] == 'spend':
                 amount = int(data['proposed_call']['args']['amount']) / float(config.TOKEN_DECIMAL)
-                requested_spend = f"```yaml\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
         
         elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
             if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
                 amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(config.TOKEN_DECIMAL)
-                requested_spend = f"```yaml\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
         
         else:
             logging.error("Unable to pull information from data sources")
@@ -83,7 +83,6 @@ async def create_or_get_role(guild, role_name):
 async def manage_discord_thread(channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
     thread = None
     char_exceed_msg = "\n```For more insights, visit the provided links below.```"
-   
     content = Text.convert_markdown_to_discord(content) if content is not None else None
     
     try:
@@ -207,7 +206,7 @@ async def check_governance():
                     
             # Get the guild object where the role is located
             # Construct the role name based on the symbol in config
-
+            referendum_info = opengov2.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 requested_spend = ""
@@ -236,11 +235,6 @@ async def check_governance():
 
                     logging.info(f"Creating thread on Discord: {index}# {title}")
 
-                    # Create Discord thread
-                    #   content starts with `requested_spend`,
-                    #   followed by `content` (or an empty string if `content` is None).
-                    #   If `content` is long enough (1450 characters or more), it appends '...' and `char_exceed_msg`.
-                    #   The string ends with two newline characters.
                     try:                        
                         thread = await manage_discord_thread(channel, 'create', title, index, requested_spend, values['content'], governance_tag, message_id=None, client=client)
                         logging.info(f"Thread created: {thread.message.id}")
@@ -251,13 +245,15 @@ async def check_governance():
                     initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
 
                     channel_thread = channel.get_thread(thread.message.id)
-                    client.vote_counts[str(thread.message.id)] = {"index": index,
-                                                                  "title": values['title'][:200].strip(),
-                                                                  "aye": 0,
-                                                                  "nay": 0,
-                                                                  "recuse": 0,
-                                                                  "users": {},
-                                                                  "epoch": int(time.time())}
+                    client.vote_counts[str(thread.message.id)] = {
+                        "index": index,
+                        "title": values['title'][:200].strip(),
+                        "aye": 0,
+                        "nay": 0,
+                        "recuse": 0,
+                        "users": {},
+                        "epoch": int(time.time())
+                        }
                     client.save_vote_counts()
                     external_links = ExternalLinkButton(index, config.NETWORK_NAME)
                     results_message = await channel_thread.send(content=initial_results_message,view=external_links)
@@ -274,7 +270,7 @@ async def check_governance():
                         role = await create_or_get_role(guild, config.TAG_ROLE_NAME)
                         if role:
                             await channel_thread.send(content=
-                            f"<@&{role.id}>"
+                            f"||<@&{role.id}>||"
                             f"\n**INSTRUCTIONS:**"
                             f"\n- Vote **AYE** if you want to see this proposal pass"
                             f"\n- Vote **NAY** if you want to see this proposal fail"
@@ -284,9 +280,12 @@ async def check_governance():
                     results_message_id = results_message.id
 
                     message_id = thread.message.id
-                    buttons = ButtonHandler(client, message_id)
+                    voting_buttons = ButtonHandler(client, message_id)
                     logging.info(f"Vote results message added: {message_id}")
-                    await thread.message.edit(view=buttons)  # Update the thread message with the new view
+                    #embed = Embed(color=0x00ff00)
+                    #embed = opengov2.add_fields_to_embed(embed, referendum_info[index])
+                    await thread.message.edit(view=voting_buttons)  # Update the thread message with the new #await thread.message.edit(embed=embed, view=voting_buttons) # Disabled the embed for now
+
 
                 except discord.errors.Forbidden as forbidden:
                     logging.exception(f"Forbidden error occurred:  {forbidden}")
@@ -338,7 +337,6 @@ async def recheck_proposals():
         if opengov['title'] != 'None':
             requested_spend = get_requested_spend(opengov, current_price)
             client.vote_counts[message_id]['title'] = title = opengov['title'][:TITLE_MAX_LENGTH].strip()
-            #content = Text.convert_markdown_to_discord(opengov['content'])[:BODY_MAX_LENGTH].strip() if opengov['content'] is not None else None
             # set title on thread id contained in vote_counts.json
             client.save_vote_counts()
 
@@ -422,9 +420,7 @@ if __name__ == '__main__':
         await set_voting_button_lock_status(thread_ids_list, lock_status)
         await interaction.response.send_message(f'The following thread(s) have been {action.name}d: {thread_ids_list}', ephemeral=True)
 
-        
 
-           
     try:    
         client.run(config.DISCORD_API_KEY)
     except KeyboardInterrupt:

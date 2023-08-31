@@ -1,6 +1,6 @@
 import discord
 from discord.ext import tasks
-from discord import app_commands
+from discord import app_commands, PartialEmoji
 from discord.ui import Button, View
 
 class ButtonHandler(View):
@@ -8,9 +8,11 @@ class ButtonHandler(View):
         super().__init__(timeout=30.0)
         self.bot_instance = bot_instance
         self.message_id = message_id
-        self.add_item(Button(label="AYE", custom_id="aye_button", style=discord.ButtonStyle.green))
-        self.add_item(Button(label="NAY", custom_id="nay_button", style=discord.ButtonStyle.red))
-        self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary))
+        self.add_item(Button(label="AYE", custom_id="aye_button", style=discord.ButtonStyle.green, emoji="👍"))
+        self.add_item(Button(label="NAY", custom_id="nay_button", style=discord.ButtonStyle.red, emoji="👎"))
+        #custom_emoji = PartialEmoji(name="0xTaylor", id=916267559479824395)
+        self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary, emoji="⛔️"))
+    
 
     async def on_aye_button(self, interaction: discord.Interaction):
         await interaction.response.defer()

@@ -42,6 +42,130 @@ class OpenGovernance2:
             sort = json.dumps(referendum, sort_keys=True)
             data = json.loads(sort)
             return data
+        
+    def get_display_name(self, address: str) -> str:
+        # Fetch the identity info associated with the given address.
+        identity_info = self.substrate.query(
+            module='Identity',
+            storage_function='IdentityOf',
+            params=[address]
+        )
+
+        # Check if identity info exists.
+        if identity_info is None or identity_info.value is None or 'info' not in identity_info.value:
+            return None
+
+        # Get the display name.
+        display_name_data = identity_info.value['info']['display']
+        if 'Raw' in display_name_data:
+            display_name = display_name_data['Raw']
+        else:
+            # Handle other types of Data encoding if needed
+            display_name = None
+
+        return display_name
+
+
+
+        
+    def format_key(self, key, parent_key):
+        FIELD_NAME_MAP = {
+            "Ongoing.alarm": "Ending Block",
+            "Ongoing.deciding.confirming": "Confirming",
+            "Ongoing.deciding.since": "Confirming Since",
+            "Ongoing.decision_deposit.amount": "Decision Deposit Amount",
+            "Ongoing.decision_deposit.who": "Decision Deposit Who",
+            "Ongoing.enactment.After": "Enactment After",
+            "Ongoing.in_queue": "In Queue",
+            "Ongoing.origin.Origins": "Origin",
+            "Ongoing.proposal.Lookup.hash": "Proposal Hash",
+            "Ongoing.proposal.Lookup.len": "Proposal Length",
+            "Ongoing.submission_deposit.amount": "Submission Deposit Amount",
+            "Ongoing.submission_deposit.who": "Submission Deposit Who",
+            "Ongoing.submitted": "Submitted",
+            "Ongoing.tally.ayes": "Ayes",
+            "Ongoing.tally.nays": "Nays",
+            "Ongoing.tally.support": "Support",
+            "Ongoing.track": "Track"
+        }
+        full_key = f"{parent_key}.{key}" if parent_key else key
+        formatted_key = FIELD_NAME_MAP.get(full_key, full_key)
+        
+        # Handle special case for 'Ongoing.alarm'
+        
+            
+        return formatted_key
+
+    def add_fields_to_embed(self, embed, data, parent_key=""):
+        char_count = 0
+        field_data = {} 
+        field_order = [
+            'Origin',         
+            'Decision Deposit Amount', 
+            'Submission Deposit Amount', 
+            'Ending Block', 
+            'Confirming', 
+            'Confirming Since',
+            'Decision Deposit Who', 
+            'Submission Deposit Who',         
+            'Since', 
+            'Enactment After',
+            'Ayes', 
+            'Nays', 
+            'Support',
+            'Submitted'
+        ]
+
+        for key, value in data.items():
+            if parent_key == "comments" or key in ["Proposal Length" "Proposal Hash"]:
+                continue
+            formatted_key = self.format_key(key, parent_key)
+                
+            # Look up and add display name for specific keys
+            if formatted_key in ['Decision Deposit Who', 'Submission Deposit Who']:
+                display_name = self.get_display_name(address=value)
+                if display_name:
+                    value = f"[{display_name}](https://polkadot.subscan.io/account/{value})"
+                else:
+                    value = f"[{value}](https://polkadot.subscan.io/account/{value})"
+            if formatted_key == "Ending Block":
+                value = f"[{value[0]}](https://polkadot.subscan.io/block/{value[0]})"
+                
+            if formatted_key in ["Confirming Since", "Submitted"]:
+                value = f"[{value}](https://polkadot.subscan.io/block/{value})"
+
+            if formatted_key == "Confirming":
+                value = "True" if isinstance(value, int) or (isinstance(value, str) and value.isdigit()) else "False"
+                
+            if any(keyword in formatted_key for keyword in ["Ayes", "Nays", "Support"]):
+                value = "{:,.2f}".format(int(value) / self.config.TOKEN_DECIMAL)  # Add a dollar sign before the value
+                
+            if "Amount" in formatted_key:
+                value = "{:,.2f}".format(int(value) / self.config.TOKEN_DECIMAL)
+                value = f"{value} {self.config.SYMBOL}"# Add a dollar sign before the value
+        
+            
+            #print(f"Char count: {char_count}, Key: {formatted_key}, Value: {value}")  # Debug line
+
+            next_count = char_count + len(str(formatted_key)) + len(str(value))
+
+            if next_count > 6000:
+                print("Stopping due to char limit")
+                break
+
+            if isinstance(value, dict):
+                embed = self.add_fields_to_embed(embed, value, formatted_key)
+            else:
+                field_data[formatted_key] = value
+
+            char_count = next_count
+
+        # Moved outside data loop
+        for key in field_order:
+            if key in field_data:
+                embed.add_field(name=key, value=field_data[key], inline=True)
+
+        return embed
 
     @staticmethod
     async def fetch_referendum_data(referendum_id: int, network: str):
@@ -105,6 +229,24 @@ class OpenGovernance2:
         else:
             successful_response["successful_url"] = successful_url
             return successful_response
+        
+    def get_average_block_time(self, num_blocks=255):
+        latest_block_num = self.substrate.get_block_number(block_hash=self.substrate.block_hash)
+        first_block_num = latest_block_num - num_blocks
+
+        first_timestamp = self.substrate.query(
+            module='Timestamp', 
+            storage_function='Now', 
+            block_hash=self.substrate.get_block_hash(first_block_num)
+        ).value
+
+        last_timestamp = self.substrate.query(
+            module='Timestamp', 
+            storage_function='Now', 
+            block_hash=self.substrate.get_block_hash(latest_block_num)
+        ).value
+
+        return (last_timestamp - first_timestamp) / (num_blocks * 1000)
 
     def time_until_block(self, target_block: int) -> int:
         """
@@ -124,14 +266,14 @@ class OpenGovernance2:
             # Get the current block number
             current_block = self.substrate.get_block_number(block_hash=self.substrate.block_hash)
             if target_block <= current_block:
-                print("The target block has already been reached.")
+                self.logger.info("The target block has already been reached.")
                 return False
 
             # Calculate the difference in blocks
             block_difference = target_block - current_block
 
             # Get the average block time (6 seconds for Kusama)
-            avg_block_time = 6
+            avg_block_time = self.get_average_block_time()
 
             # Calculate the remaining time in seconds
             remaining_time = block_difference * avg_block_time
@@ -142,7 +284,7 @@ class OpenGovernance2:
             return int(minutes)
 
         except Exception as error:
-            print( f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
+            self.logger.error( f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
 
     async def check_referendums(self):
         """
