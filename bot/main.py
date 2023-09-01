@@ -2,6 +2,7 @@ import time
 import requests
 import logging
 import json
+import re
 import discord
 import asyncio
 import argparse
@@ -9,7 +10,7 @@ from utils.logger import Logger
 from utils.gov2 import OpenGovernance2
 from utils.data_processing import CacheManager, Text
 from utils.config import Config
-from utils.button_handler import ButtonHandler
+from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
 from logging.handlers import TimedRotatingFileHandler
@@ -18,6 +19,8 @@ from utils.database_handler import DatabaseHandler
 from discord.ext import tasks
 import psycopg2
 from psycopg2 import extras
+from discord import app_commands, Embed
+
 
 def get_requested_spend(data, current_price):
     requested_spend = ""
@@ -26,12 +29,12 @@ def get_requested_spend(data, current_price):
         if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
             if data['proposed_call']['method'] == 'spend':
                 amount = int(data['proposed_call']['args']['amount']) / float(config.TOKEN_DECIMAL)
-                requested_spend = f"```yaml\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
         
         elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
             if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
                 amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(config.TOKEN_DECIMAL)
-                requested_spend = f"```yaml\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
         
         else:
             logging.error("Unable to pull information from data sources")
@@ -79,16 +82,19 @@ async def create_or_get_role(guild, role_name):
 
 async def manage_discord_thread(channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
     thread = None
-    char_exceed_msg = "\n```Character count exceeded. For more insights, kindly visit the provided links```"
-   
-    content = Text.convert_markdown_to_discord(content)[:BODY_MAX_LENGTH].strip() if content is not None else None
-
+    char_exceed_msg = "\n```For more insights, visit the provided links below.```"
+    content = Text.convert_markdown_to_discord(content) if content is not None else None
+    
     try:
-        thread_content = f"""{content if content is not None else ''}{'...' + char_exceed_msg if content is not None and len(content) >= BODY_MAX_LENGTH-1 else ''}\n\n"""
-        thread_content += f"**External links**"
-        thread_content += f"\n<https://{config.NETWORK_NAME}.polkassembly.io/referenda/{index}>"
-        thread_content += f"\n<https://{config.NETWORK_NAME}.subsquare.io/referenda/referendum/{index}>"
-        thread_content += f"\n<https://{config.NETWORK_NAME}.subscan.io/referenda_v2/{index}>"
+        
+        other_components_length = len(requested_spend + "\n\n")  # Newlines are 2 characters
+        final_content = content or ''
+        if len(final_content) + other_components_length > BODY_MAX_LENGTH:
+            available_space = BODY_MAX_LENGTH - other_components_length - len(char_exceed_msg + "...")
+            truncated_content = re.sub(r'\s+\S+$', '', final_content[:available_space])
+            final_content = f"{truncated_content}...{char_exceed_msg}"
+
+        thread_content = f"{requested_spend}{final_content}\n\n"
         thread_title = f"{index}: {title}"
         
         if operation == 'create':
@@ -112,6 +118,44 @@ async def manage_discord_thread(channel, operation, title, index, requested_spen
     except Exception as e:
         logging.error(f"Failed to manage Discord thread: {e}")
     return thread
+
+async def set_voting_button_lock_status(threads, lock: bool):
+    if threads:
+        logging.info(f"{len(threads)} threads to {'lock' if lock else 'unlock'}")
+        for message_id in threads:
+            thread = client.get_channel(int(message_id))
+            if thread is not None:
+                async for message in thread.history(oldest_first=True, limit=1):
+                    view = ButtonHandler(client, message)
+                    view.set_buttons_lock_status(lock_status=lock)
+                    await message.edit(view=view)
+        logging.info(f"The following threads have been {'locked' if lock else 'unlocked'}: {threads}")
+
+async def lock_threads(threads_to_lock, user):
+    try:
+        if threads_to_lock:
+            username = user.name
+            user_id = user.id
+            logging.info(f"{len(threads_to_lock)} threads have been archived by {username} (ID: {user_id})")
+            
+            for message_id in threads_to_lock:
+                thread = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(message_id))
+                if thread is None:
+                    logging.warning(f"Thread with ID {message_id} not found.")
+                    continue
+                
+                async for message_id in thread.history(oldest_first=True, limit=1):
+                    results_message_id = message_id.id
+                
+                view = ButtonHandler(client, message_id)
+                view.set_buttons_lock_status(lock_status=True)
+                await message_id.edit(view=view)
+            
+            logging.info(f"The following threads have been locked by {username} (ID: {user_id}): {threads_to_lock}")
+
+    except Exception as e:
+        logging.error(f"An error occurred while locking threads: {str(e)}")
+
 
 
 @tasks.loop(hours=6)
@@ -137,7 +181,7 @@ async def check_governance():
     """
     try:
         logging.info("Checking for new proposals")
-        opengov2 = OpenGovernance2(config)
+        opengov2 = OpenGovernance2(config, logger=logging)
         new_referendums = await opengov2.check_referendums()
         
         # Get the guild object where the role is located
@@ -150,10 +194,8 @@ async def check_governance():
         # lock threads once archived (prevents regular users from continuing to vote).
         threads_to_lock = CacheManager.delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
         if threads_to_lock:
-            logging.info(f"{len(threads_to_lock)} threads have been archived")
             try:
-                await client.lock_threads_by_message_ids(guild_id=config.DISCORD_SERVER_ID, message_ids=threads_to_lock)
-                logging.info(f"The following threads have been locked: {threads_to_lock}")
+                await lock_threads(threads_to_lock, client.user)
             except Exception as e:
                 logging.error(f"Failed to lock threads: {threads_to_lock}. Error: {e}")
 
@@ -164,7 +206,7 @@ async def check_governance():
                     
             # Get the guild object where the role is located
             # Construct the role name based on the symbol in config
-
+            referendum_info = opengov2.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 requested_spend = ""
@@ -193,11 +235,6 @@ async def check_governance():
 
                     logging.info(f"Creating thread on Discord: {index}# {title}")
 
-                    # Create Discord thread
-                    #   content starts with `requested_spend`,
-                    #   followed by `content` (or an empty string if `content` is None).
-                    #   If `content` is long enough (1450 characters or more), it appends '...' and `char_exceed_msg`.
-                    #   The string ends with two newline characters.
                     try:                        
                         thread = await manage_discord_thread(channel, 'create', title, index, requested_spend, values['content'], governance_tag, message_id=None, client=client)
                         logging.info(f"Thread created: {thread.message.id}")
@@ -208,16 +245,18 @@ async def check_governance():
                     initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
 
                     channel_thread = channel.get_thread(thread.message.id)
-                    client.vote_counts[str(thread.message.id)] = {"index": index,
-                                                                  "title": values['title'][:200].strip(),
-                                                                  "aye": 0,
-                                                                  "nay": 0,
-                                                                  "recuse": 0,
-                                                                  "users": {},
-                                                                  "epoch": int(time.time())}
+                    client.vote_counts[str(thread.message.id)] = {
+                        "index": index,
+                        "title": values['title'][:200].strip(),
+                        "aye": 0,
+                        "nay": 0,
+                        "recuse": 0,
+                        "users": {},
+                        "epoch": int(time.time())
+                        }
                     client.save_vote_counts()
-
-                    results_message = await channel_thread.send(content=initial_results_message)
+                    external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                    results_message = await channel_thread.send(content=initial_results_message,view=external_links)
                     await thread.message.pin()
                     await results_message.pin()
                     # Searches the last 5 messages
@@ -231,7 +270,7 @@ async def check_governance():
                         role = await create_or_get_role(guild, config.TAG_ROLE_NAME)
                         if role:
                             await channel_thread.send(content=
-                            f"<@&{role.id}>"
+                            f"||<@&{role.id}>||"
                             f"\n**INSTRUCTIONS:**"
                             f"\n- Vote **AYE** if you want to see this proposal pass"
                             f"\n- Vote **NAY** if you want to see this proposal fail"
@@ -241,9 +280,12 @@ async def check_governance():
                     results_message_id = results_message.id
 
                     message_id = thread.message.id
-                    buttons = ButtonHandler(client, message_id)
+                    voting_buttons = ButtonHandler(client, message_id)
                     logging.info(f"Vote results message added: {message_id}")
-                    await thread.message.edit(view=buttons)  # Update the thread message with the new view
+                    #embed = Embed(color=0x00ff00)
+                    #embed = opengov2.add_fields_to_embed(embed, referendum_info[index])
+                    await thread.message.edit(view=voting_buttons)  # Update the thread message with the new #await thread.message.edit(embed=embed, view=voting_buttons) # Disabled the embed for now
+
 
                 except discord.errors.Forbidden as forbidden:
                     logging.exception(f"Forbidden error occurred:  {forbidden}")
@@ -283,7 +325,7 @@ async def recheck_proposals():
     """
     logging.info("Checking past proposals where title/content is None to populate them with relevant data")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
-    opengov2 = OpenGovernance2(config)
+    opengov2 = OpenGovernance2(config, logger=logging)
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
@@ -295,7 +337,6 @@ async def recheck_proposals():
         if opengov['title'] != 'None':
             requested_spend = get_requested_spend(opengov, current_price)
             client.vote_counts[message_id]['title'] = title = opengov['title'][:TITLE_MAX_LENGTH].strip()
-            #content = Text.convert_markdown_to_discord(opengov['content'])[:BODY_MAX_LENGTH].strip() if opengov['content'] is not None else None
             # set title on thread id contained in vote_counts.json
             client.save_vote_counts()
 
@@ -317,25 +358,25 @@ if __name__ == '__main__':
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
     permission_checker = PermissionCheck(logging)
-    db_params = {
-        'dbname': config.DB_NAME,
-        'user': config.DB_USER,
-        'password': config.DB_PASSWORD,
-        'host': config.DB_HOST,
-        'port': config.DB_PORT,
-        'options': '-c password_encryption=scram-sha-256'
-    }
+    #db_params = {
+    #    'dbname': config.DB_NAME,
+    #    'user': config.DB_USER,
+    #    'password': config.DB_PASSWORD,
+    #    'host': config.DB_HOST,
+    #    'port': config.DB_PORT,
+    #    'options': '-c password_encryption=scram-sha-256'
+    #}
 
     # Create an instance of DatabaseHandler
-    db_handler = DatabaseHandler(db_params)
-    db_handler.migrated_check()
+    #db_handler = DatabaseHandler(db_params, logging)
+    #db_handler.migrated_check()
     client = GovernanceMonitor(
         guild=guild,
         discord_role=config.DISCORD_VOTER_ROLE,
         permission_checker=permission_checker, 
-        db_handler=db_handler)
+        )
     TITLE_MAX_LENGTH = 95
-    BODY_MAX_LENGTH = 1451
+    BODY_MAX_LENGTH = 2000
     
     @client.event
     async def on_ready():
@@ -352,4 +393,47 @@ if __name__ == '__main__':
         if not recheck_proposals.is_running():
             recheck_proposals.start()
             
-    client.run(config.DISCORD_API_KEY)
+    
+    @client.tree.command()
+    @app_commands.choices(action=[
+        app_commands.Choice(name='enable', value='enable'),
+        app_commands.Choice(name='disable', value='disable')
+    ])
+    async def thread(interaction: discord.Interaction, action: app_commands.Choice[str], thread_ids: str):
+        user = interaction.user
+        guild = interaction.guild
+        thread_ids_list = None  # Initialize to avoid UnboundLocalError
+
+        # Fetch the Member object for the user
+        member = await guild.fetch_member(user.id)
+
+        role = discord.utils.get(guild.roles, name=config.DISCORD_ADMIN_ROLE)
+        if role not in member.roles:
+            msg = await interaction.response.send_message("You're not cool enough to do this.", ephemeral=True)
+            await asyncio.sleep(10)
+            await interaction.delete_original_response()
+
+            return
+
+        thread_ids_list = [int(x.strip()) for x in thread_ids.split(',')]
+        lock_status = True if action.value == 'disable' else False
+        await set_voting_button_lock_status(thread_ids_list, lock_status)
+        await interaction.response.send_message(f'The following thread(s) have been {action.name}d: {thread_ids_list}', ephemeral=True)
+
+
+    try:    
+        client.run(config.DISCORD_API_KEY)
+    except KeyboardInterrupt:
+        # Perform your cleanup here
+        print("KeyboardInterrupt caught, cleaning up...")
+        
+        # Close any aiohttp.ClientSession, database connections, etc.
+        # If you're running any asyncio loops, make sure to stop them as well.
+
+        # For example, if you have an aiohttp client session:
+        # await session.close()
+
+    except Exception as e:
+        # Log any other exceptions
+        print(f"An error occurred: {e}")
+

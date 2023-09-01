@@ -4,21 +4,28 @@ import logging
 import json
 import discord
 import asyncio
+import sys
 from logging.handlers import TimedRotatingFileHandler
 from discord.ext import tasks
+from discord import app_commands
+import interactions
 
 
-
-class GovernanceMonitor(discord.Client):
-    def __init__(self, guild,  discord_role, permission_checker, db_handler,  intents: discord.Intents = None):
-        super().__init__(intents=intents)
-        self.guild = guild
-        self.db_handler = db_handler
+class GovernanceMonitor(discord.Client, interactions.Client):
+    def __init__(self, guild,  discord_role, permission_checker):
+        super().__init__(intents=None)
         self.button_cooldowns = {}
         self.discord_role = discord_role
-        #self.tree = app_commands.CommandTree(self)
-        self.vote_counts = self.load_vote_counts() # 0xTaylor - We can probably remove this?
+        self.guild = guild
         self.permission_checker = permission_checker
+        self.tree = app_commands.CommandTree(self)
+        self.vote_counts = self.load_vote_counts()
+        
+
+    async def setup_hook(self):
+        self.tree.copy_global_to(guild=self.guild)
+        await self.tree.sync(guild=self.guild)        
+    
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -153,42 +160,25 @@ class GovernanceMonitor(discord.Client):
         with open("../data/vote_counts.json", "w") as file:
             json.dump(self.vote_counts, file, indent=4)
 
- #   async def set_buttons_lock_status(client, channel_id, message_ids, lock_status=True):
- #       for message_id in message_ids:
- #           message = await message_id.fetch_message(message_id)
- #           view = message.view
- #           # Set the disabled status of the buttons
- #           for button in view.children:
- #               button.disabled = lock_status
- #           # Update the message with the new view
- #           await message.edit(view=view)
-
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
         print(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
-        print(f"Channel type: {type(channel)}, attributes: {dir(channel)}")  # Debug print
+        print(f"Channel type: {type(channel)}, attributes: {dir(channel)}") 
 
         for message_id in message_ids:
             print(f"Fetching message with ID {message_id}")
 
             message = channel.get_thread(message_id)
             if message is None:
-                print(f"Error: Could not find thread for message ID {message_id}")  # Debug print
+                print(f"Error: Could not find thread for message ID {message_id}")
                 continue
 
             view = message.view
             print(f"Current view: {view}")
 
-            # Set the disabled status of the buttons
-            #for button in view.children:
-            #    print(f"Setting disabled status of button {button.label} to {lock_status}")
-            #    button.disabled = lock_status
-
-            # Update the message with the new view
             print(f"Editing message with new view: {view}")
             await message.edit(view=view)
 
         print("Finished setting buttons lock status")
-
 
     async def lock_threads_by_message_ids(self, guild_id, message_ids):
         """
@@ -339,21 +329,55 @@ class GovernanceMonitor(discord.Client):
 
 
             if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
+                self.vote_counts = self.load_vote_counts()
                 self.button_cooldowns[user_id] = current_time
-                vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
-
+                vote_type = "aye" if custom_id == "aye_button" else "recuse" if custom_id == "recuse_button" else "nay"
                 # Save or update vote in the database
-                already_voted, previous_vote = self.db_handler.save_or_update_vote(message_id, user_id, vote_id, username)
+                if message_id not in list(self.vote_counts.keys()):
+                    self.vote_counts[message_id] = {
+                        "index": 'Proposal detected; corresponding vote_count.json entry absent, now added using first vote interaction.',
+                        "title": discord_thread.name,
+                        "aye": 0,
+                        "nay": 0,
+                        "recuse": 0,
+                        "users": {},
+                        "epoch": int(time.time())}
 
-                if already_voted and previous_vote == vote_id:
-                    await interaction.response.send_message(
-                        f"Your vote of **{self.db_handler.vote_options[vote_id]}** has already been recorded. To change it, select an alternative option.",
-                        ephemeral=True)
-                    await asyncio.sleep(5)
-                    return
+                # Check if the user has already voted
+                if str(user_id) in self.vote_counts[message_id]["users"]:
+                    previous_vote = self.vote_counts[message_id]["users"][str(user_id)]["vote_type"]
 
-                # Fetch updated vote counts from the database for this message
-                aye_count, nay_count, recuse_count = self.db_handler.fetch_vote_counts_from_db(message_id)
+                    # If the user has voted for the same option, ignore the vote
+                    if previous_vote == vote_type:
+                        await interaction.response.send_message(
+                            f"Your vote of **{previous_vote}** has already been recorded. To change it, select an alternative option.",
+                            ephemeral=True)
+                        await asyncio.sleep(5)
+                        # await interaction.delete_original_response()
+                        return
+                    else:
+                        # Remove the previous vote
+                        self.vote_counts[message_id][previous_vote] -= 1
+
+                # Update the vote count and save the user's vote
+                self.vote_counts[message_id][vote_type] += 1
+                self.vote_counts[message_id]["users"][str(user_id)] = {"username": username,
+                                                                       "vote_type": vote_type}
+                self.save_vote_counts()
+# Disabling db handler for now.
+#                vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
+#                already_voted, previous_vote = self.db_handler.sync_vote(message_id, user_id, vote_id, username)
+#
+#                if already_voted and previous_vote == vote_id:
+#                    await interaction.response.send_message(
+#                        f"Your vote of **{self.db_handler.vote_options[vote_id]}** has already been recorded. To change it, select an alternative option.",
+#                        ephemeral=True)
+#                    await asyncio.sleep(5)
+#                    return
+#
+#                # Fetch updated vote counts from the database for this message
+#                aye_count, nay_count, recuse_count = self.db_handler.fetch_vote_counts_from_db(message_id)
+
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
                 async for message in thread.history(oldest_first=True):
@@ -363,14 +387,14 @@ class GovernanceMonitor(discord.Client):
                 else:
                     results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
-                new_results_message = f"👍 AYE: {aye_count}    |    👎 NAY: {nay_count}    |    ☯ RECUSE: {recuse_count}\n" \
-                                    f"{self.calculate_vote_result(aye_votes=aye_count, nay_votes=nay_count)}"
+                new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
+                                    f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
                 await results_message.edit(content=new_results_message)
                 
                 # Acknowledge the vote and delete the message 10 seconds later
                 # (this notification is only visible to the user that interacts with AYE, NAY
                 await interaction.response.send_message(
-                    f"Your vote of **{self.db_handler.vote_options[vote_id]}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
+                    f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
                 await asyncio.sleep(60*60*24*14)
                 # await interaction.delete_original_response()

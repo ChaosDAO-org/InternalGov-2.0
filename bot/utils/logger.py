@@ -18,7 +18,10 @@ class Logger:
         else:
             logger.setLevel(logging.INFO)
         logger.addHandler(log_handler)
-    
+
+    def exception(self, message):
+        self.logger.exception(message)
+
     def debug(self, message):
         self.logger.debug(message)
 
@@ -33,6 +36,13 @@ class Logger:
 
     def critical(self, message):
         self.logger.critical(message)
+        
+    def write_out(self, message, log_filename):
+        with open(log_filename, 'a') as f:
+            print(message, file=f)
+
+    def console(self, message):
+        print(message)
         
     def missing_role(self, message):
         warning_roles = ["Manage Roles"]
