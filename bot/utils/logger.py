@@ -32,7 +32,7 @@ class Logger:
         self.logger.warning(message)
 
     def error(self, message):
-        self.logger.error(message)
+        self.logger.error(message, exc_info=True)
 
     def critical(self, message):
         self.logger.critical(message)
@@ -52,6 +52,6 @@ class Logger:
         else:
             log_level = self.logger.critical  # Default to critical for unspecified roles
             
-        message = f"***** MISSING ROLE: {message} *****"
+        message = f"MISSING ROLE: {message}"
         self.logger.critical(message)
         print(message)
