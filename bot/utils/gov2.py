@@ -214,9 +214,7 @@ class OpenGovernance2:
                 
             # Look up and add display name for specific keys
             if self.is_valid_ss58_address(value) and len(value) < 50:
-                #print("add_fields_to_embed ",value)
                 identity = self.get_identity_or_super_identity(address=value)
-                print("identity ",identity)
                 display_name = identity['display']['Raw'] if identity and 'display' in identity else None
                 value = f"[{display_name if display_name else value}](https://polkadot.subscan.io/account/{value})"
 
