@@ -7,6 +7,7 @@ from typing import Union, Any
 from utils.data_processing import CacheManager
 from logging.handlers import TimedRotatingFileHandler
 from substrateinterface import SubstrateInterface
+from substrateinterface.exceptions import SubstrateRequestException
 
 class OpenGovernance2:
     def __init__(self, config):
@@ -66,83 +67,173 @@ class OpenGovernance2:
 
         return display_name
 
+    def get_identity_or_super_identity(self, address: str) -> dict:
+        identity_info = self.substrate.query(
+            module='Identity',
+            storage_function='IdentityOf',
+            params=[address]
+        )
+        
+        if identity_info and identity_info.value and 'info' in identity_info.value:
+            return identity_info.value['info']
+        
+        super_info = self.substrate.query(
+            module='Identity',
+            storage_function='SuperOf',
+            params=[address]
+        )
+        
+        if super_info and super_info.value:
+            super_address = super_info.value[0]
+            super_identity_info = self.substrate.query(
+                module='Identity',
+                storage_function='IdentityOf',
+                params=[super_address]
+            )
+            
+            if super_identity_info and super_identity_info.value and 'info' in super_identity_info.value:
+                return super_identity_info.value['info']
+        
+        return None
+
+    def is_valid_ss58_address(self, address):
+        if not isinstance(address, str):
+            return False
+        try:
+            decoded = self.substrate.ss58_decode(address)
+            return True
+        except (SubstrateRequestException, ValueError):
+            return False
 
 
         
     def format_key(self, key, parent_key):
-        FIELD_NAME_MAP = {
-            "Ongoing.alarm": "Ending Block",
-            "Ongoing.deciding.confirming": "Confirming",
-            "Ongoing.deciding.since": "Confirming Since",
-            "Ongoing.decision_deposit.amount": "Decision Deposit Amount",
-            "Ongoing.decision_deposit.who": "Decision Deposit Who",
-            "Ongoing.enactment.After": "Enactment After",
-            "Ongoing.in_queue": "In Queue",
-            "Ongoing.origin.Origins": "Origin",
-            "Ongoing.proposal.Lookup.hash": "Proposal Hash",
-            "Ongoing.proposal.Lookup.len": "Proposal Length",
-            "Ongoing.submission_deposit.amount": "Submission Deposit Amount",
-            "Ongoing.submission_deposit.who": "Submission Deposit Who",
-            "Ongoing.submitted": "Submitted",
-            "Ongoing.tally.ayes": "Ayes",
-            "Ongoing.tally.nays": "Nays",
-            "Ongoing.tally.support": "Support",
-            "Ongoing.track": "Track"
-        }
-        full_key = f"{parent_key}.{key}" if parent_key else key
-        formatted_key = FIELD_NAME_MAP.get(full_key, full_key)
-        
-        # Handle special case for 'Ongoing.alarm'
-        
+        try:
+            FIELD_NAME_MAP = {
+                "Ongoing.alarm": "ENDING BLOCK",
+                "Ongoing.deciding.confirming": "CONFIRMING",
+                "Ongoing.deciding.since": "CONFIRMING SINCE",
+                "Ongoing.decision_deposit.amount": "DECISION DEPOSIT AMOUNT",
+                "Ongoing.decision_deposit.who": "DECISION DEPOSITER",
+                "Ongoing.enactment.After": "ENACTMENT AFTER",
+                "Ongoing.in_queue": "IN QUEUE",
+                "Ongoing.origin.Origins": "ORIGIN",
+                "Ongoing.proposal.Lookup.hash": "PROPOSAL HASH",
+                "Ongoing.proposal.Lookup.len": "PROPOSAL LENGTH",
+                "Ongoing.submission_deposit.amount": "SUBMISSION DEPOSIT AMOUNT",
+                "Ongoing.submission_deposit.who": "SUBMITTER",
+                "Ongoing.submitted": "SUBMITTED",
+                "Ongoing.tally.ayes": "AYES",
+                "Ongoing.tally.nays": "NAYS",
+                "Ongoing.tally.support": "SUPPORT",
+                "Ongoing.track": "TRACK"
+            }
             
-        return formatted_key
+            if isinstance(key, list):
+                key = ','.join(map(str, key))
+            if isinstance(parent_key, list):
+                parent_key = ','.join(map(str, parent_key))
+                
+            full_key = f"{parent_key}.{key}" if parent_key else key
+            if full_key.startswith("args."):
+                full_key = full_key.replace("args.", "", 1)
+            formatted_key = FIELD_NAME_MAP.get(full_key, full_key)       
+        except Exception as e:
+            # Handle or log error
+            logging.error(f"Error occurred: {e}")   
+        return formatted_key.upper()
+    
+    def extract_and_embed(self, data, embed, parent_key=""):
+        if 'proposed_call' in data:
+            data = data['proposed_call']
+
+        for key, value in data.items():
+            new_key = f"{parent_key}.{key}" if parent_key else key
+            if self.is_valid_ss58_address(value) and len(value) < 49:
+                display_name = self.get_display_name(address=value)
+                #display_name = identity.get('display', {}).get('Raw', None)
+                value = f"[{display_name if display_name else value}](https://polkadot.subscan.io/account/{value})"
+            
+            if new_key == 'CALL.CALLS':
+                for idx, call_item in enumerate(value):
+                    for call_key, call_value in call_item.items():
+                        formatted_key = self.format_key(f"{call_key.upper()} {idx + 1}", parent_key)
+                        embed.add_field(name=formatted_key, value=call_value, inline=True)
+                continue
+
+            if key.upper() in ["AMOUNT", "FEE"] and isinstance(value, (int, float, str)):
+                value = "{:,.0f}".format(int(value) / self.config.TOKEN_DECIMAL)
+                value = f"{value} {self.config.SYMBOL}"# Add a dollar sign before the value
+            
+            if isinstance(value, dict):
+                self.extract_and_embed(value, embed, new_key)
+            else:
+                formatted_key = self.format_key(new_key, "")
+                if len(str(value)) > 255:
+                    value = str(value)[:252] + "..."
+                embed.add_field(name=formatted_key, value=value, inline=True)
+
+        return embed
+
+    def flatten_dict(self, data, parent_key='', sep='.'):
+        items = {}
+        for k, v in data.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.update(self.flatten_dict(v, new_key, sep=sep))
+            else:
+                items[new_key] = v
+        return items
 
     def add_fields_to_embed(self, embed, data, parent_key=""):
         char_count = 0
         field_data = {} 
         field_order = [
-            'Origin',         
-            'Decision Deposit Amount', 
-            'Submission Deposit Amount', 
-            'Ending Block', 
-            'Confirming', 
-            'Confirming Since',
-            'Decision Deposit Who', 
-            'Submission Deposit Who',         
-            'Since', 
-            'Enactment After',
-            'Ayes', 
-            'Nays', 
-            'Support',
-            'Submitted'
+            'ORIGIN',         
+            'DECISION DEPOSIT AMOUNT', 
+            'SUBMISSION DEPOSIT AMOUNT', 
+            'ENDING BLOCK', 
+            'CONFIRMING', 
+            'CONFIRMING SINCE',
+            'DECISION DEPOSITER', 
+            'SUBMITTER',         
+            'SINCE', 
+            'ENACTMENT AFTER',
+            'AYES', 
+            'NAYS', 
+            'SUPPORT',
+            'SUBMITTED'
         ]
+        
+        flat_data = self.flatten_dict(data)
 
-        for key, value in data.items():
-            if parent_key == "comments" or key in ["Proposal Length" "Proposal Hash"]:
+        for key, value in flat_data.items():
+            if parent_key == "comments" or key in ["PROPOSAL LENGTH", "PROPOSAL HASH"]:
                 continue
             formatted_key = self.format_key(key, parent_key)
                 
             # Look up and add display name for specific keys
-            if formatted_key in ['Decision Deposit Who', 'Submission Deposit Who']:
-                display_name = self.get_display_name(address=value)
-                if display_name:
-                    value = f"[{display_name}](https://polkadot.subscan.io/account/{value})"
-                else:
-                    value = f"[{value}](https://polkadot.subscan.io/account/{value})"
-            if formatted_key == "Ending Block":
+            if self.is_valid_ss58_address(value) and len(value) < 50:
+                #print("add_fields_to_embed ",value)
+                identity = self.get_identity_or_super_identity(address=value)
+                print("identity ",identity)
+                display_name = identity['display']['Raw'] if identity and 'display' in identity else None
+                value = f"[{display_name if display_name else value}](https://polkadot.subscan.io/account/{value})"
+
+            if formatted_key == "ENDING BLOCK":
                 value = f"[{value[0]}](https://polkadot.subscan.io/block/{value[0]})"
                 
-            if formatted_key in ["Confirming Since", "Submitted"]:
+            if formatted_key in ["CONFIRMING SINCE", "SUBMITTED"]:
                 value = f"[{value}](https://polkadot.subscan.io/block/{value})"
 
-            if formatted_key == "Confirming":
+            if formatted_key == "CONFIRMING":
                 value = "True" if isinstance(value, int) or (isinstance(value, str) and value.isdigit()) else "False"
                 
-            if any(keyword in formatted_key for keyword in ["Ayes", "Nays", "Support"]):
-                value = "{:,.2f}".format(int(value) / self.config.TOKEN_DECIMAL)  # Add a dollar sign before the value
+            if any(keyword in formatted_key for keyword in ["AYES", "NAYS", "SUPPORT"]) and isinstance(value, (int, float, str)):
+                value = str("{:,.0f}".format(int(value) / self.config.TOKEN_DECIMAL))  # Add a dollar sign before the value
                 
-            if "Amount" in formatted_key:
-                value = "{:,.2f}".format(int(value) / self.config.TOKEN_DECIMAL)
+            if "AMOUNT" in formatted_key and isinstance(value, (int, float, str)):
+                value = "{:,.0f}".format(int(value) / self.config.TOKEN_DECIMAL)
                 value = f"{value} {self.config.SYMBOL}"# Add a dollar sign before the value
         
             
@@ -161,7 +252,6 @@ class OpenGovernance2:
 
             char_count = next_count
 
-        # Moved outside data loop
         for key in field_order:
             if key in field_data:
                 embed.add_field(name=key, value=field_data[key], inline=True)
