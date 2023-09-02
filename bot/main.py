@@ -170,7 +170,7 @@ async def lock_threads(threads_to_lock, user):
 
 
 
-@tasks.loop(hours=6)
+@tasks.loop(seconds=20)
 async def check_governance():
     """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
     referendum on a Discord channel with a specified ID, and adds reactions to the thread.
@@ -193,23 +193,17 @@ async def check_governance():
     """
     try:
         logging.info("Checking for new proposals")
-        opengov2 = OpenGovernance2(config, logger=logging)
+        opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
         
         # Get the guild object where the role is located
         guild = client.get_guild(config.DISCORD_SERVER_ID)
-        # Construct the role name based on the symbol in config
-        
-        # Find the role by its name
-        role = discord.utils.get(guild.roles, name=config.TAG_ROLE_NAME)
 
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
-            
+            channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
             current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
-            role = await create_or_get_role(guild, config.TAG_ROLE_NAME) 
-            # Get the guild object where the role is located
-            # Construct the role name based on the symbol in config
+                    
             referendum_info = opengov2.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
@@ -237,8 +231,8 @@ async def check_governance():
 
                     title = values['title'][:TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
 
-                    logging.info(f"Creating thread on Discord: {index}# {title}")
-
+                    logging.info(f"Creating thread on Discord: #{index} {title}")
+                    
                     try:                        
                         thread = await manage_discord_thread(
                             channel=channel,
@@ -345,6 +339,12 @@ async def check_governance():
         raise error
 
 
+@tasks.loop(seconds=10)
+async def sync_embeds():
+    
+    referendum_info = opengov2.referendumInfoFor()
+    print(referendum_info)
+
 @tasks.loop(hours=1)
 async def recheck_proposals():
     """
@@ -365,9 +365,9 @@ async def recheck_proposals():
     - Saves the updated proposal data to the JSON file.
     - Logs the successful update of the proposals' data.
     """
-    logging.info("Checking past proposals where title/content is None to populate them with relevant data")
+    logging.info("Checking past proposals where title/content is None")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
-    opengov2 = OpenGovernance2(config, logger=logging)
+    #opengov2 = OpenGovernance2(config)
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
@@ -409,7 +409,7 @@ if __name__ == '__main__':
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
-    permission_checker = PermissionCheck(logging)
+    permission_checker = PermissionCheck()
     #db_params = {
     #    'dbname': config.DB_NAME,
     #    'user': config.DB_USER,
@@ -432,10 +432,10 @@ if __name__ == '__main__':
     
     @client.event
     async def on_ready():
-        print(f"Logged in as {client.user} (ID: {client.user.id})")
-        print("Connected to the following servers:")
+        #print(f"Logged in as {client.user} (ID: {client.user.id})")
+        #print("Connected to the following servers:")
         for server in client.guilds:
-            print(f"- {server.name} (ID: {server.id})")
+            #print(f"- {server.name} (ID: {server.id})")
             # Check permissions for the bot to read/write to the forum channel
             await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID) 
 
@@ -445,6 +445,8 @@ if __name__ == '__main__':
         if not recheck_proposals.is_running():
             recheck_proposals.start()
             
+        #if not sync_embeds().is_running():
+        #    sync_embeds.start()
     
     @client.tree.command()
     @app_commands.choices(action=[
