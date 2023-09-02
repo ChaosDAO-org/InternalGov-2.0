@@ -2,15 +2,16 @@ import yaml
 import json
 import requests
 import aiohttp
+import logging
 from typing import Union, Any
 from utils.data_processing import CacheManager
+from logging.handlers import TimedRotatingFileHandler
 from substrateinterface import SubstrateInterface
 
 class OpenGovernance2:
-    def __init__(self, config, logger):
+    def __init__(self, config):
         self.config = config
         self.util = CacheManager
-        self.logger = logger
         self.substrate = SubstrateInterface(
             url=self.config.SUBSTRATE_WSS,
             type_registry_preset=self.config.NETWORK_NAME
@@ -150,7 +151,7 @@ class OpenGovernance2:
             next_count = char_count + len(str(formatted_key)) + len(str(value))
 
             if next_count > 6000:
-                print("Stopping due to char limit")
+                logging.info("Stopping due to char limit")
                 break
 
             if isinstance(value, dict):
@@ -220,7 +221,7 @@ class OpenGovernance2:
                             break
 
                 except aiohttp.ClientResponseError as http_error:
-                    print(f"HTTP exception occurred while accessing {url}: {http_error}")
+                    logging.error(f"HTTP exception occurred while accessing {url}: {http_error}")
 
         if successful_response is None:
             return {"title": "None",
@@ -266,7 +267,7 @@ class OpenGovernance2:
             # Get the current block number
             current_block = self.substrate.get_block_number(block_hash=self.substrate.block_hash)
             if target_block <= current_block:
-                self.logger.info("The target block has already been reached.")
+                logging.info("The target block has already been reached.")
                 return False
 
             # Calculate the difference in blocks
@@ -284,7 +285,7 @@ class OpenGovernance2:
             return int(minutes)
 
         except Exception as error:
-            self.logger.error( f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
+            logging.error( f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
 
     async def check_referendums(self):
         """
