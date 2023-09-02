@@ -170,7 +170,7 @@ async def lock_threads(threads_to_lock, user):
 
 
 
-@tasks.loop(seconds=20)
+@tasks.loop(hours=6)
 async def check_governance():
     """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
     referendum on a Discord channel with a specified ID, and adds reactions to the thread.
