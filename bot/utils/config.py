@@ -17,11 +17,11 @@ class Config:
             self.SYMBOL = os.getenv('SYMBOL') or self.raise_error("Missing SYMBOL")
             self.TAG_ROLE_NAME = f"{os.getenv('SYMBOL')}-GOV" or self.raise_error("Missing SYMBOL")
             self.TOKEN_DECIMAL = float(os.getenv('TOKEN_DECIMAL') or self.raise_error("Missing TOKEN_DECIMAL"))
-            self.DB_NAME = os.getenv('DB_NAME') or self.raise_error("Missing DB_NAME")
-            self.DB_USER = os.getenv('DB_USER') or self.raise_error("Missing DB_USER")
-            self.DB_PASSWORD = os.getenv('DB_PASSWORD') or self.raise_error("Missing DB_PASSWORD")
-            self.DB_HOST = os.getenv('DB_HOST') or self.raise_error("Missing DB_HOST")
-            self.DB_PORT = os.getenv('DB_PORT') or self.raise_error("Missing DB_PORT")
+#            self.DB_NAME = os.getenv('DB_NAME') or self.raise_error("Missing DB_NAME")
+#            self.DB_USER = os.getenv('DB_USER') or self.raise_error("Missing DB_USER")
+#            self.DB_PASSWORD = os.getenv('DB_PASSWORD') or self.raise_error("Missing DB_PASSWORD")
+#            self.DB_HOST = os.getenv('DB_HOST') or self.raise_error("Missing DB_HOST")
+#            self.DB_PORT = os.getenv('DB_PORT') or self.raise_error("Missing DB_PORT")
             
         except ValueError as e:
             print(f"Error: {e}")
