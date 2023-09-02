@@ -278,27 +278,46 @@ async def check_governance():
                         if message.type == discord.MessageType.pins_add:
                             await message.delete()
 
-                    if guild is None:
-                        logging.error(f"Guild with ID {guild_id} not found")
-                    else:
-                        role = await create_or_get_role(guild, config.TAG_ROLE_NAME)
-                        if role:
-                            await channel_thread.send(content=
-                            f"||<@&{role.id}>||"
-                            f"\n**INSTRUCTIONS:**"
-                            f"\n- Vote **AYE** if you want to see this proposal pass"
-                            f"\n- Vote **NAY** if you want to see this proposal fail"
-                            f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
-                            )
                     
-                    results_message_id = results_message.id
-
+                    if guild is None:
+                        logging.error(f"Guild not found")
+                    else:
+                        try:
+                            role = await create_or_get_role(guild, config.TAG_ROLE_NAME)
+                            if role:
+                                await channel_thread.send(content=
+                                f"||<@&{role.id}>||"
+                                f"\n**INSTRUCTIONS:**"
+                                f"\n- Vote **AYE** if you want to see this proposal pass"
+                                f"\n- Vote **NAY** if you want to see this proposal fail"
+                                f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
+                                )
+                                logging.info(f"Vote results message added instruction message added for {index}")
+                        except Exception as error:
+                            logging.error(f"An unexpected error occurred: {error}")
+                    
+                    #results_message_id = results_message.id
                     message_id = thread.message.id
                     voting_buttons = ButtonHandler(client, message_id)
-                    logging.info(f"Vote results message added: {message_id}")
-                    #embed = Embed(color=0x00ff00)
-                    #embed = opengov2.add_fields_to_embed(embed, referendum_info[index])
-                    await thread.message.edit(view=voting_buttons)  # Update the thread message with the new #await thread.message.edit(embed=embed, view=voting_buttons) # Disabled the embed for now
+                    
+                    general_info_embed = Embed(color=0x00ff00)
+                    polkasembly_info_embed = Embed(color=0x00ff00)
+                    
+                    try:
+                        
+                        # Add fields to embed
+                        general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
+                        passembly_call_data = opengov2.extract_and_embed(values, polkasembly_info_embed)
+                        
+                        await channel_thread.send(embed=passembly_call_data)
+                        # Edit the message
+                        await thread.message.edit(view=voting_buttons, embed=general_info)
+                        #await channel_thread.send(view=initial_results_message,view=external_links)
+                    except Exception as e:
+                        # Log the exception
+                        logging.error(f"An error occurred: {e}")
+                        
+
 
 
                 except discord.errors.Forbidden as forbidden:
@@ -310,6 +329,15 @@ async def check_governance():
                 except Exception as error:
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
+                
+        # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
+        # lock threads once archived (prevents regular users from continuing to vote).
+        threads_to_lock = CacheManager.delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
+        if threads_to_lock:
+            try:
+                await lock_threads(threads_to_lock, client.user)
+            except Exception as e:
+                logging.error(f"Failed to lock threads: {threads_to_lock}. Error: {e}")
         else:
             logging.info("0 proposals found since last checking")
     except Exception as error:
