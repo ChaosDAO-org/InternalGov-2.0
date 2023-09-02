@@ -302,8 +302,9 @@ async def check_governance():
                         # Add fields to embed
                         general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
                         passembly_call_data = opengov2.extract_and_embed(values, polkasembly_info_embed)
-                        
+                        await asyncio.sleep(0.5)
                         await channel_thread.send(embed=passembly_call_data)
+                        await asyncio.sleep(0.5)
                         # Edit the message
                         await thread.message.edit(view=voting_buttons, embed=general_info)
                         #await channel_thread.send(view=initial_results_message,view=external_links)
@@ -339,11 +340,11 @@ async def check_governance():
         raise error
 
 
-@tasks.loop(seconds=10)
-async def sync_embeds():
-    
-    referendum_info = opengov2.referendumInfoFor()
-    print(referendum_info)
+#@tasks.loop(seconds=10)
+#async def sync_embeds():
+#    
+#    referendum_info = opengov2.referendumInfoFor()
+#    print(referendum_info)
 
 @tasks.loop(hours=1)
 async def recheck_proposals():
