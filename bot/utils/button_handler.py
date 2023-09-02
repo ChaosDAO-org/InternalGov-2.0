@@ -10,8 +10,7 @@ class ButtonHandler(View):
         self.message_id = message_id
         self.add_item(Button(label="AYE", custom_id="aye_button", style=discord.ButtonStyle.green, emoji="👍"))
         self.add_item(Button(label="NAY", custom_id="nay_button", style=discord.ButtonStyle.red, emoji="👎"))
-        #custom_emoji = PartialEmoji(name="0xTaylor", id=916267559479824395)
-        self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary, emoji="⛔️"))
+        self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary, emoji="\u26d4"))
     
 
     async def on_aye_button(self, interaction: discord.Interaction):
@@ -34,6 +33,6 @@ class ExternalLinkButton(View):
         self.index = index
         self.network_name = network_name        
         # External link buttons on row 1
-        self.add_item(Button(label="Polkassembly", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.polkassembly.io/referenda/{self.index}"))
         self.add_item(Button(label="Subsquare", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.subsquare.io/referenda/referendum/{self.index}"))
+        self.add_item(Button(label="Polkassembly", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.polkassembly.io/referenda/{self.index}"))
         self.add_item(Button(label="Subscan", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.subscan.io/referenda_v2/{self.index}"))

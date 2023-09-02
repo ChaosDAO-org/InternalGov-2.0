@@ -161,24 +161,24 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             json.dump(self.vote_counts, file, indent=4)
 
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
-        print(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
-        print(f"Channel type: {type(channel)}, attributes: {dir(channel)}") 
+        logging.info(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
+        logging.info(f"Channel type: {type(channel)}, attributes: {dir(channel)}") 
 
         for message_id in message_ids:
-            print(f"Fetching message with ID {message_id}")
+            logging.info(f"Fetching message with ID {message_id}")
 
             message = channel.get_thread(message_id)
             if message is None:
-                print(f"Error: Could not find thread for message ID {message_id}")
+                logging.error(f"Error: Could not find thread for message ID {message_id}")
                 continue
 
             view = message.view
-            print(f"Current view: {view}")
+            logging.info(f"Current view: {view}")
 
-            print(f"Editing message with new view: {view}")
+            logging.info(f"Editing message with new view: {view}")
             await message.edit(view=view)
 
-        print("Finished setting buttons lock status")
+        logging.info("Finished setting buttons lock status")
 
     async def lock_threads_by_message_ids(self, guild_id, message_ids):
         """

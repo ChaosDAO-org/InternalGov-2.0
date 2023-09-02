@@ -9,13 +9,22 @@ import markdownify
 class Text:
     @staticmethod
     def convert_markdown_to_discord(markdown_text):
-        base_url = "https://polkadot.subsquare.io/referenda/referendum/"
+        base_url = "https://polkadot.polkassembly.io/"
+
         def replacer_link(match):
             link_text = match.group(1)
             url = match.group(2)
-            if url.isdigit():  # If the URL is just a positive integer
-                url = base_url + url
-            return f'[{link_text}]({url})'  # Updated to use the desired format
+
+            # Check if the URL is relative
+            if url.startswith("../"):
+                # Construct the absolute URL
+                url = base_url + url[3:]
+
+            # If the URL is just a positive integer, it's considered relative
+            elif url.isdigit():
+                url = base_url + "referenda/referendum/" + url
+
+            return f'[{link_text}]({url})'
 
         def replacer_image(match):
             url = match.group(1)
@@ -24,10 +33,9 @@ class Text:
         markdown_text = markdownify.markdownify(markdown_text)
         markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer_link, markdown_text)
         markdown_text = re.sub(r'!\[[^\]]*\]\(([^)]+)\)', replacer_image, markdown_text)
-        markdown_text = re.sub(r'(?:\s*\n){3,}', '\n\n', markdown_text) # Replace three or more newlines with optional spaces with just one newline
-        markdown_text = markdown_text.rstrip('\n') # Remove trailing line breaks
+        markdown_text = re.sub(r'(?:\s*\n){3,}', '\n\n', markdown_text)  # Replace three or more newlines with optional spaces with just one newline
+        markdown_text = markdown_text.rstrip('\n')  # Remove trailing line breaks
 
-        # Return the modified text.
         return markdown_text
 
 class CacheManager:
@@ -58,7 +66,6 @@ class CacheManager:
         # use DeepDiff to check if any values have changed since we ran has_commission_updated().
         difference = deepdiff.DeepDiff(cached_data, data, ignore_order=True).to_json()
         result = json.loads(difference)
-
         if len(result) == 0:
             return {}
         else:
