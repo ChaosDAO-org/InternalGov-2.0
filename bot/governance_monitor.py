@@ -360,19 +360,19 @@ class GovernanceMonitor(discord.Client):
                 self.vote_counts[message_id]["users"][str(user_id)] = {"username": username,
                                                                        "vote_type": vote_type}
                 self.save_vote_counts()
-                # Disabling db handler for now.
-                #                vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
-                #                already_voted, previous_vote = self.db_handler.sync_vote(message_id, user_id, vote_id, username)
-                #
-                #                if already_voted and previous_vote == vote_id:
-                #                    await interaction.response.send_message(
-                #                        f"Your vote of **{self.db_handler.vote_options[vote_id]}** has already been recorded. To change it, select an alternative option.",
-                #                        ephemeral=True)
-                #                    await asyncio.sleep(5)
-                #                    return
-                #
-                #                # Fetch updated vote counts from the database for this message
-                #                aye_count, nay_count, recuse_count = self.db_handler.fetch_vote_counts_from_db(message_id)
+# Disabling db handler for now.
+#                vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
+#                already_voted, previous_vote = self.db_handler.sync_vote(message_id, user_id, vote_id, username)
+#
+#                if already_voted and previous_vote == vote_id:
+#                    await interaction.response.send_message(
+#                        f"Your vote of **{self.db_handler.vote_options[vote_id]}** has already been recorded. To change it, select an alternative option.",
+#                        ephemeral=True)
+#                    await asyncio.sleep(5)
+#                    return
+#
+#                # Fetch updated vote counts from the database for this message
+#                aye_count, nay_count, recuse_count = self.db_handler.fetch_vote_counts_from_db(message_id)
 
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
@@ -414,7 +414,7 @@ class GovernanceMonitor(discord.Client):
             print(f"An error occurred: {exc}")
 
     # Synchronize the app commands to one guild.
-# async def setup_hook(self):
-#     # This copies the global commands over to your guild.
-#     self.tree.copy_global_to(guild=self.guild)
-#     await self.tree.sync(guild=self.guild)
+#   async def setup_hook(self):
+#       # This copies the global commands over to your guild.
+#       self.tree.copy_global_to(guild=self.guild)
+#       await self.tree.sync(guild=self.guild)
