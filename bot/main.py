@@ -82,7 +82,17 @@ async def create_or_get_role(guild, role_name):
         logging.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
         raise  # You can raise the exception or return None based on your use case
 
-async def manage_discord_thread(channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
+async def manage_discord_thread(
+        channel, 
+        operation, 
+        title, 
+        index, 
+        requested_spend, 
+        content, 
+        governance_tag, 
+        message_id, 
+        client
+    ):
     thread = None
     char_exceed_msg = "\n```For more insights, visit the provided links below.```"
     content = Text.convert_markdown_to_discord(content) if content is not None else None
@@ -192,20 +202,12 @@ async def check_governance():
         
         # Find the role by its name
         role = discord.utils.get(guild.roles, name=config.TAG_ROLE_NAME)
-        # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
-        # lock threads once archived (prevents regular users from continuing to vote).
-        threads_to_lock = CacheManager.delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
-        if threads_to_lock:
-            try:
-                await lock_threads(threads_to_lock, client.user)
-            except Exception as e:
-                logging.error(f"Failed to lock threads: {threads_to_lock}. Error: {e}")
 
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
-            channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+            
             current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
-                    
+            role = await create_or_get_role(guild, config.TAG_ROLE_NAME) 
             # Get the guild object where the role is located
             # Construct the role name based on the symbol in config
             referendum_info = opengov2.referendumInfoFor()
@@ -238,7 +240,17 @@ async def check_governance():
                     logging.info(f"Creating thread on Discord: {index}# {title}")
 
                     try:                        
-                        thread = await manage_discord_thread(channel, 'create', title, index, requested_spend, values['content'], governance_tag, message_id=None, client=client)
+                        thread = await manage_discord_thread(
+                            channel=channel,
+                            operation='create',
+                            title=title,
+                            index=index,
+                            requested_spend=requested_spend,
+                            content=values['content'],
+                            governance_tag=governance_tag,
+                            message_id=None,
+                            client=client
+                        )
                         logging.info(f"Thread created: {thread.message.id}")
                     except Exception as e:
                         logging.error(f"Failed to create thread: {e}")
@@ -346,7 +358,17 @@ async def recheck_proposals():
             logging.info(f"Editing discord thread with title + content: {proposal_index}# {title}")
             
             try:
-                await manage_discord_thread(channel, 'edit', title, proposal_index, requested_spend, opengov['content'], "", message_id=message_id, client=client)
+                await manage_discord_thread(
+                    channel=channel, 
+                    operation='edit', 
+                    title=title, 
+                    index=proposal_index, 
+                    requested_spend=requested_spend, 
+                    content=opengov['content'], 
+                    governance_tag="", 
+                    message_id='', 
+                    client=client
+                    )
                 logging.info(f"Title updated from None -> {title} in vote_counts.json")
                 logging.info(f"Discord thread successfully amended")
             except Exception as e:
