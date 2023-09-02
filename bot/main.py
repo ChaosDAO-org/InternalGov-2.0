@@ -26,21 +26,23 @@ def get_requested_spend(data, current_price):
     requested_spend = ""
     
     if data.get('title') != 'None':
-        if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
-            if data['proposed_call']['method'] == 'spend':
-                amount = int(data['proposed_call']['args']['amount']) / float(config.TOKEN_DECIMAL)
-                requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-        
-        elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
-            if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
-                amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(config.TOKEN_DECIMAL)
-                requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-        
-        else:
-            logging.error("Unable to pull information from data sources")
+        try:
+            if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
+                if data['proposed_call']['method'] == 'spend':
+                    amount = int(data['proposed_call']['args']['amount']) / float(config.TOKEN_DECIMAL)
+                    requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+            elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
+                if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
+                    amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(config.TOKEN_DECIMAL)
+                    requested_spend = f"```markdown\n{config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+            else:
+                logging.error("Data does not match any known sources")
+                requested_spend = ""
+        except Exception as e:
+            logging.error(f"Unable to pull information from data sources due to: {e}")
             requested_spend = ""
     else:
-        logging.error("Title is None. Unable to pull information from data sources")
+        logging.error("Title: None")
         requested_spend = ""
     
     return requested_spend
