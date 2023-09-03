@@ -1,11 +1,7 @@
-import yaml
 import json
-import requests
 import aiohttp
 import logging
-from typing import Union, Any
 from utils.data_processing import CacheManager
-from logging.handlers import TimedRotatingFileHandler
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
 
@@ -15,7 +11,8 @@ class OpenGovernance2:
         self.config = config
         self.util = CacheManager
         self.substrate = SubstrateInterface(
-            url=self.config.SUBSTRATE_WSS
+            url=self.config.SUBSTRATE_WSS,
+            type_registry_preset=self.config.NETWORK_NAME
         )
 
     def referendumInfoFor(self, index=None):
