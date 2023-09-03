@@ -1,0 +1,77 @@
+{
+  "Root": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "WhitelistedCaller": {
+    "decision_period": 14,
+    "internal_vote_period": 3,
+    "revote_period": 10
+  },
+  "StakingAdmin": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "Treasurer": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "LeaseAdmin": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "FellowshipAdmin": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "GeneralAdmin": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "AuctionAdmin": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "ReferendumCanceller": {
+    "decision_period": 7,
+    "internal_vote_period": 2,
+    "revote_period": 4
+  },
+  "ReferendumKiller": {
+    "decision_period": 14,
+    "internal_vote_period": 2,
+    "revote_period": 10
+  },
+  "SmallTipper": {
+    "decision_period": 7,
+    "internal_vote_period": 1,
+    "revote_period": 4
+  },
+  "BigTipper": {
+    "decision_period": 7,
+    "internal_vote_period": 1,
+    "revote_period": 4
+  },
+  "SmallSpender": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "MediumSpender": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  },
+  "BigSpender": {
+    "decision_period": 14,
+    "internal_vote_period": 5,
+    "revote_period": 10
+  }
+}
