@@ -389,8 +389,6 @@ class OpenGovernance2:
         results = self.util.get_cache_difference(filename='../data/governance.cache', data=referendum_info)
         self.util.save_data_to_cache(filename='../data/governance.cache', data=referendum_info)
 
-        print(self.config.NETWORK_NAME)
-
         if results:
             for key, value in results.items():
                 if 'added' in key:
