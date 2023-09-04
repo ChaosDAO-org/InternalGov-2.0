@@ -256,6 +256,14 @@ class OpenGovernance2:
 
         return embed
 
+    def find_msgid_by_index(self, cache_data, json_data):
+        output = {}
+        for index in cache_data.keys():
+            key_name = next((key for key, item in json_data.items() if item['index'] == index), None)
+            if key_name:
+                output[index] = key_name
+        return output
+
     @staticmethod
     async def fetch_referendum_data(referendum_id: int, network: str):
         """
