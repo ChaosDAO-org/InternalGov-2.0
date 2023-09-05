@@ -8,11 +8,10 @@ import sys
 from logging.handlers import TimedRotatingFileHandler
 from discord.ext import tasks
 from discord import app_commands
-import interactions
 
 
-class GovernanceMonitor(discord.Client, interactions.Client):
-    def __init__(self, guild,  discord_role, permission_checker):
+class GovernanceMonitor(discord.Client):
+    def __init__(self, guild, discord_role, permission_checker):
         super().__init__(intents=None)
         self.button_cooldowns = {}
         self.discord_role = discord_role
@@ -20,12 +19,10 @@ class GovernanceMonitor(discord.Client, interactions.Client):
         self.permission_checker = permission_checker
         self.tree = app_commands.CommandTree(self)
         self.vote_counts = self.load_vote_counts()
-        
 
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
-        await self.tree.sync(guild=self.guild)        
-    
+        await self.tree.sync(guild=self.guild)
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -162,7 +159,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
 
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
         logging.info(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
-        logging.info(f"Channel type: {type(channel)}, attributes: {dir(channel)}") 
+        logging.info(f"Channel type: {type(channel)}, attributes: {dir(channel)}")
 
         for message_id in message_ids:
             logging.info(f"Fetching message with ID {message_id}")
@@ -327,7 +324,6 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             current_time = time.time()
             cooldown_time = self.button_cooldowns.get(user_id, 0) + 2
 
-
             if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
                 self.vote_counts = self.load_vote_counts()
                 self.button_cooldowns[user_id] = current_time
@@ -388,15 +384,15 @@ class GovernanceMonitor(discord.Client, interactions.Client):
                     results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
                 new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
-                                    f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
+                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
                 await results_message.edit(content=new_results_message)
-                
+
                 # Acknowledge the vote and delete the message 10 seconds later
                 # (this notification is only visible to the user that interacts with AYE, NAY
                 await interaction.response.send_message(
                     f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
-                await asyncio.sleep(60*60*24*14)
+                await asyncio.sleep(60 * 60 * 24 * 14)
                 # await interaction.delete_original_response()
             else:
                 # Block the user from pressing the AYE, NAY to prevent unnecessary spam
@@ -410,7 +406,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
 
     async def on_error(self, event, *args, **kwargs):
         _, exc = sys.exc_info()
-        
+
         if isinstance(exc, HTTPException) and exc.status == 429:
             print(f"We are being rate-limited. Waiting for {exc.retry_after} seconds.")
         else:
@@ -418,7 +414,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             print(f"An error occurred: {exc}")
 
     # Synchronize the app commands to one guild.
-  # async def setup_hook(self):
-  #     # This copies the global commands over to your guild.
-  #     self.tree.copy_global_to(guild=self.guild)
-  #     await self.tree.sync(guild=self.guild)
+#   async def setup_hook(self):
+#       # This copies the global commands over to your guild.
+#       self.tree.copy_global_to(guild=self.guild)
+#       await self.tree.sync(guild=self.guild)
