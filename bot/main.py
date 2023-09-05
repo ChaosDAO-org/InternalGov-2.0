@@ -159,6 +159,29 @@ async def lock_threads(threads_to_lock, user):
         logging.error(f"An error occurred while locking threads: {str(e)}")
 
 
+@tasks.loop(minutes=15)   
+async def sync_embeds():
+    referendum_info = opengov2.referendumInfoFor()
+    json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
+    if json_data:
+        index_msgid = opengov2.find_msgid_by_index(referendum_info, json_data)
+    else:
+        logging.error("No data found in vote_counts.json")
+        return None
+    for index, message_id in index_msgid.items():
+        thread = client.get_channel(int(message_id))
+        if thread is not None:
+            async for message in thread.history(oldest_first=True, limit=1):
+                if referendum_info[index]['Ongoing']['tally']['ayes'] >= referendum_info[index]['Ongoing']['tally']['nays']:
+                    general_info_embed = Embed(color=0x00FF00)
+                else:
+                    general_info_embed = Embed(color=0xFF0000)
+                general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
+                await message.edit(embed=general_info)
+        else:
+            logging.error(f"Thread with index {index} - {message_id} not found.")
+
+
 @tasks.loop(hours=6)
 async def check_governance():
     """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
@@ -182,7 +205,6 @@ async def check_governance():
     """
     try:
         logging.info("Checking for new proposals")
-        opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
 
         # Get the guild object where the role is located
@@ -281,10 +303,10 @@ async def check_governance():
                     # results_message_id = results_message.id
                     message_id = thread.message.id
                     voting_buttons = ButtonHandler(client, message_id)
-
-                    general_info_embed = Embed(color=0x00ff00)
-                    polkasembly_info_embed = Embed(color=0x00ff00)
-
+                    
+                    general_info_embed = Embed(color=0x00FF00)
+                    polkasembly_info_embed = Embed(color=0xFFFFFF)
+                    
                     try:
 
                         # Add fields to embed
@@ -295,7 +317,6 @@ async def check_governance():
                         await asyncio.sleep(0.5)
                         # Edit the message
                         await thread.message.edit(view=voting_buttons, embed=general_info)
-                        # await channel_thread.send(view=initial_results_message,view=external_links)
                     except Exception as e:
                         # Log the exception
                         logging.error(f"An error occurred: {e}")
@@ -325,12 +346,6 @@ async def check_governance():
         raise error
 
 
-# @tasks.loop(seconds=10)
-# async def sync_embeds():
-#    
-#    referendum_info = opengov2.referendumInfoFor()
-#    print(referendum_info)
-
 @tasks.loop(hours=1)
 async def recheck_proposals():
     """
@@ -353,7 +368,6 @@ async def recheck_proposals():
     """
     logging.info("Checking past proposals where title/content is None")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
-    opengov2 = OpenGovernance2(config)
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
@@ -393,6 +407,7 @@ async def recheck_proposals():
 
 if __name__ == '__main__':
     config = Config()
+    opengov2 = OpenGovernance2(config)
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
@@ -421,22 +436,16 @@ if __name__ == '__main__':
 
     @client.event
     async def on_ready():
-        # print(f"Logged in as {client.user} (ID: {client.user.id})")
-        # print("Connected to the following servers:")
         for server in client.guilds:
-            # print(f"- {server.name} (ID: {server.id})")
-            # Check permissions for the bot to read/write to the forum channel
             await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID)
-
+        if not sync_embeds.is_running():
+            sync_embeds.start()
+        
         if not check_governance.is_running():
             check_governance.start()
 
         if not recheck_proposals.is_running():
             recheck_proposals.start()
-
-        # if not sync_embeds().is_running():
-        #    sync_embeds.start()
-
 
     @client.tree.command()
     @app_commands.choices(action=[
@@ -468,14 +477,16 @@ if __name__ == '__main__':
     try:
         client.run(config.DISCORD_API_KEY)
     except KeyboardInterrupt:
-        # Perform your cleanup here
         print("KeyboardInterrupt caught, cleaning up...")
+        
+        if check_governance.is_running():
+            check_governance.stop()
 
-        # Close any aiohttp.ClientSession, database connections, etc.
-        # If you're running any asyncio loops, make sure to stop them as well.
+        if recheck_proposals.is_running():
+            recheck_proposals.stop()
 
-        # For example, if you have an aiohttp client session:
-        # await session.close()
+        if sync_embeds.is_running():
+            sync_embeds.stop()
 
     except Exception as e:
         # Log any other exceptions
