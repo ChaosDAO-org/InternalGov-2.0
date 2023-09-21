@@ -6,16 +6,14 @@ from utils.config import Config
 from utils.logger import Logger
 from utils.gov2 import OpenGovernance2
 from governance_monitor import GovernanceMonitor
-from utils.data_processing import CacheManager, Text
+from utils.data_processing import CacheManager, Text, DiscordFormatting
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
 from discord import app_commands, Embed
 from discord.ext import tasks
-#import psycopg2
-#from psycopg2 import extras
-#from logging.handlers import TimedRotatingFileHandler
-#from utils.database_handler import DatabaseHandler
+
+discord_format = DiscordFormatting()
 
 
 def get_requested_spend(data, current_price):
@@ -159,15 +157,34 @@ async def lock_threads(threads_to_lock, user):
         logging.error(f"An error occurred while locking threads: {str(e)}")
 
 
-@tasks.loop(minutes=15)   
+@tasks.loop(hours=1)
 async def sync_embeds():
+    """
+    This asynchronous function is designed to run every hour to synchronize embeds on discord threads.
+    It interacts with OpenGovernance2 to retrieve referendum information and loads cached vote
+    counts from a local JSON file.
+
+    It then logs the synchronization process, finds message IDs by index from the
+    referendum info, and updates the embeds in the relevant Discord threads with the
+    new information.
+
+    Side Effects:
+        - Updates Discord embeds in threads with new information and potentially new colors.
+        - Logs information, errors, and completion status of the synchronization process.
+        - Edits messages in Discord with new views and embeds.
+    """
+    opengov2 = OpenGovernance2(config)
     referendum_info = opengov2.referendumInfoFor()
     json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
+
+    logging.info("Synchronizing embeds")
     if json_data:
-        index_msgid = opengov2.find_msgid_by_index(referendum_info, json_data)
+        index_msgid = discord_format.find_msgid_by_index(referendum_info, json_data)
     else:
         logging.error("No data found in vote_counts.json")
         return None
+
+    logging.info(f"Updating {len(index_msgid)} embeds")
     for index, message_id in index_msgid.items():
         thread = client.get_channel(int(message_id))
         if thread is not None:
@@ -176,13 +193,18 @@ async def sync_embeds():
                     general_info_embed = Embed(color=0x00FF00)
                 else:
                     general_info_embed = Embed(color=0xFF0000)
-                general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
-                await message.edit(embed=general_info)
+                general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
+                voting_buttons = ButtonHandler(client, message_id)
+
+                await message.edit(view=voting_buttons, embed=general_info)
+                logging.info(f"Successfully synchronized {message_id}")
+                await asyncio.sleep(10)
         else:
             logging.error(f"Thread with index {index} - {message_id} not found.")
+    logging.info("synchronization complete")
 
 
-@tasks.loop(hours=6)
+@tasks.loop(hours=4)
 async def check_governance():
     """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
     referendum on a Discord channel with a specified ID, and adds reactions to the thread.
@@ -205,6 +227,7 @@ async def check_governance():
     """
     try:
         logging.info("Checking for new proposals")
+        opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
 
         # Get the guild object where the role is located
@@ -237,7 +260,7 @@ async def check_governance():
                         #  get_requested_spend handles the differences in returned JSON between Polkassembly & Subsquare
                         requested_spend = get_requested_spend(values, current_price)
                     else:
-                        logging.error(f"No value: ", values['successful_url'])
+                        logging.error(f"No value: {values['successful_url']}")
                         requested_spend = ""
 
                     title = values['title'][:TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
@@ -276,8 +299,10 @@ async def check_governance():
                     client.save_vote_counts()
                     external_links = ExternalLinkButton(index, config.NETWORK_NAME)
                     results_message = await channel_thread.send(content=initial_results_message, view=external_links)
+
                     await thread.message.pin()
                     await results_message.pin()
+
                     # Searches the last 5 messages
                     async for message in channel_thread.history(limit=5):
                         if message.type == discord.MessageType.pins_add:
@@ -303,18 +328,19 @@ async def check_governance():
                     # results_message_id = results_message.id
                     message_id = thread.message.id
                     voting_buttons = ButtonHandler(client, message_id)
-                    
+
                     general_info_embed = Embed(color=0x00FF00)
                     polkasembly_info_embed = Embed(color=0xFFFFFF)
-                    
+
                     try:
 
                         # Add fields to embed
-                        general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
-                        passembly_call_data = opengov2.extract_and_embed(values, polkasembly_info_embed)
+                        general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
+                        passembly_call_data = await discord_format.extract_and_embed(values, polkasembly_info_embed)
                         await asyncio.sleep(0.5)
                         await channel_thread.send(embed=passembly_call_data)
                         await asyncio.sleep(0.5)
+
                         # Edit the message
                         await thread.message.edit(view=voting_buttons, embed=general_info)
                     except Exception as e:
@@ -368,6 +394,7 @@ async def recheck_proposals():
     """
     logging.info("Checking past proposals where title/content is None")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
+    opengov2 = OpenGovernance2(config)
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
@@ -407,7 +434,6 @@ async def recheck_proposals():
 
 if __name__ == '__main__':
     config = Config()
-    opengov2 = OpenGovernance2(config)
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
@@ -438,14 +464,16 @@ if __name__ == '__main__':
     async def on_ready():
         for server in client.guilds:
             await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID)
-        if not sync_embeds.is_running():
-            sync_embeds.start()
-        
         if not check_governance.is_running():
             check_governance.start()
 
         if not recheck_proposals.is_running():
             recheck_proposals.start()
+
+        if not sync_embeds.is_running():
+            sync_embeds.start()
+
+
 
     @client.tree.command()
     @app_commands.choices(action=[
@@ -478,7 +506,7 @@ if __name__ == '__main__':
         client.run(config.DISCORD_API_KEY)
     except KeyboardInterrupt:
         print("KeyboardInterrupt caught, cleaning up...")
-        
+
         if check_governance.is_running():
             check_governance.stop()
 
@@ -491,3 +519,11 @@ if __name__ == '__main__':
     except Exception as e:
         # Log any other exceptions
         print(f"An error occurred: {e}")
+        if not check_governance.is_running():
+            check_governance.restart()
+
+        if not recheck_proposals.is_running():
+            recheck_proposals.restart()
+
+        if not sync_embeds.is_running():
+            sync_embeds.restart()
