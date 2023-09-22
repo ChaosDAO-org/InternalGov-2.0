@@ -1,10 +1,14 @@
+import re
 import os
 import time
 import json
-from typing import Dict, Any
 import deepdiff
-import re
 import markdownify
+from typing import Dict, Any
+from utils.config import Config
+from utils.subquery import SubstrateAPI
+from utils.logger import Logger
+
 
 class Text:
     @staticmethod
@@ -37,6 +41,7 @@ class Text:
         markdown_text = markdown_text.rstrip('\n')  # Remove trailing line breaks
 
         return markdown_text
+
 
 class CacheManager:
     @staticmethod
@@ -108,3 +113,169 @@ class CacheManager:
 
         # Return the list of archived keys
         return keys_to_delete
+
+
+class DiscordFormatting:
+    def __init__(self):
+        self.config = Config()
+        self.substrate = SubstrateAPI()
+        self.logging = Logger()
+
+    def format_key(self, key, parent_key):
+        try:
+            FIELD_NAME_MAP = {
+                "Ongoing.alarm": "ENDING BLOCK",
+                "Ongoing.deciding.confirming": "CONFIRMING",
+                "Ongoing.deciding.since": "CONFIRMING SINCE",
+                "Ongoing.decision_deposit.amount": "DECISION DEPOSIT AMOUNT",
+                "Ongoing.decision_deposit.who": "DECISION DEPOSITER",
+                "Ongoing.enactment.After": "ENACTMENT AFTER",
+                "Ongoing.in_queue": "IN QUEUE",
+                "Ongoing.origin.Origins": "ORIGIN",
+                "Ongoing.proposal.Lookup.hash": "PROPOSAL HASH",
+                "Ongoing.proposal.Lookup.len": "PROPOSAL LENGTH",
+                "Ongoing.submission_deposit.amount": "SUBMISSION DEPOSIT AMOUNT",
+                "Ongoing.submission_deposit.who": "SUBMITTER",
+                "Ongoing.submitted": "SUBMITTED",
+                "Ongoing.tally.ayes": "AYES",
+                "Ongoing.tally.nays": "NAYS",
+                "Ongoing.tally.support": "SUPPORT",
+                "Ongoing.track": "TRACK"
+            }
+
+            if isinstance(key, list):
+                key = ','.join(map(str, key))
+            if isinstance(parent_key, list):
+                parent_key = ','.join(map(str, parent_key))
+
+            full_key = f"{parent_key}.{key}" if parent_key else key
+            if full_key.startswith("args."):
+                full_key = full_key.replace("args.", "", 1)
+            formatted_key = FIELD_NAME_MAP.get(full_key, full_key)
+        except Exception as e:
+            # Handle or log error
+            self.logging.error(f"Error occurred: {e}")
+        return formatted_key.upper()
+
+    async def extract_and_embed(self, data, embed, parent_key=""):
+        if 'proposed_call' in data:
+            data = data['proposed_call']
+
+        for key, value in data.items():
+            new_key = f"{parent_key}.{key}" if parent_key else key
+            valid_address = await self.substrate.is_valid_ss58_address(address=value)
+            if valid_address and len(value) < 49:
+                display_name = await self.substrate.get_display_name(address=value)
+                # display_name = identity.get('display', {}).get('Raw', None)
+                value = f"[{display_name if display_name else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
+
+            if new_key == 'CALL.CALLS':
+                for idx, call_item in enumerate(value):
+                    for call_key, call_value in call_item.items():
+                        formatted_key = self.format_key(f"{call_key.upper()} {idx + 1}", parent_key)
+                        embed.add_field(name=formatted_key, value=call_value, inline=True)
+                continue
+
+            if key.upper() in ["AMOUNT", "FEE", "DECISION_DEPOSIT_AMOUNT"] and isinstance(value, (int, float, str)):
+                value = "{:,.0f}".format(int(value) / self.config.TOKEN_DECIMAL)
+                value = f"{value} {self.config.SYMBOL}"  # Add a dollar sign before the value
+
+            if isinstance(value, dict):
+                await self.extract_and_embed(value, embed, new_key)
+            else:
+                formatted_key = self.format_key(new_key, "")
+                if len(str(value)) > 255:
+                    value = str(value)[:252] + "..."
+                embed.add_field(name=formatted_key, value=value, inline=True)
+
+        return embed
+
+    def flatten_dict(self, data, parent_key='', sep='.'):
+        items = {}
+        for k, v in data.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.update(self.flatten_dict(v, new_key, sep=sep))
+            else:
+                items[new_key] = v
+        return items
+
+    async def add_fields_to_embed(self, embed, data, parent_key=""):
+        char_count = 0
+        field_data = {}
+        field_order = [
+            'ORIGIN',
+            'DECISION DEPOSIT AMOUNT',
+            'SUBMISSION DEPOSIT AMOUNT',
+            'ENDING BLOCK',
+            'CONFIRMING',
+            'CONFIRMING SINCE',
+            'DECISION DEPOSITER',
+            'SUBMITTER',
+            'SINCE',
+            'ENACTMENT AFTER',
+            'AYES',
+            'NAYS',
+            'SUPPORT',
+            'SUBMITTED'
+        ]
+
+        flat_data = self.flatten_dict(data)
+
+        for key, value in flat_data.items():
+            if parent_key == "comments" or key in ["PROPOSAL LENGTH", "PROPOSAL HASH"]:
+                continue
+            formatted_key = self.format_key(key, parent_key)
+
+            # Look up and add display name for specific keys
+            valid_address = await self.substrate.is_valid_ss58_address(address=value)
+            if valid_address and len(value) < 50:
+                identity = await self.substrate.get_identity_or_super_identity(address=value)
+                display_name = identity['display']['Raw'] if identity and 'display' in identity else None
+                value = f"[{display_name if display_name else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
+
+            if formatted_key == "ENDING BLOCK":
+                value = f"[{value[0]}](https://{self.config.NETWORK_NAME}.subscan.io/block/{value[0]})"
+
+            if formatted_key in ["CONFIRMING SINCE", "SUBMITTED"]:
+                value = f"[{value}](https://{self.config.NETWORK_NAME}.subscan.io/block/{value})"
+
+            if formatted_key == "CONFIRMING":
+                value = "True" if isinstance(value, int) or (isinstance(value, str) and value.isdigit()) else "False"
+
+            if any(keyword in formatted_key for keyword in ["AYES", "NAYS", "SUPPORT"]) and isinstance(value, (int, float, str)):
+                value = str("{:,.0f}".format(int(value) / self.config.TOKEN_DECIMAL))  # Add a dollar sign before the value
+
+            if "AMOUNT" in formatted_key and isinstance(value, (int, float, str)):
+                value = "{:,.0f}".format(int(value) / self.config.TOKEN_DECIMAL)
+                value = f"{value} {self.config.SYMBOL}"  # Add a dollar sign before the value
+
+            # print(f"Char count: {char_count}, Key: {formatted_key}, Value: {value}")  # Debug line
+
+            next_count = char_count + len(str(formatted_key)) + len(str(value))
+
+            if next_count > 6000:
+                self.logging.info("Stopping due to char limit")
+                break
+
+            if isinstance(value, dict):
+                embed = self.add_fields_to_embed(embed, value, formatted_key)
+            else:
+                field_data[formatted_key] = value
+
+            char_count = next_count
+
+        for key in field_order:
+            if key in field_data:
+                embed.add_field(name=key, value=field_data[key], inline=True)
+
+        return embed
+
+    @staticmethod
+    def find_msgid_by_index(cache_data, json_data):
+        output = {}
+        for index in cache_data.keys():
+            key_name = next((key for key, item in json_data.items() if item['index'] == index), None)
+            if key_name:
+                output[index] = key_name
+        return output
