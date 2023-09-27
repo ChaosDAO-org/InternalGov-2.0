@@ -69,22 +69,39 @@ class ProxyVoter:
             dict: The composed call for democracy voting.
         """
         try:
-            return self.substrate.compose_call(
-                call_module="ConvictionVoting",
-                call_function="vote",
-                call_params={
-                    "poll_index": proposal_index,
-                    "vote": {
-                        "Standard": {
-                            "balance": int(self.balance()),
-                            "vote": {
-                                f"{vote_type}": True,
-                                "conviction": conviction
+            if vote_type != 'abstain':
+                return self.substrate.compose_call(
+                    call_module="ConvictionVoting",
+                    call_function="vote",
+                    call_params={
+                        "poll_index": proposal_index,
+                        "vote": {
+                            "Standard": {
+                                "balance": int(self.balance()),
+                                "vote": {
+                                    f"{vote_type}": True,
+                                    "conviction": conviction
+                                }
                             }
                         }
                     }
-                }
-            )
+                )
+            else:
+                return self.substrate.compose_call(
+                    call_module="ConvictionVoting",
+                    call_function="vote",
+                    call_params={
+                        "poll_index": proposal_index,
+                        "vote": {
+                            "SplitAbstain": {
+                                f"{vote_type}": int(self.balance()),
+                                "aye": 0,
+                                "nay": 0
+                            }
+                        }
+                    }
+                )
+
         except SubstrateRequestException as e:
             print(f"Failed to compose democracy vote call: {e}")
             return None
