@@ -118,7 +118,7 @@ class CacheManager:
 class DiscordFormatting:
     def __init__(self):
         self.config = Config()
-        self.substrate = SubstrateAPI()
+        self.substrate = SubstrateAPI(self.config)
         self.logging = Logger()
 
     def format_key(self, key, parent_key):
@@ -165,7 +165,7 @@ class DiscordFormatting:
             new_key = f"{parent_key}.{key}" if parent_key else key
             valid_address = await self.substrate.is_valid_ss58_address(address=value)
             if valid_address and len(value) < 49:
-                display_name = await self.substrate.get_display_name(address=value)
+                display_name = await self.substrate.check_identity(address=value, network=self.config.NETWORK_NAME)
                 # display_name = identity.get('display', {}).get('Raw', None)
                 value = f"[{display_name if display_name else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
 
@@ -230,9 +230,9 @@ class DiscordFormatting:
             # Look up and add display name for specific keys
             valid_address = await self.substrate.is_valid_ss58_address(address=value)
             if valid_address and len(value) < 50:
-                identity = await self.substrate.get_identity_or_super_identity(address=value)
-                display_name = identity['display']['Raw'] if identity and 'display' in identity else None
-                value = f"[{display_name if display_name else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
+                identity = await self.substrate.check_identity(address=value, network=self.config.NETWORK_NAME)
+                #display_name = identity['display']['Raw'] if identity and 'display' in identity else None
+                value = f"[{identity if identity else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
 
             if formatted_key == "ENDING BLOCK":
                 value = f"[{value[0]}](https://{self.config.NETWORK_NAME}.subscan.io/block/{value[0]})"
