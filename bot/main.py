@@ -173,6 +173,7 @@ async def sync_embeds():
         - Logs information, errors, and completion status of the synchronization process.
         - Edits messages in Discord with new views and embeds.
     """
+    await client.wait_until_ready()
     opengov2 = OpenGovernance2(config)
     referendum_info = opengov2.referendumInfoFor()
     json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
@@ -226,6 +227,7 @@ async def check_governance():
     and create threads for them on the Discord channel.
     """
     try:
+        await client.wait_until_ready()
         logging.info("Checking for new proposals")
         opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
@@ -392,6 +394,7 @@ async def recheck_proposals():
     - Saves the updated proposal data to the JSON file.
     - Logs the successful update of the proposals' data.
     """
+    await client.wait_until_ready()
     logging.info("Checking past proposals where title/content is None")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
     opengov2 = OpenGovernance2(config)
