@@ -121,7 +121,7 @@ class DiscordFormatting:
         self.substrate = SubstrateAPI(self.config)
         self.logging = Logger()
 
-    def format_key(self, key, parent_key):
+    async def format_key(self, key, parent_key):
         try:
             FIELD_NAME_MAP = {
                 "Ongoing.alarm": "ENDING BLOCK",
@@ -163,16 +163,15 @@ class DiscordFormatting:
 
         for key, value in data.items():
             new_key = f"{parent_key}.{key}" if parent_key else key
-            valid_address = await self.substrate.is_valid_ss58_address(address=value)
+            valid_address = await self.substrate.check_ss58_address(address=value)
             if valid_address and len(value) < 49:
                 display_name = await self.substrate.check_identity(address=value, network=self.config.NETWORK_NAME)
-                # display_name = identity.get('display', {}).get('Raw', None)
                 value = f"[{display_name if display_name else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
 
             if new_key == 'CALL.CALLS':
                 for idx, call_item in enumerate(value):
                     for call_key, call_value in call_item.items():
-                        formatted_key = self.format_key(f"{call_key.upper()} {idx + 1}", parent_key)
+                        formatted_key = await self.format_key(f"{call_key.upper()} {idx + 1}", parent_key)
                         embed.add_field(name=formatted_key, value=call_value, inline=True)
                 continue
 
@@ -183,19 +182,19 @@ class DiscordFormatting:
             if isinstance(value, dict):
                 await self.extract_and_embed(value, embed, new_key)
             else:
-                formatted_key = self.format_key(new_key, "")
+                formatted_key = await self.format_key(new_key, "")
                 if len(str(value)) > 255:
                     value = str(value)[:252] + "..."
                 embed.add_field(name=formatted_key, value=value, inline=True)
 
         return embed
 
-    def flatten_dict(self, data, parent_key='', sep='.'):
+    async def flatten_dict(self, data, parent_key='', sep='.'):
         items = {}
         for k, v in data.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
             if isinstance(v, dict):
-                items.update(self.flatten_dict(v, new_key, sep=sep))
+                items.update(await self.flatten_dict(v, new_key, sep=sep))
             else:
                 items[new_key] = v
         return items
@@ -220,18 +219,17 @@ class DiscordFormatting:
             'SUBMITTED'
         ]
 
-        flat_data = self.flatten_dict(data)
+        flat_data = await self.flatten_dict(data)
 
         for key, value in flat_data.items():
             if parent_key == "comments" or key in ["PROPOSAL LENGTH", "PROPOSAL HASH"]:
                 continue
-            formatted_key = self.format_key(key, parent_key)
+            formatted_key = await self.format_key(key, parent_key)
 
             # Look up and add display name for specific keys
-            valid_address = await self.substrate.is_valid_ss58_address(address=value)
+            valid_address = await self.substrate.check_ss58_address(address=value)
             if valid_address and len(value) < 50:
                 identity = await self.substrate.check_identity(address=value, network=self.config.NETWORK_NAME)
-                #display_name = identity['display']['Raw'] if identity and 'display' in identity else None
                 value = f"[{identity if identity else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
 
             if formatted_key == "ENDING BLOCK":
@@ -259,7 +257,7 @@ class DiscordFormatting:
                 break
 
             if isinstance(value, dict):
-                embed = self.add_fields_to_embed(embed, value, formatted_key)
+                embed = await self.add_fields_to_embed(embed, value, formatted_key)
             else:
                 field_data[formatted_key] = value
 
@@ -272,7 +270,7 @@ class DiscordFormatting:
         return embed
 
     @staticmethod
-    def find_msgid_by_index(cache_data, json_data):
+    async def find_msgid_by_index(cache_data, json_data):
         output = {}
         for index in cache_data.keys():
             key_name = next((key for key, item in json_data.items() if item['index'] == index), None)
