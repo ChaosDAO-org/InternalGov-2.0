@@ -5,6 +5,7 @@ import asyncio
 from utils.config import Config
 from utils.logger import Logger
 from utils.gov2 import OpenGovernance2
+from utils.subquery import SubstrateAPI
 from governance_monitor import GovernanceMonitor
 from utils.data_processing import CacheManager, Text, DiscordFormatting
 from utils.button_handler import ButtonHandler, ExternalLinkButton
@@ -126,7 +127,7 @@ async def set_voting_button_lock_status(threads, lock: bool):
             if thread is not None:
                 async for message in thread.history(oldest_first=True, limit=1):
                     view = ButtonHandler(client, message)
-                    view.set_buttons_lock_status(lock_status=lock)
+                    await view.set_buttons_lock_status(lock_status=lock)
                     await message.edit(view=view)
         logging.info(f"The following threads have been {'locked' if lock else 'unlocked'}: {threads}")
 
@@ -148,7 +149,7 @@ async def lock_threads(threads_to_lock, user):
                     results_message_id = message_id.id
 
                 view = ButtonHandler(client, message_id)
-                view.set_buttons_lock_status(lock_status=True)
+                await view.set_buttons_lock_status(lock_status=True)
                 await message_id.edit(view=view)
 
             logging.info(f"The following threads have been locked by {username} (ID: {user_id}): {threads_to_lock}")
@@ -174,32 +175,48 @@ async def sync_embeds():
         - Edits messages in Discord with new views and embeds.
     """
     await client.wait_until_ready()
-    opengov2 = OpenGovernance2(config)
-    referendum_info = opengov2.referendumInfoFor()
+
+    referendum_info = await substrate.referendumInfoFor()
     json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
 
     logging.info("Synchronizing embeds")
     if json_data:
-        index_msgid = discord_format.find_msgid_by_index(referendum_info, json_data)
+        index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
     else:
         logging.error("No data found in vote_counts.json")
         return None
 
-    logging.info(f"Updating {len(index_msgid)} embeds")
-    for index, message_id in index_msgid.items():
-        thread = client.get_channel(int(message_id))
-        if thread is not None:
-            async for message in thread.history(oldest_first=True, limit=1):
+    logging.info(f"{len(index_msgid)} threads to synchronize")
+    # Synchronize in reverse from latest to oldest active proposals
+    for index, message_id in sorted(index_msgid.items(), reverse=True):
+        sync_thread = client.get_channel(int(message_id))
+        logging.info(f"Synchronizing {sync_thread.name}")
+        if sync_thread is not None:
+            async for message in sync_thread.history(oldest_first=True, limit=1):
                 if referendum_info[index]['Ongoing']['tally']['ayes'] >= referendum_info[index]['Ongoing']['tally']['nays']:
                     general_info_embed = Embed(color=0x00FF00)
                 else:
                     general_info_embed = Embed(color=0xFF0000)
-                general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
-                voting_buttons = ButtonHandler(client, message_id)
 
-                await message.edit(view=voting_buttons, embed=general_info)
-                logging.info(f"Successfully synchronized {message_id}")
-                await asyncio.sleep(10)
+                # Update initial post
+                general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
+                await message.edit(embed=general_info)
+
+                # Add voting buttons if no components found on message
+                if not message.components:
+                    voting_buttons = ButtonHandler(client, message_id)
+                    await message.edit(view=voting_buttons)
+
+            async for message in sync_thread.history(oldest_first=True):
+                # Add hyperlinks to results if no components found on message
+                if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
+                    logging.info("Adding missing hyperlink buttons")
+                    external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                    await message.edit(view=external_links)
+                    break
+
+            logging.info(f"Successfully synchronized {sync_thread.name}")
+            await asyncio.sleep(2.5)
         else:
             logging.error(f"Thread with index {index} - {message_id} not found.")
     logging.info("synchronization complete")
@@ -240,7 +257,7 @@ async def check_governance():
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
             current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
-            referendum_info = opengov2.referendumInfoFor()
+            referendum_info = await substrate.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 requested_spend = ""
@@ -292,6 +309,7 @@ async def check_governance():
                     client.vote_counts[str(thread.message.id)] = {
                         "index": index,
                         "title": values['title'][:200].strip(),
+                        "origin": governance_origin,
                         "aye": 0,
                         "nay": 0,
                         "recuse": 0,
@@ -301,6 +319,11 @@ async def check_governance():
                     client.save_vote_counts()
                     external_links = ExternalLinkButton(index, config.NETWORK_NAME)
                     results_message = await channel_thread.send(content=initial_results_message, view=external_links)
+
+                    # results_message_id = results_message.id
+                    message_id = thread.message.id
+                    voting_buttons = ButtonHandler(client, message_id)
+                    await thread.message.edit(view=voting_buttons)
 
                     await thread.message.pin()
                     await results_message.pin()
@@ -327,15 +350,10 @@ async def check_governance():
                         except Exception as error:
                             logging.error(f"An unexpected error occurred: {error}")
 
-                    # results_message_id = results_message.id
-                    message_id = thread.message.id
-                    voting_buttons = ButtonHandler(client, message_id)
-
                     general_info_embed = Embed(color=0x00FF00)
                     polkasembly_info_embed = Embed(color=0xFFFFFF)
 
                     try:
-
                         # Add fields to embed
                         general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
                         passembly_call_data = await discord_format.extract_and_embed(values, polkasembly_info_embed)
@@ -344,7 +362,7 @@ async def check_governance():
                         await asyncio.sleep(0.5)
 
                         # Edit the message
-                        await thread.message.edit(view=voting_buttons, embed=general_info)
+                        await thread.message.edit(embed=general_info)
                     except Exception as e:
                         # Log the exception
                         logging.error(f"An error occurred: {e}")
@@ -358,6 +376,7 @@ async def check_governance():
                 except Exception as error:
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
+
 
         # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
         # lock threads once archived (prevents regular users from continuing to vote).
@@ -435,24 +454,15 @@ async def recheck_proposals():
             continue
 
 
+
 if __name__ == '__main__':
     config = Config()
+    substrate = SubstrateAPI(config)
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
     permission_checker = PermissionCheck()
-    # db_params = {
-    #    'dbname': config.DB_NAME,
-    #    'user': config.DB_USER,
-    #    'password': config.DB_PASSWORD,
-    #    'host': config.DB_HOST,
-    #    'port': config.DB_PORT,
-    #    'options': '-c password_encryption=scram-sha-256'
-    # }
 
-    # Create an instance of DatabaseHandler
-    # db_handler = DatabaseHandler(db_params, logging)
-    # db_handler.migrated_check()
     client = GovernanceMonitor(
         guild=guild,
         discord_role=config.DISCORD_VOTER_ROLE,
@@ -475,7 +485,6 @@ if __name__ == '__main__':
 
         if not sync_embeds.is_running():
             sync_embeds.start()
-
 
 
     @client.tree.command()
