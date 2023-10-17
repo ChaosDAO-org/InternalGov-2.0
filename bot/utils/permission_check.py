@@ -1,4 +1,3 @@
-import discord
 from utils.logger import Logger
 
 
