@@ -12,6 +12,7 @@ class SubstrateAPI:
     def __init__(self, config):
         self.config = config
         self.logger = Logger()
+        self.logger.info("Initializing SubstrateAPI")
 
     async def _connect(self):
         max_retries = 3
@@ -19,7 +20,6 @@ class SubstrateAPI:
 
         for attempt in range(1, max_retries + 1):
             try:
-                self.logger.info("Creating a new Substrate connection")
                 await asyncio.sleep(0.5)
                 return SubstrateInterface(
                     url=self.config.SUBSTRATE_WSS,
@@ -66,10 +66,6 @@ class SubstrateAPI:
         except FileNotFoundError:
             return True
 
-    async def _run_in_executor(self, func, *args, **kwargs):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
-
     async def referendumInfoFor(self, index=None):
         """
         Get information regarding a specific referendum or all ongoing referendums.
@@ -78,42 +74,47 @@ class SubstrateAPI:
         :return: dictionary containing the information of the specific referendum or a dictionary of all ongoing referendums
         :raises: ValueError if `index` is not None and not a valid index of any referendum
         """
-        substrate = await self._connect()
         referendum = {}
-
+        substrate = None
         try:
+            substrate = await self._connect()
             if index is not None:
-                data = await self._run_in_executor(substrate.query, module='Referenda', storage_function='ReferendumInfoFor', params=[index])
-                return data.serialize()  # Make sure this is not a blocking call, if it is, run it in the executor.
+                return substrate.query(
+                    module='Referenda',
+                    storage_function='ReferendumInfoFor',
+                    params=[index]).serialize()
             else:
-                qmap_generator = await self._run_in_executor(substrate.query_map, module='Referenda', storage_function='ReferendumInfoFor', params=[])
-
-                for index, info in qmap_generator:
+                qmap = substrate.query_map(
+                    module='Referenda',
+                    storage_function='ReferendumInfoFor',
+                    params=[])
+                for index, info in qmap:
                     if 'Ongoing' in info:
                         referendum.update({int(index.value): info.value})
 
-                sorted_json = json.dumps(referendum, sort_keys=True)
-                data = json.loads(sorted_json)
+                sort = json.dumps(referendum, sort_keys=True)
+                data = json.loads(sort)
                 return data
 
         finally:
-            substrate.close()  # Consider if this needs to be awaited or run in the executor, and modify accordingly.
+            if substrate:
+                substrate.close()
 
-    async def is_valid_ss58_address(self, address) -> bool:
-        substrate = await self._connect()
-
+    async def check_ss58_address(self, address) -> bool:
+        substrate = None
         try:
+            substrate = await self._connect()
             if not isinstance(address, str):
                 return False
-
             try:
-                await self._run_in_executor(substrate.ss58_decode, address)
+                decoded = substrate.ss58_decode(address)
                 return True
             except (SubstrateRequestException, ValueError):
                 return False
 
         finally:
-            substrate.close()
+            if substrate:
+                substrate.close()
 
     """
     Cache Super_of
@@ -235,3 +236,70 @@ class SubstrateAPI:
             return twitter_name
         else:
             return address
+
+    async def get_average_block_time(self, num_blocks=255):
+        substrate = None
+        try:
+            substrate = await self._connect()
+            latest_block_num = substrate.get_block_number(block_hash=substrate.block_hash)
+            first_block_num = latest_block_num - num_blocks
+
+            first_timestamp = substrate.query(
+                module='Timestamp',
+                storage_function='Now',
+                block_hash=substrate.get_block_hash(first_block_num)
+            ).value
+
+            last_timestamp = substrate.query(
+                module='Timestamp',
+                storage_function='Now',
+                block_hash=substrate.get_block_hash(latest_block_num)
+            ).value
+
+            return (last_timestamp - first_timestamp) / (num_blocks * 1000)
+        finally:
+            if substrate:
+                substrate.close()
+
+    async def time_until_block(self, target_block: int) -> int:
+        """
+        Calculate the estimated time in minutes until the specified target block is reached on the Kusama network.
+
+        Args:
+            target_block (int): The target block number for which the remaining time needs to be calculated.
+
+        Returns:
+            int: The estimated time remaining in minutes until the target block is reached. If the target block has
+            already been reached, the function will return None.
+
+        Raises:
+            Exception: If any error occurs while trying to calculate the time remaining until the target block.
+        """
+        substrate = None
+        try:
+            substrate = await self._connect()
+            # Get the current block number
+            current_block = substrate.get_block_number(block_hash=substrate.block_hash)
+            if target_block <= current_block:
+                self.logger.info("The target block has already been reached.")
+                return False
+
+            # Calculate the difference in blocks
+            block_difference = target_block - current_block
+
+            # Get the average block time (6 seconds for Kusama)
+            avg_block_time = self.get_average_block_time()
+
+            # Calculate the remaining time in seconds
+            remaining_time = block_difference * avg_block_time
+
+            # Convert seconds to minutes
+            minutes = remaining_time / 60
+
+            return int(minutes)
+
+        except Exception as error:
+            self.logger.error(f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
+        finally:
+            if substrate:
+                substrate.close()
