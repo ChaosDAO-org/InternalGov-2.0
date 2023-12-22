@@ -1,30 +1,25 @@
-import time
-import requests
-import logging
-import json
 import re
+import time
 import discord
 import asyncio
-import argparse
+from utils.config import Config
 from utils.logger import Logger
 from utils.gov2 import OpenGovernance2
-from utils.data_processing import CacheManager, Text
-from utils.config import Config
+from utils.subquery import SubstrateAPI
+from governance_monitor import GovernanceMonitor
+from utils.data_processing import CacheManager, Text, DiscordFormatting
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
-from logging.handlers import TimedRotatingFileHandler
-from governance_monitor import GovernanceMonitor
-from utils.database_handler import DatabaseHandler
-from discord.ext import tasks
-import psycopg2
-from psycopg2 import extras
 from discord import app_commands, Embed
+from discord.ext import tasks
+
+discord_format = DiscordFormatting()
 
 
 def get_requested_spend(data, current_price):
     requested_spend = ""
-    
+
     if data.get('title') != 'None':
         try:
             if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
@@ -44,8 +39,9 @@ def get_requested_spend(data, current_price):
     else:
         logging.error("Title: None")
         requested_spend = ""
-    
+
     return requested_spend
+
 
 async def get_or_create_governance_tag(available_channel_tags, governance_origin, channel):
     try:
@@ -62,6 +58,7 @@ async def get_or_create_governance_tag(available_channel_tags, governance_origin
             governance_tag = None
 
     return governance_tag
+
 
 async def create_or_get_role(guild, role_name):
     # Check if the role already exists
@@ -82,23 +79,13 @@ async def create_or_get_role(guild, role_name):
         logging.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
         raise  # You can raise the exception or return None based on your use case
 
-async def manage_discord_thread(
-        channel, 
-        operation, 
-        title, 
-        index, 
-        requested_spend, 
-        content, 
-        governance_tag, 
-        message_id, 
-        client
-    ):
+
+async def manage_discord_thread(channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
     thread = None
     char_exceed_msg = "\n```For more insights, visit the provided links below.```"
     content = Text.convert_markdown_to_discord(content) if content is not None else None
-    
+
     try:
-        
         other_components_length = len(requested_spend + "\n\n")  # Newlines are 2 characters
         final_content = content or ''
         if len(final_content) + other_components_length > BODY_MAX_LENGTH:
@@ -108,7 +95,7 @@ async def manage_discord_thread(
 
         thread_content = f"{requested_spend}{final_content}\n\n"
         thread_title = f"{index}: {title}"
-        
+
         if operation == 'create':
             thread = await channel.create_thread(
                 name=thread_title,
@@ -116,7 +103,7 @@ async def manage_discord_thread(
                 reason=f"Created by an incoming proposal on the {config.NETWORK_NAME} network",
                 applied_tags=[governance_tag]
             )
-        elif operation == 'edit' and client is not None and key is not None:
+        elif operation == 'edit' and client is not None:
             await client.edit_thread(
                 forum_channel=config.DISCORD_FORUM_CHANNEL_ID,
                 message_id=message_id,
@@ -131,6 +118,7 @@ async def manage_discord_thread(
         logging.error(f"Failed to manage Discord thread: {e}")
     return thread
 
+
 async def set_voting_button_lock_status(threads, lock: bool):
     if threads:
         logging.info(f"{len(threads)} threads to {'lock' if lock else 'unlock'}")
@@ -139,9 +127,10 @@ async def set_voting_button_lock_status(threads, lock: bool):
             if thread is not None:
                 async for message in thread.history(oldest_first=True, limit=1):
                     view = ButtonHandler(client, message)
-                    view.set_buttons_lock_status(lock_status=lock)
+                    await view.set_buttons_lock_status(lock_status=lock)
                     await message.edit(view=view)
         logging.info(f"The following threads have been {'locked' if lock else 'unlocked'}: {threads}")
+
 
 async def lock_threads(threads_to_lock, user):
     try:
@@ -149,49 +138,91 @@ async def lock_threads(threads_to_lock, user):
             username = user.name
             user_id = user.id
             logging.info(f"{len(threads_to_lock)} threads have been archived by {username} (ID: {user_id})")
-            
+
             for message_id in threads_to_lock:
                 thread = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(message_id))
                 if thread is None:
                     logging.warning(f"Thread with ID {message_id} not found.")
                     continue
-                
+
                 async for message_id in thread.history(oldest_first=True, limit=1):
                     results_message_id = message_id.id
-                
+
                 view = ButtonHandler(client, message_id)
-                view.set_buttons_lock_status(lock_status=True)
+                await view.set_buttons_lock_status(lock_status=True)
                 await message_id.edit(view=view)
-            
+
             logging.info(f"The following threads have been locked by {username} (ID: {user_id}): {threads_to_lock}")
 
     except Exception as e:
         logging.error(f"An error occurred while locking threads: {str(e)}")
 
 
-@tasks.loop(minutes=15)   
+@tasks.loop(hours=1)
 async def sync_embeds():
-    referendum_info = opengov2.referendumInfoFor()
+    """
+    This asynchronous function is designed to run every hour to synchronize embeds on discord threads.
+    It interacts with OpenGovernance2 to retrieve referendum information and loads cached vote
+    counts from a local JSON file.
+
+    It then logs the synchronization process, finds message IDs by index from the
+    referendum info, and updates the embeds in the relevant Discord threads with the
+    new information.
+
+    Side Effects:
+        - Updates Discord embeds in threads with new information and potentially new colors.
+        - Logs information, errors, and completion status of the synchronization process.
+        - Edits messages in Discord with new views and embeds.
+    """
+    await client.wait_until_ready()
+
+    referendum_info = await substrate.referendumInfoFor()
     json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
+
+    logging.info("Synchronizing embeds")
     if json_data:
-        index_msgid = opengov2.find_msgid_by_index(referendum_info, json_data)
+        index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
     else:
         logging.error("No data found in vote_counts.json")
         return None
-    for index, message_id in index_msgid.items():
-        thread = client.get_channel(int(message_id))
-        if thread is not None:
-            async for message in thread.history(oldest_first=True, limit=1):
+
+    logging.info(f"{len(index_msgid)} threads to synchronize")
+    # Synchronize in reverse from latest to oldest active proposals
+    for index, message_id in sorted(index_msgid.items(), reverse=True):
+        sync_thread = client.get_channel(int(message_id))
+        logging.info(f"Synchronizing {sync_thread.name}")
+        if sync_thread is not None:
+            async for message in sync_thread.history(oldest_first=True, limit=1):
                 if referendum_info[index]['Ongoing']['tally']['ayes'] >= referendum_info[index]['Ongoing']['tally']['nays']:
                     general_info_embed = Embed(color=0x00FF00)
                 else:
                     general_info_embed = Embed(color=0xFF0000)
-                general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
+
+                # Update initial post
+                general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
                 await message.edit(embed=general_info)
+
+                # Add voting buttons if no components found on message
+                if not message.components:
+                    voting_buttons = ButtonHandler(client, message_id)
+                    await message.edit(view=voting_buttons)
+
+            async for message in sync_thread.history(oldest_first=True):
+                # Add hyperlinks to results if no components found on message
+                if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
+                    logging.info("Adding missing hyperlink buttons")
+                    external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                    await message.edit(view=external_links)
+                    break
+
+            logging.info(f"Successfully synchronized {sync_thread.name}")
+            await asyncio.sleep(2.5)
         else:
             logging.error(f"Thread with index {index} - {message_id} not found.")
+    logging.info("synchronization complete")
 
-@tasks.loop(hours=6)
+
+@tasks.loop(hours=4)
 async def check_governance():
     """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
     referendum on a Discord channel with a specified ID, and adds reactions to the thread.
@@ -213,9 +244,11 @@ async def check_governance():
     and create threads for them on the Discord channel.
     """
     try:
+        await client.wait_until_ready()
         logging.info("Checking for new proposals")
+        opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
-        
+
         # Get the guild object where the role is located
         guild = client.get_guild(config.DISCORD_SERVER_ID)
 
@@ -223,13 +256,13 @@ async def check_governance():
             logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
             current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
-                    
-            referendum_info = opengov2.referendumInfoFor()
+
+            referendum_info = await substrate.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 requested_spend = ""
                 try:
-                    #proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
+                    # proposal_ends = opengov2.time_until_block(target_block=values['onchain']['alarm'][0])
                     available_channel_tags = []
                     if channel is not None:
                         available_channel_tags = [tag for tag in channel.available_tags]
@@ -240,20 +273,20 @@ async def check_governance():
 
                     # Create forum tags if they don't already exist.
                     governance_tag = await get_or_create_governance_tag(available_channel_tags, governance_origin, channel)
-                    
+
                     if values['successful_url']:
                         logging.info(f"Getting on-chain data from: {values['successful_url']}")
                         #  get_requested_spend handles the differences in returned JSON between Polkassembly & Subsquare
                         requested_spend = get_requested_spend(values, current_price)
                     else:
-                        logging.error(f"No value: ", values['successful_url'])
+                        logging.error(f"No value: {values['successful_url']}")
                         requested_spend = ""
 
                     title = values['title'][:TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
 
                     logging.info(f"Creating thread on Discord: #{index} {title}")
-                    
-                    try:                        
+
+                    try:
                         thread = await manage_discord_thread(
                             channel=channel,
                             operation='create',
@@ -276,23 +309,30 @@ async def check_governance():
                     client.vote_counts[str(thread.message.id)] = {
                         "index": index,
                         "title": values['title'][:200].strip(),
+                        "origin": governance_origin,
                         "aye": 0,
                         "nay": 0,
                         "recuse": 0,
                         "users": {},
                         "epoch": int(time.time())
-                        }
+                    }
                     client.save_vote_counts()
                     external_links = ExternalLinkButton(index, config.NETWORK_NAME)
-                    results_message = await channel_thread.send(content=initial_results_message,view=external_links)
+                    results_message = await channel_thread.send(content=initial_results_message, view=external_links)
+
+                    # results_message_id = results_message.id
+                    message_id = thread.message.id
+                    voting_buttons = ButtonHandler(client, message_id)
+                    await thread.message.edit(view=voting_buttons)
+
                     await thread.message.pin()
                     await results_message.pin()
+
                     # Searches the last 5 messages
                     async for message in channel_thread.history(limit=5):
                         if message.type == discord.MessageType.pins_add:
                             await message.delete()
 
-                    
                     if guild is None:
                         logging.error(f"Guild not found")
                     else:
@@ -300,39 +340,32 @@ async def check_governance():
                             role = await create_or_get_role(guild, config.TAG_ROLE_NAME)
                             if role:
                                 await channel_thread.send(content=
-                                f"||<@&{role.id}>||"
-                                f"\n**INSTRUCTIONS:**"
-                                f"\n- Vote **AYE** if you want to see this proposal pass"
-                                f"\n- Vote **NAY** if you want to see this proposal fail"
-                                f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
-                                )
+                                                          f"||<@&{role.id}>||"
+                                                          f"\n**INSTRUCTIONS:**"
+                                                          f"\n- Vote **AYE** if you want to see this proposal pass"
+                                                          f"\n- Vote **NAY** if you want to see this proposal fail"
+                                                          f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
+                                                          )
                                 logging.info(f"Vote results message added instruction message added for {index}")
                         except Exception as error:
                             logging.error(f"An unexpected error occurred: {error}")
-                    
-                    #results_message_id = results_message.id
-                    message_id = thread.message.id
-                    voting_buttons = ButtonHandler(client, message_id)
-                    
+
                     general_info_embed = Embed(color=0x00FF00)
                     polkasembly_info_embed = Embed(color=0xFFFFFF)
-                    
+
                     try:
-                        
                         # Add fields to embed
-                        general_info = opengov2.add_fields_to_embed(general_info_embed, referendum_info[index])
-                        passembly_call_data = opengov2.extract_and_embed(values, polkasembly_info_embed)
+                        general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
+                        passembly_call_data = await discord_format.extract_and_embed(values, polkasembly_info_embed)
                         await asyncio.sleep(0.5)
                         await channel_thread.send(embed=passembly_call_data)
                         await asyncio.sleep(0.5)
+
                         # Edit the message
-                        await thread.message.edit(view=voting_buttons, embed=general_info)
+                        await thread.message.edit(embed=general_info)
                     except Exception as e:
                         # Log the exception
                         logging.error(f"An error occurred: {e}")
-                        
-
-
 
                 except discord.errors.Forbidden as forbidden:
                     logging.exception(f"Forbidden error occurred:  {forbidden}")
@@ -343,7 +376,8 @@ async def check_governance():
                 except Exception as error:
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
-                
+
+
         # Move votes from vote_counts.json -> archived_votes.json once they exceed X amount of days
         # lock threads once archived (prevents regular users from continuing to vote).
         threads_to_lock = CacheManager.delete_old_keys_and_archive(json_file_path='../data/vote_counts.json', days=config.DISCORD_LOCK_THREAD, archive_filename='../data/archived_votes.json')
@@ -379,13 +413,15 @@ async def recheck_proposals():
     - Saves the updated proposal data to the JSON file.
     - Logs the successful update of the proposals' data.
     """
+    await client.wait_until_ready()
     logging.info("Checking past proposals where title/content is None")
     proposals_without_context = client.proposals_with_no_context('../data/vote_counts.json')
+    opengov2 = OpenGovernance2(config)
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
     current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
 
     for message_id, value in proposals_without_context.items():
-        requested_spend = ""
+
         proposal_index = value['index']
         opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config.NETWORK_NAME)
 
@@ -397,19 +433,19 @@ async def recheck_proposals():
 
             # Edit existing thread with new data found from Polkassembly or SubSquare
             logging.info(f"Editing discord thread with title + content: {proposal_index}# {title}")
-            
+
             try:
                 await manage_discord_thread(
-                    channel=channel, 
-                    operation='edit', 
-                    title=title, 
-                    index=proposal_index, 
-                    requested_spend=requested_spend, 
-                    content=opengov['content'], 
-                    governance_tag="", 
-                    message_id='', 
+                    channel=channel,
+                    operation='edit',
+                    title=title,
+                    index=proposal_index,
+                    requested_spend=requested_spend,
+                    content=opengov['content'],
+                    governance_tag="",
+                    message_id=message_id,
                     client=client
-                    )
+                )
                 logging.info(f"Title updated from None -> {title} in vote_counts.json")
                 logging.info(f"Discord thread successfully amended")
             except Exception as e:
@@ -417,46 +453,39 @@ async def recheck_proposals():
         else:
             continue
 
+
+
 if __name__ == '__main__':
     config = Config()
-    opengov2 = OpenGovernance2(config)
+    substrate = SubstrateAPI(config)
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     logging = Logger(arguments.args.verbose)
     permission_checker = PermissionCheck()
-    #db_params = {
-    #    'dbname': config.DB_NAME,
-    #    'user': config.DB_USER,
-    #    'password': config.DB_PASSWORD,
-    #    'host': config.DB_HOST,
-    #    'port': config.DB_PORT,
-    #    'options': '-c password_encryption=scram-sha-256'
-    #}
 
-    # Create an instance of DatabaseHandler
-    #db_handler = DatabaseHandler(db_params, logging)
-    #db_handler.migrated_check()
     client = GovernanceMonitor(
         guild=guild,
         discord_role=config.DISCORD_VOTER_ROLE,
-        permission_checker=permission_checker, 
-        )
+        permission_checker=permission_checker,
+    )
+
     TITLE_MAX_LENGTH = 95
     BODY_MAX_LENGTH = 2000
-    
+
+
     @client.event
     async def on_ready():
         for server in client.guilds:
-            await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID) 
-
-        if not sync_embeds.is_running():
-            sync_embeds.start()
-        
+            await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID)
         if not check_governance.is_running():
             check_governance.start()
 
         if not recheck_proposals.is_running():
             recheck_proposals.start()
+
+        if not sync_embeds.is_running():
+            sync_embeds.start()
+
 
     @client.tree.command()
     @app_commands.choices(action=[
@@ -485,11 +514,11 @@ if __name__ == '__main__':
         await interaction.response.send_message(f'The following thread(s) have been {action.name}d: {thread_ids_list}', ephemeral=True)
 
 
-    try:    
+    try:
         client.run(config.DISCORD_API_KEY)
     except KeyboardInterrupt:
         print("KeyboardInterrupt caught, cleaning up...")
-        
+
         if check_governance.is_running():
             check_governance.stop()
 
@@ -502,4 +531,11 @@ if __name__ == '__main__':
     except Exception as e:
         # Log any other exceptions
         print(f"An error occurred: {e}")
+        if not check_governance.is_running():
+            check_governance.restart()
 
+        if not recheck_proposals.is_running():
+            recheck_proposals.restart()
+
+        if not sync_embeds.is_running():
+            sync_embeds.restart()

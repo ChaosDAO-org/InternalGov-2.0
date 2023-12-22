@@ -1,11 +1,17 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
+
 class Logger:
-    def __init__(self, verbose=False):
-        self.verbose = verbose
-        self.setup_logging()
-        self.logger = logging.getLogger()
+    _instance = None
+
+    def __new__(cls, verbose=False):
+        if cls._instance is None:
+            cls._instance = super(Logger, cls).__new__(cls)
+            cls._instance.verbose = verbose
+            cls._instance.setup_logging()
+            cls._instance.logger = logging.getLogger()
+        return cls._instance
 
     def setup_logging(self):
         log_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
@@ -36,22 +42,22 @@ class Logger:
 
     def critical(self, message):
         self.logger.critical(message)
-        
+
     def write_out(self, message, log_filename):
         with open(log_filename, 'a') as f:
             print(message, file=f)
 
     def console(self, message):
         print(message)
-        
+
     def missing_role(self, message):
         warning_roles = ["Manage Roles"]
-    
+
         if any(role in message for role in warning_roles):
             log_level = self.logger.warning
         else:
             log_level = self.logger.critical  # Default to critical for unspecified roles
-            
+
         message = f"MISSING ROLE: {message}"
         self.logger.critical(message)
         print(message)

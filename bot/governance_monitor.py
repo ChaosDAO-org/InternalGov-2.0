@@ -1,31 +1,28 @@
 import time
-import requests
-import logging
 import json
-import discord
 import asyncio
-import sys
-from logging.handlers import TimedRotatingFileHandler
-from discord.ext import tasks
+import discord
+import requests
 from discord import app_commands
-import interactions
+from utils.logger import Logger
+from aiohttp.web_exceptions import HTTPException
+import sys
 
 
-class GovernanceMonitor(discord.Client, interactions.Client):
-    def __init__(self, guild,  discord_role, permission_checker):
+class GovernanceMonitor(discord.Client):
+    def __init__(self, guild, discord_role, permission_checker):
         super().__init__(intents=None)
         self.button_cooldowns = {}
+        self.logger = Logger()
         self.discord_role = discord_role
         self.guild = guild
         self.permission_checker = permission_checker
         self.tree = app_commands.CommandTree(self)
         self.vote_counts = self.load_vote_counts()
-        
 
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
-        await self.tree.sync(guild=self.guild)        
-    
+        await self.tree.sync(guild=self.guild)
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -114,8 +111,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
 
-    @staticmethod
-    def get_asset_price(asset_id, currencies='usd,gbp,eur'):
+    def get_asset_price(self, asset_id, currencies='usd,gbp,eur'):
         """
         Fetches the price of an asset in the specified currencies from the CoinGecko API.
 
@@ -134,16 +130,16 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            print(f"An HTTP error occurred: {e}")
+            self.logger.error(f"An HTTP error occurred: {e}")
             return None
         except requests.exceptions.RequestException as e:
-            print(f"A request error occurred: {e}")
+            self.logger.error(f"A request error occurred: {e}")
             return None
 
         data = response.json()
 
         if asset_id not in data:
-            print(f"Asset ID '{asset_id}' not found in CoinGecko.")
+            self.logger.warning(f"Asset ID '{asset_id}' not found in CoinGecko.")
             return None
 
         return data[asset_id]
@@ -161,24 +157,24 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             json.dump(self.vote_counts, file, indent=4)
 
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
-        logging.info(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
-        logging.info(f"Channel type: {type(channel)}, attributes: {dir(channel)}") 
+        self.logger.info(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
+        self.logger.info(f"Channel type: {type(channel)}, attributes: {dir(channel)}")
 
         for message_id in message_ids:
-            logging.info(f"Fetching message with ID {message_id}")
+            self.logger.info(f"Fetching message with ID {message_id}")
 
             message = channel.get_thread(message_id)
             if message is None:
-                logging.error(f"Error: Could not find thread for message ID {message_id}")
+                self.logger.error(f"Error: Could not find thread for message ID {message_id}")
                 continue
 
             view = message.view
-            logging.info(f"Current view: {view}")
+            self.logger.info(f"Current view: {view}")
 
-            logging.info(f"Editing message with new view: {view}")
+            self.logger.info(f"Editing message with new view: {view}")
             await message.edit(view=view)
 
-        logging.info("Finished setting buttons lock status")
+        self.logger.info("Finished setting buttons lock status")
 
     async def lock_threads_by_message_ids(self, guild_id, message_ids):
         """
@@ -222,7 +218,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
         bot_member = server.get_member(self.user.id)
 
         if not bot_member.guild_permissions.manage_threads:
-            logging.error("The bot lacks the necessary permissions to lock threads. Please update the permissions.")
+            self.logger.error("The bot lacks the necessary permissions to lock threads. Please update the permissions.")
             return
 
         for message_id in message_ids:
@@ -230,11 +226,11 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             thread = self.get_channel(int(message_id))
 
             if not thread:
-                logging.error(f"Invalid Discord forum thread ID: {message_id}")
+                self.logger.error(f"Invalid Discord forum thread ID: {message_id}")
                 continue
 
             # Lock the thread
-            logging.info(f"Discord forum thread '{thread.name}' is >= threshold set in config, locking thread from future interactions.")
+            self.logger.info(f"Discord forum thread '{thread.name}' is >= threshold set in config, locking thread from future interactions.")
             await thread.edit(locked=True)
 
     async def edit_thread(self, forum_channel: int, message_id: int, name: str, content: str) -> bool:
@@ -298,6 +294,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
         if interaction.data and interaction.data.get("component_type") == 2:
             custom_id = interaction.data.get("custom_id")
 
+            # to be deprecated
             if custom_id == 'abstain_button':
                 await interaction.response.send_message(f"Choose Aye, Nay, or Recuse if there's a conflict of interest. Abstain has been removed", ephemeral=True)
                 await asyncio.sleep(10)
@@ -307,13 +304,15 @@ class GovernanceMonitor(discord.Client, interactions.Client):
             user_id = interaction.user.id
             username = interaction.user.name + '#' + interaction.user.discriminator
 
-            logging.info(f"User interaction from {username}")
-
+            self.logger.info(f"User interaction from {username}")
             member = await interaction.guild.fetch_member(user_id)
             roles = member.roles
 
+            current_time = time.time()
+            cooldown_time = self.button_cooldowns.get(user_id, 0) + 5  # 5 second cooldown to mitigate button spam
+
             if self.discord_role and not any(role.name == self.discord_role for role in roles):
-                logging.warning(f"{username} doesn't have the necessary role assigned to participate:: {self.discord_role}")
+                self.logger.warning(f"{username} doesn't have the necessary role assigned to participate:: {self.discord_role}")
                 await interaction.response.send_message(
                     f"To participate, please ensure that you have the necessary role assigned: {self.discord_role}. This is a prerequisite for engaging in this activity.",
                     ephemeral=True)
@@ -323,10 +322,6 @@ class GovernanceMonitor(discord.Client, interactions.Client):
 
             message_id = str(interaction.message.id)
             discord_thread = interaction.message.channel
-
-            current_time = time.time()
-            cooldown_time = self.button_cooldowns.get(user_id, 0) + 2
-
 
             if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
                 self.vote_counts = self.load_vote_counts()
@@ -352,7 +347,7 @@ class GovernanceMonitor(discord.Client, interactions.Client):
                         await interaction.response.send_message(
                             f"Your vote of **{previous_vote}** has already been recorded. To change it, select an alternative option.",
                             ephemeral=True)
-                        await asyncio.sleep(5)
+                        await asyncio.sleep(2)
                         # await interaction.delete_original_response()
                         return
                     else:
@@ -364,19 +359,6 @@ class GovernanceMonitor(discord.Client, interactions.Client):
                 self.vote_counts[message_id]["users"][str(user_id)] = {"username": username,
                                                                        "vote_type": vote_type}
                 self.save_vote_counts()
-# Disabling db handler for now.
-#                vote_id = 1 if custom_id == "aye_button" else 3 if custom_id == "recuse_button" else 2 if custom_id == "nay_button" else 0
-#                already_voted, previous_vote = self.db_handler.sync_vote(message_id, user_id, vote_id, username)
-#
-#                if already_voted and previous_vote == vote_id:
-#                    await interaction.response.send_message(
-#                        f"Your vote of **{self.db_handler.vote_options[vote_id]}** has already been recorded. To change it, select an alternative option.",
-#                        ephemeral=True)
-#                    await asyncio.sleep(5)
-#                    return
-#
-#                # Fetch updated vote counts from the database for this message
-#                aye_count, nay_count, recuse_count = self.db_handler.fetch_vote_counts_from_db(message_id)
 
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
@@ -388,15 +370,15 @@ class GovernanceMonitor(discord.Client, interactions.Client):
                     results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
                 new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
-                                    f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
+                                      f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
                 await results_message.edit(content=new_results_message)
-                
+
                 # Acknowledge the vote and delete the message 10 seconds later
                 # (this notification is only visible to the user that interacts with AYE, NAY
                 await interaction.response.send_message(
                     f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
-                await asyncio.sleep(60*60*24*14)
+                await asyncio.sleep(2)
                 # await interaction.delete_original_response()
             else:
                 # Block the user from pressing the AYE, NAY to prevent unnecessary spam
@@ -405,20 +387,20 @@ class GovernanceMonitor(discord.Client, interactions.Client):
 
                 await interaction.response.send_message(f"{seconds} second waiting period remaining before you may cast your vote again. We appreciate your patience and understanding.",
                                                         ephemeral=True)
-                await asyncio.sleep(5)
+                await asyncio.sleep(seconds)
                 await interaction.delete_original_response()
 
     async def on_error(self, event, *args, **kwargs):
-        _, exc = sys.exc_info()
-        
+        exc = sys.exc_info()
+
         if isinstance(exc, HTTPException) and exc.status == 429:
-            print(f"We are being rate-limited. Waiting for {exc.retry_after} seconds.")
+            self.logger.warning(f"We are being rate-limited. Waiting for {exc.retry_after} seconds.")
         else:
             # Handle other types of exceptions or log them
-            print(f"An error occurred: {exc}")
+            self.logger.error(f"An error occurred: {exc}")
 
     # Synchronize the app commands to one guild.
-  # async def setup_hook(self):
-  #     # This copies the global commands over to your guild.
-  #     self.tree.copy_global_to(guild=self.guild)
-  #     await self.tree.sync(guild=self.guild)
+#   async def setup_hook(self):
+#       # This copies the global commands over to your guild.
+#       self.tree.copy_global_to(guild=self.guild)
+#       await self.tree.sync(guild=self.guild)
