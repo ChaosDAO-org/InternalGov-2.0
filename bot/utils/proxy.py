@@ -1,5 +1,7 @@
 from substrateinterface import SubstrateInterface, Keypair
 from substrateinterface.exceptions import SubstrateRequestException
+from utils.logger import Logger
+import asyncio
 
 
 class ProxyVoter:
@@ -35,14 +37,17 @@ class ProxyVoter:
             self.substrate = SubstrateInterface(
                 url=url
             )
+            self.substrate.get_block()
+
         except SubstrateRequestException as e:
             print(f"Failed to connect to Substrate node: {e}")
             return
 
         self.main_address = main_address
         self.proxy_keypair = Keypair.create_from_mnemonic(proxy_mnemonic)
+        self.logger = Logger()
 
-    def balance(self):
+    async def balance(self):
         """
         Query the free balance of the main address.
 
@@ -56,9 +61,12 @@ class ProxyVoter:
             print(f"Failed to query balance: {e}")
             return None
 
-    def compose_democracy_vote_call(self, proposal_index, vote_type, conviction):
+    async def compose_democracy_vote_call(self, proposal_index, vote_type, conviction, ongoing_referendas):
         """
         Compose a democracy vote call.
+
+        NOTE: This will check if the index being passed is an Ongoing referendum.
+        If it's not; the call will not be composed.
 
         Args:
             proposal_index (int): The index of the proposal to vote on.
@@ -69,7 +77,14 @@ class ProxyVoter:
             dict: The composed call for democracy voting.
         """
         try:
-            if vote_type != 'abstain':
+
+            # Prevent Failed（NotOngoing）- caused when voing on a referenda that is not ongoing.
+            # ongoing ref
+            if proposal_index not in ongoing_referendas:
+                self.logger.info(f"{proposal_index}# is not an ongoing referenda, skipping...")
+                return False
+
+            if vote_type == 'aye':
                 return self.substrate.compose_call(
                     call_module="ConvictionVoting",
                     call_function="vote",
@@ -77,16 +92,35 @@ class ProxyVoter:
                         "poll_index": proposal_index,
                         "vote": {
                             "Standard": {
-                                "balance": int(self.balance()),
+                                "balance": int(await self.balance()),
                                 "vote": {
-                                    f"{vote_type}": True,
+                                    f"aye": True,
                                     "conviction": conviction
                                 }
                             }
                         }
                     }
                 )
-            else:
+
+            if vote_type == 'nay':
+                return self.substrate.compose_call(
+                    call_module="ConvictionVoting",
+                    call_function="vote",
+                    call_params={
+                        "poll_index": proposal_index,
+                        "vote": {
+                            "Standard": {
+                                "balance": int(await self.balance()),
+                                "vote": {
+                                    f"aye": False,
+                                    "conviction": conviction
+                                }
+                            }
+                        }
+                    }
+                )
+
+            if vote_type == 'abstain':
                 return self.substrate.compose_call(
                     call_module="ConvictionVoting",
                     call_function="vote",
@@ -94,7 +128,7 @@ class ProxyVoter:
                         "poll_index": proposal_index,
                         "vote": {
                             "SplitAbstain": {
-                                f"{vote_type}": int(self.balance()),
+                                f"{vote_type}": int(await self.balance()),
                                 "aye": 0,
                                 "nay": 0
                             }
@@ -106,7 +140,7 @@ class ProxyVoter:
             print(f"Failed to compose democracy vote call: {e}")
             return None
 
-    def compose_utility_batch_call(self, calls):
+    async def compose_utility_batch_call(self, calls):
         """
         Compose a utility batch call.
 
@@ -123,10 +157,10 @@ class ProxyVoter:
                 call_params={"calls": calls}
             )
         except SubstrateRequestException as e:
-            print(f"Failed to compose utility batch call: {e}")
+            self.logger.exception(f"Failed to compose utility batch call: {e}")
             return None
 
-    def compose_proxy_call(self, batch_call):
+    async def compose_proxy_call(self, batch_call):
         """
         Compose a proxy call.
 
@@ -147,27 +181,30 @@ class ProxyVoter:
                 }
             )
         except SubstrateRequestException as e:
-            print(f"Failed to compose proxy call: {e}")
+            self.logger.exception(f"Failed to compose proxy call: {e}")
             return None
 
-    def execute_calls(self, calls):
+    async def execute_calls(self, calls):
         """
         Execute a batch of calls.
 
         Args:
             calls (list): A list of calls to execute.
         """
-        batch_call = self.compose_utility_batch_call(calls)
-        proxy_call = self.compose_proxy_call(batch_call)
+        batch_call = await self.compose_utility_batch_call(calls)
+        proxy_call = await self.compose_proxy_call(batch_call)
         extrinsic = self.substrate.create_signed_extrinsic(call=proxy_call, keypair=self.proxy_keypair)
 
         try:
             result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-            print(f"Extrinsic {result['extrinsic_hash']} sent and included in block {result['block_hash']}")
+            if result.is_success:
+                return result['extrinsic_hash']
+            else:
+                return False
         except Exception as e:
-            print(f"Failed to send extrinsic: {e}")
+            self.logger.exception(f"Failed to send extrinsic: {e}")
 
-    def execute_multiple_votes(self, votes):
+    async def execute_multiple_votes(self, votes):
         """
         Execute multiple democracy votes.
 
@@ -175,7 +212,35 @@ class ProxyVoter:
             votes (list): A list of tuples, each containing proposal index, vote type, and conviction.
         """
         try:
-            vote_calls = [self.compose_democracy_vote_call(index, vote_type, conviction) for index, vote_type, conviction in votes]
-            self.execute_calls(vote_calls)
+            vote_calls = []
+            indexes = []
+
+            ongoing_referendas = [int(index.value) for index, info in self.substrate.query_map(module='Referenda', storage_function='ReferendumInfoFor', params=[]) if 'Ongoing' in info]
+
+            for i, (index, vote_type, conviction) in enumerate(votes):
+                if vote_type not in ['aye', 'nay', 'abstain']:
+                    self.logger.error(f"Incorrect vote_type at index {index}: {vote_type}")
+                    continue
+
+                democracy_call = await self.compose_democracy_vote_call(index, vote_type, conviction, ongoing_referendas)
+                if democracy_call:
+                    vote_calls.append(democracy_call)
+                    indexes.append(str(index))
+                    await asyncio.sleep(0.5)
+                else:
+                    continue
+
+            if len(vote_calls) > 0:
+                extrinsic = await self.execute_calls(vote_calls)
+
+                if extrinsic:
+                    self.logger.info(f"An on-chain vote has been cast: {extrinsic}")
+                    return indexes, vote_calls, extrinsic
+                else:
+                    self.logger.error("vote(s) were not successful")
+            else:
+                self.logger.warning("vote_calls variable was empty, no vote(s) casted.")
         except SubstrateRequestException as e:
-            print(f"Failed to execute multiple votes: {e}")
+            self.logger.exception(f"Failed to execute multiple votes: {e}")
+        finally:
+            self.substrate.close()
