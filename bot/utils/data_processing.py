@@ -2,6 +2,7 @@ import re
 import os
 import time
 import json
+import shutil
 import deepdiff
 import markdownify
 from typing import Dict, Any
@@ -114,6 +115,39 @@ class CacheManager:
         # Return the list of archived keys
         return keys_to_delete
 
+    @staticmethod
+    def rotating_backup_file(source_path, backup_dir, max_versions=3):
+        """
+        Creates a rotating backup of a file. Overwrites the oldest backup to maintain
+        only max_versions of the backup.
+
+        :param source_path: Path to the original file.
+        :param backup_dir: Directory where the backups will be stored.
+        :param max_versions: Maximum number of backup versions to keep.
+        """
+        try:
+            # Ensure the backup directory exists
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+
+            # Create backup file name
+            base_name = os.path.basename(source_path)
+            backup_path_template = os.path.join(backup_dir, f"{base_name}.{{}}")
+
+            # Find the oldest backup version to overwrite
+            existing_backups = [int(backup.split('.')[-1]) for backup in os.listdir(backup_dir) if backup.startswith(base_name) and backup.split('.')[-1].isdigit()]
+            if existing_backups:
+                existing_backups.sort()
+                version_to_overwrite = existing_backups[0] if len(existing_backups) >= max_versions else max(existing_backups) + 1
+            else:
+                version_to_overwrite = 1
+
+            # Overwrite the oldest backup or create a new one
+            backup_path = backup_path_template.format(version_to_overwrite)
+            shutil.copy2(source_path, backup_path)
+            return f"Backup successful. Backup version: {version_to_overwrite}"
+        except Exception as e:
+            return f"Error during backup: {e}"
 
 class DiscordFormatting:
     def __init__(self):
