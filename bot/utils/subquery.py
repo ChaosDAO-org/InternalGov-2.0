@@ -16,7 +16,7 @@ class SubstrateAPI:
 
     async def _connect(self):
         max_retries = 3
-        wait_seconds = 30
+        wait_seconds = 10
 
         for attempt in range(1, max_retries + 1):
             try:
@@ -34,6 +34,7 @@ class SubstrateAPI:
                     self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
                     print(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
                     await asyncio.sleep(wait_seconds)
+                    raise
                 else:  # If we reached max_retries and couldn't establish a connection.
                     self.logger.error("Max retries reached. Could not establish a connection.")
                     print("Max retries reached. Could not establish a connection.")
@@ -107,8 +108,10 @@ class SubstrateAPI:
             if not isinstance(address, str):
                 return False
             try:
-                decoded = substrate.ss58_decode(address)
-                return True
+                if substrate.is_valid_ss58_address(value=address):
+                    return True
+                else:
+                    return False
             except (SubstrateRequestException, ValueError):
                 return False
 
@@ -278,6 +281,7 @@ class SubstrateAPI:
         substrate = None
         try:
             substrate = await self._connect()
+
             # Get the current block number
             current_block = substrate.get_block_number(block_hash=substrate.block_hash)
             if target_block <= current_block:
@@ -300,6 +304,22 @@ class SubstrateAPI:
 
         except Exception as error:
             self.logger.error(f"An error occurred while trying to calculate minute remaining until {target_block} is met... {error}")
+        finally:
+            if substrate:
+                substrate.close()
+
+    async def get_block_epoch(self, block_number):
+        substrate = None
+        try:
+            substrate = await self._connect()
+            blockhash = substrate.get_block_hash(block_id=block_number)
+            epoch = substrate.query(
+                module='Timestamp',
+                storage_function='Now',
+                block_hash=blockhash
+            )
+
+            return epoch.value
         finally:
             if substrate:
                 substrate.close()

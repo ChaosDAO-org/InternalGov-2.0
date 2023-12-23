@@ -1,10 +1,16 @@
+import re
 import time
 import json
 import asyncio
 import discord
 import requests
+import aiofiles
+from typing import Dict, Any
 from discord import app_commands
 from utils.logger import Logger
+from utils.config import Config
+from utils.data_processing import Text
+from utils.button_handler import ButtonHandler
 from aiohttp.web_exceptions import HTTPException
 import sys
 
@@ -13,16 +19,76 @@ class GovernanceMonitor(discord.Client):
     def __init__(self, guild, discord_role, permission_checker):
         super().__init__(intents=None)
         self.button_cooldowns = {}
+        self.config = Config()
         self.logger = Logger()
         self.discord_role = discord_role
         self.guild = guild
         self.permission_checker = permission_checker
         self.tree = app_commands.CommandTree(self)
-        self.vote_counts = self.load_vote_counts()
+        loop = asyncio.get_event_loop()
+        self.vote_counts = loop.run_until_complete(self.load_vote_counts())
 
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
+
+    def get_asset_price(self, asset_id, currencies='usd,gbp,eur'):
+        """
+        Fetches the price of an asset in the specified currencies from the CoinGecko API.
+
+        Args:
+            asset_id (str): The ID of the asset for which to fetch the price (e.g., "bitcoin").
+            currencies (str, optional): A comma-separated string of currency symbols
+                                         (default is 'usd,gbp,eur').
+
+        Returns:
+            dict: A dictionary containing the prices in the specified currencies, or None
+                  if an error occurred or the asset ID was not found.
+        """
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={asset_id}&vs_currencies={currencies}"
+
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            self.logger.error(f"An HTTP error occurred: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"A request error occurred: {e}")
+            return None
+
+        data = response.json()
+
+        if asset_id not in data:
+            self.logger.warning(f"Asset ID '{asset_id}' not found in CoinGecko.")
+            return None
+
+        return data[asset_id]
+
+    async def get_requested_spend(self, data, current_price):
+        requested_spend = ""
+
+        if data.get('title') != 'None':
+            try:
+                if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
+                    if data['proposed_call']['method'] == 'spend':
+                        amount = int(data['proposed_call']['args']['amount']) / float(self.config.TOKEN_DECIMAL)
+                        requested_spend = f"```markdown\n{self.config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
+                    if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
+                        amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(self.config.TOKEN_DECIMAL)
+                        requested_spend = f"```markdown\n{self.config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
+                else:
+                    self.logger.error("Data does not match any known sources")
+                    requested_spend = ""
+            except Exception as e:
+                self.logger.error(f"Unable to pull information from data sources due to: {e}")
+                requested_spend = ""
+        else:
+            self.logger.error("Title: None")
+            requested_spend = ""
+
+        return requested_spend
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -111,50 +177,45 @@ class GovernanceMonitor(discord.Client):
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
 
-    def get_asset_price(self, asset_id, currencies='usd,gbp,eur'):
-        """
-        Fetches the price of an asset in the specified currencies from the CoinGecko API.
-
-        Args:
-            asset_id (str): The ID of the asset for which to fetch the price (e.g., "bitcoin").
-            currencies (str, optional): A comma-separated string of currency symbols
-                                         (default is 'usd,gbp,eur').
-
-        Returns:
-            dict: A dictionary containing the prices in the specified currencies, or None
-                  if an error occurred or the asset ID was not found.
-        """
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={asset_id}&vs_currencies={currencies}"
-
+    @staticmethod
+    async def load_vote_counts():
         try:
-            response = requests.get(url)
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            self.logger.error(f"An HTTP error occurred: {e}")
-            return None
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"A request error occurred: {e}")
-            return None
-
-        data = response.json()
-
-        if asset_id not in data:
-            self.logger.warning(f"Asset ID '{asset_id}' not found in CoinGecko.")
-            return None
-
-        return data[asset_id]
+            async with aiofiles.open("../data/vote_counts.json", "r") as file:
+                data = await file.read()
+                return json.loads(data)
+        except FileNotFoundError:
+            return {}
 
     @staticmethod
-    def load_vote_counts():
+    async def load_onchain_votes():
         try:
-            with open("../data/vote_counts.json", "r") as file:
+            async with aiofiles.open("../data/onchain-votes.json", "r") as file:
+                data = await file.read()
+                return json.loads(data)
+        except FileNotFoundError:
+            return {}
+
+    @staticmethod
+    def load_governance_cache():
+        try:
+            with open("../data/governance.cache", "r") as file:
                 return json.load(file)
         except FileNotFoundError:
             return {}
 
-    def save_vote_counts(self):
-        with open("../data/vote_counts.json", "w") as file:
-            json.dump(self.vote_counts, file, indent=4)
+    @staticmethod
+    async def load_vote_periods(network: str):
+        file_path = f"../data/vote_periods/{network}.json"
+        try:
+            async with aiofiles.open(file_path, "r") as file:
+                data = await file.read()
+                return json.loads(data)
+        except FileNotFoundError:
+            return {}
+
+    async def save_vote_counts(self):
+        async with aiofiles.open("../data/vote_counts.json", "w") as file:
+            await file.write(json.dumps(self.vote_counts, indent=4))
 
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
         self.logger.info(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
@@ -291,20 +352,15 @@ class GovernanceMonitor(discord.Client):
         - Ensure that 'self.calculate_vote_result' method is defined, it should take
           aye_votes, and nay_votes as parameters and return a string.
         """
+        await interaction.response.defer()
         if interaction.data and interaction.data.get("component_type") == 2:
             custom_id = interaction.data.get("custom_id")
-
-            # to be deprecated
-            if custom_id == 'abstain_button':
-                await interaction.response.send_message(f"Choose Aye, Nay, or Recuse if there's a conflict of interest. Abstain has been removed", ephemeral=True)
-                await asyncio.sleep(10)
-                await interaction.delete_original_response()
-                return
 
             user_id = interaction.user.id
             username = interaction.user.name + '#' + interaction.user.discriminator
 
             self.logger.info(f"User interaction from {username}")
+            await asyncio.sleep(2)
             member = await interaction.guild.fetch_member(user_id)
             roles = member.roles
 
@@ -313,18 +369,18 @@ class GovernanceMonitor(discord.Client):
 
             if self.discord_role and not any(role.name == self.discord_role for role in roles):
                 self.logger.warning(f"{username} doesn't have the necessary role assigned to participate:: {self.discord_role}")
-                await interaction.response.send_message(
+                interaction_message = await interaction.followup.send(
                     f"To participate, please ensure that you have the necessary role assigned: {self.discord_role}. This is a prerequisite for engaging in this activity.",
                     ephemeral=True)
                 await asyncio.sleep(5)
-                await interaction.delete_original_response()
+                await interaction_message.delete()
                 return
 
             message_id = str(interaction.message.id)
             discord_thread = interaction.message.channel
 
             if custom_id in ["aye_button", "nay_button", "recuse_button"] and current_time >= cooldown_time:
-                self.vote_counts = self.load_vote_counts()
+                self.vote_counts = await self.load_vote_counts()
                 self.button_cooldowns[user_id] = current_time
                 vote_type = "aye" if custom_id == "aye_button" else "recuse" if custom_id == "recuse_button" else "nay"
                 # Save or update vote in the database
@@ -344,7 +400,7 @@ class GovernanceMonitor(discord.Client):
 
                     # If the user has voted for the same option, ignore the vote
                     if previous_vote == vote_type:
-                        await interaction.response.send_message(
+                        await interaction.followup.send(
                             f"Your vote of **{previous_vote}** has already been recorded. To change it, select an alternative option.",
                             ephemeral=True)
                         await asyncio.sleep(2)
@@ -358,7 +414,7 @@ class GovernanceMonitor(discord.Client):
                 self.vote_counts[message_id][vote_type] += 1
                 self.vote_counts[message_id]["users"][str(user_id)] = {"username": username,
                                                                        "vote_type": vote_type}
-                self.save_vote_counts()
+                await self.save_vote_counts()
 
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
@@ -375,7 +431,7 @@ class GovernanceMonitor(discord.Client):
 
                 # Acknowledge the vote and delete the message 10 seconds later
                 # (this notification is only visible to the user that interacts with AYE, NAY
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
                     ephemeral=True)
                 await asyncio.sleep(2)
@@ -385,10 +441,165 @@ class GovernanceMonitor(discord.Client):
                 remaining_time = cooldown_time - current_time
                 seconds = int(remaining_time)
 
-                await interaction.response.send_message(f"{seconds} second waiting period remaining before you may cast your vote again. We appreciate your patience and understanding.",
+                interaction_message = await interaction.followup.send(f"{seconds} second waiting period remaining before you may cast your vote again. We appreciate your patience and understanding.",
                                                         ephemeral=True)
                 await asyncio.sleep(seconds)
-                await interaction.delete_original_response()
+                await interaction_message.delete()
+
+    async def manage_discord_thread(self, channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
+        thread = None
+        char_exceed_msg = "\n```For more insights, visit the provided links below.```"
+        content = Text.convert_markdown_to_discord(content) if content is not None else None
+
+        try:
+            other_components_length = len(requested_spend + "\n\n")  # Newlines are 2 characters
+            final_content = content or ''
+            if len(final_content) + other_components_length > self.config.DISCORD_BODY_MAX_LENGTH:
+                available_space = self.config.DISCORD_BODY_MAX_LENGTH - other_components_length - len(char_exceed_msg + "...")
+                truncated_content = re.sub(r'\s+\S+$', '', final_content[:available_space])
+                final_content = f"{truncated_content}...{char_exceed_msg}"
+
+            thread_content = f"{requested_spend}{final_content}\n\n"
+            thread_title = f"{index}: {title}"
+
+            if operation == 'create':
+                thread = await channel.create_thread(
+                    name=thread_title,
+                    content=thread_content,
+                    reason=f"Created by an incoming proposal on the {self.config.NETWORK_NAME} network",
+                    applied_tags=[governance_tag]
+                )
+            elif operation == 'edit' and client is not None:
+                await client.edit_thread(
+                    forum_channel=self.config.DISCORD_FORUM_CHANNEL_ID,
+                    message_id=message_id,
+                    name=thread_title,
+                    content=thread_content
+                )
+                self.logger.info(f"Title updated from None -> {title} in vote_counts.json")
+                self.logger.info("Discord thread successfully amended")
+            else:
+                self.logger.error(f"Invalid operation or missing parameters for {operation}")
+        except Exception as e:
+            self.logger.error(f"Failed to manage Discord thread: {e}")
+        return thread
+
+    async def get_or_create_governance_tag(self, available_channel_tags, governance_origin, channel):
+        try:
+            governance_tag = next((tag for tag in available_channel_tags if tag.name == governance_origin[0]), None)
+        except Exception as e:
+            self.logger.error(f"Error while searching for tag: {e}")
+            governance_tag = None
+
+        if governance_tag is None:
+            try:
+                governance_tag = await channel.create_tag(name=governance_origin[0])
+            except Exception as e:
+                self.logger.error(f"Failed to create tag: {e}")
+                governance_tag = None
+
+        return governance_tag
+
+    async def create_or_get_role(self, guild, role_name):
+        # Check if the role already exists
+        existing_role = discord.utils.get(guild.roles, name=role_name)
+
+        if existing_role:
+            return existing_role
+
+        # If the role doesn't exist, try to create it
+        try:
+            # Create the role with the specified name
+            new_role = await guild.create_role(name=role_name)
+            return new_role
+        except discord.Forbidden:
+            self.logger.error(f"Permission error: Unable to create role {role_name} in guild {guild.id}")
+            raise  # You can raise the exception or return None based on your use case
+        except discord.HTTPException as e:
+            self.logger.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
+            raise  # You can raise the exception or return None based on your use case
+
+    async def set_voting_button_lock_status(self, threads, lock: bool):
+        if threads:
+            self.logger.info(f"{len(threads)} threads to {'lock' if lock else 'unlock'}")
+            for message_id in threads:
+                thread = self.get_channel(int(message_id))
+                if thread is not None:
+                    async for message in thread.history(oldest_first=True, limit=1):
+                        view = ButtonHandler(self, message)
+                        await view.set_buttons_lock_status(lock_status=lock)
+                        await message.edit(view=view)
+            self.logger.info(f"The following threads have been {'locked' if lock else 'unlocked'}: {threads}")
+
+    async def lock_threads(self, threads_to_lock, user):
+        try:
+            if threads_to_lock:
+                username = user.name
+                user_id = user.id
+                self.logger.info(f"{len(threads_to_lock)} threads have been archived by {username} (ID: {user_id})")
+
+                for message_id in threads_to_lock:
+                    thread = self.get_channel(self.config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(message_id))
+                    if thread is None:
+                        self.logger.warning(f"Thread with ID {message_id} not found.")
+                        continue
+
+                    async for message_id in thread.history(oldest_first=True, limit=1):
+                        results_message_id = message_id.id
+
+                    view = ButtonHandler(self, message_id)
+                    await view.set_buttons_lock_status(lock_status=True)
+                    await message_id.edit(view=view)
+
+                self.logger.info(f"The following threads have been locked by {username} (ID: {user_id}): {threads_to_lock}")
+
+        except Exception as e:
+            self.logger.error(f"An error occurred while locking threads: {str(e)}")
+
+    async def calculate_proxy_vote(self, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
+        """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
+        total_votes = aye_votes + nay_votes
+
+        if total_votes == 0:
+            return "abstain"
+
+        aye_percentage = aye_votes / total_votes
+        nay_percentage = nay_votes / total_votes
+
+        if aye_percentage >= threshold:
+            return "aye"
+        elif nay_percentage >= threshold:
+            return "nay"
+        else:
+            return "abstain"
+
+    async def determine_vote_action(self, vote_data: Dict[str, Any], origin: Dict[str, Any], proposal_epoch: int):
+        """ Determine the appropriate vote action based on elapsed time since epoch and role periods. """
+        SECONDS_IN_A_DAY = 86400
+        current_time = int(time.time())
+
+        elapsed_time = int(current_time - (proposal_epoch / 1000))
+
+        decision_period_seconds = origin["decision_period"] * SECONDS_IN_A_DAY
+        internal_vote_period = origin["internal_vote_period"] * SECONDS_IN_A_DAY
+        revote_period = origin["revote_period"] * SECONDS_IN_A_DAY
+
+        _1st_vote = elapsed_time >= internal_vote_period
+        _2nd_vote = elapsed_time >= revote_period
+
+        if elapsed_time >= decision_period_seconds:
+            return 0, "Vote period has ended."
+
+        if _1st_vote and not _2nd_vote:
+            vote = await self.calculate_proxy_vote(aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
+            return 1, vote
+
+        if _1st_vote and _2nd_vote:
+            vote = await self.calculate_proxy_vote(aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
+            return 2, vote
+
+        if not _1st_vote:
+            return 99, f"Waiting for 1st vote conditions to be met. is {elapsed_time} > {internal_vote_period}?"
 
     async def on_error(self, event, *args, **kwargs):
         exc = sys.exc_info()

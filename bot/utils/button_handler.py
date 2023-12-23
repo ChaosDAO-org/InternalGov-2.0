@@ -13,15 +13,6 @@ class ButtonHandler(View):
         self.add_item(Button(label="NAY", custom_id="nay_button", style=discord.ButtonStyle.red, emoji="👎"))
         self.add_item(Button(label="RECUSE", custom_id="recuse_button", style=discord.ButtonStyle.primary, emoji="\u26d4"))
 
-    async def on_aye_button(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-
-    async def on_nay_button(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-
-    async def on_recuse_button(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-
     async def set_buttons_lock_status(self, lock_status: bool):
         for item in self.children:
             if isinstance(item, Button):
