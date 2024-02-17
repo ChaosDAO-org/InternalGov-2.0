@@ -1,5 +1,6 @@
 from substrateinterface import SubstrateInterface, Keypair
 from substrateinterface.exceptions import SubstrateRequestException
+from utils.config import Config
 from utils.logger import Logger
 import asyncio
 
@@ -37,7 +38,7 @@ class ProxyVoter:
             self.substrate = SubstrateInterface(
                 url=url
             )
-            self.substrate.get_block()
+            #self.substrate.get_block() - REMOVE
 
         except SubstrateRequestException as e:
             print(f"Failed to connect to Substrate node: {e}")
@@ -46,19 +47,35 @@ class ProxyVoter:
         self.main_address = main_address
         self.proxy_keypair = Keypair.create_from_mnemonic(proxy_mnemonic)
         self.logger = Logger()
+        self.config = Config()
 
-    async def balance(self):
+    async def balance(self, ss58_address=None):
         """
-        Query the free balance of the main address.
+        Query the free balance of the main address that the proxy controls if a ss58_address isn't provided.
 
         Returns:
             int: The free balance of the main address.
         """
         try:
-            result = self.substrate.query('System', 'Account', [self.main_address])
-            return result.value['data']['free']
+            if not ss58_address:
+                result = self.substrate.query('System', 'Account', [self.main_address])
+                return result.value['data']['free']
+            else:
+                result = self.substrate.query('System', 'Account', [ss58_address])
+                return result.value['data']['free']
         except SubstrateRequestException as e:
             print(f"Failed to query balance: {e}")
+            return None
+
+    async def proxy_balance(self):
+        try:
+            public_address = self.proxy_keypair.ss58_address
+            proxy_balance = await self.balance(ss58_address=public_address) / float(self.config.TOKEN_DECIMAL)
+            if isinstance(proxy_balance, float):
+                return proxy_balance
+            else:
+                raise ValueError("Balance is not a float")
+        except Exception as error:
             return None
 
     async def compose_democracy_vote_call(self, proposal_index, vote_type, conviction, ongoing_referendas):

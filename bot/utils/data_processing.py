@@ -1,8 +1,11 @@
 import re
 import os
+import io
 import time
 import json
 import shutil
+import qrcode
+from PIL import Image
 import deepdiff
 import markdownify
 from typing import Dict, Any
@@ -43,6 +46,29 @@ class Text:
 
         return markdown_text
 
+    @staticmethod
+    def generate_qr_code(publickey):
+        # Create a QR code instance
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+
+        # Add data to the QR code
+        qr.add_data(publickey)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        img = img.resize((250, 250), Image.ANTIALIAS)
+
+        # Save the image to a bytes object for Discord embed
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr.seek(0)
+
+        return img_byte_arr
 
 class CacheManager:
     @staticmethod

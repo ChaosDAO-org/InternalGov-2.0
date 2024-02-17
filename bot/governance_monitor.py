@@ -450,7 +450,6 @@ class GovernanceMonitor(discord.Client):
         thread = None
         char_exceed_msg = "\n```For more insights, visit the provided links below.```"
         content = Text.convert_markdown_to_discord(content) if content is not None else None
-
         try:
             other_components_length = len(requested_spend + "\n\n")  # Newlines are 2 characters
             final_content = content or ''
