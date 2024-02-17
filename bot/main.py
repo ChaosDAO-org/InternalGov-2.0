@@ -10,7 +10,7 @@ from utils.gov2 import OpenGovernance2
 from utils.subquery import SubstrateAPI
 from datetime import datetime, timezone
 from governance_monitor import GovernanceMonitor
-from utils.data_processing import CacheManager, DiscordFormatting
+from utils.data_processing import CacheManager, DiscordFormatting, Text
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
@@ -326,12 +326,29 @@ async def autonomous_voting():
 
         governance_cache = client.load_governance_cache()
         governance_cache_keys = governance_cache.keys()
+
         channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+        alert_channel = client.get_channel(config.DISCORD_PROXY_BALANCE_ALERT)
         guild = client.get_guild(config.DISCORD_SERVER_ID)
 
+        voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
         votes = []
+
         logging.info("autonomous_voting task is running")
+        proxy_balance = await voter.proxy_balance()
+
         for thread_id, vote_data in vote_counts.items():
+            if proxy_balance <= config.PROXY_BALANCE_ALERT:
+                logging.warning(f"Balance is too low: {proxy_balance}")
+                # Post on discord with balance and public address to make it easier to top up
+                proxy_address_qr = Text.generate_qr_code(publickey=config.PROXY_ADDRESS)
+
+                balance_embed = Embed(color=0xFF0000, title=f'Low balance detected', description=f'Balance is {proxy_balance:.4f}, which is below the minimum required for voting with the proxy. Please add funds to continue without interruption.', timestamp=datetime.utcnow())
+                balance_embed.add_field(name='Address', value=f'{config.PROXY_ADDRESS}', inline=True)
+                balance_embed.set_thumbnail(url="attachment://proxy_address_qr.png")
+                await alert_channel.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
+                break
+
             await asyncio.sleep(2)
             # Only vote on proposals where "origin" is present in vote_counts.json
             # This is only required for versions of the bot that didn't capture
@@ -364,6 +381,10 @@ async def autonomous_voting():
                     if not onchain_votes[proposal_index]["1st_vote"]["extrinsic"] and cast == 1:
                         logging.info("Preparing to cast the first vote")
                         onchain_votes[proposal_index]["1st_vote"]["vote_type"] = vote_type
+                        onchain_votes[proposal_index]["1st_vote"]["aye"] = vote_data['aye']
+                        onchain_votes[proposal_index]["1st_vote"]["nay"] = vote_data['nay']
+                        onchain_votes[proposal_index]["1st_vote"]["recuse"] = vote_data['recuse']
+
                         votes.append((int(proposal_index), vote_type, config.CONVICTION))
 
                     # Only update 2nd_vote if it's not already set
@@ -371,6 +392,9 @@ async def autonomous_voting():
                         if not has_previous_vote_changed:
                             logging.info("Preparing to cast the second vote")
                             onchain_votes[proposal_index]["2nd_vote"]["vote_type"] = vote_type
+                            onchain_votes[proposal_index]["2nd_vote"]["aye"] = vote_data['aye']
+                            onchain_votes[proposal_index]["2nd_vote"]["nay"] = vote_data['nay']
+                            onchain_votes[proposal_index]["2nd_vote"]["recuse"] = vote_data['recuse']
                             votes.append((int(proposal_index), vote_type, config.CONVICTION))
                         else:
                             logging.info(f"The second vote hasn't changed from the first vote. No vote shall be cast on {proposal_index}")
@@ -383,11 +407,17 @@ async def autonomous_voting():
                         "origin": vote_data["origin"][0],
                         "decision_period_passed": True if cast == 0 else False,
                         "1st_vote": {
+                            "aye": "",
+                            "nay": "",
+                            "recuse": "",
                             "vote_type": "",
                             "extrinsic": "",
                             "timestamp": ""
                         },
                         "2nd_vote": {
+                            "aye": "",
+                            "nay": "",
+                            "recuse": "",
                             "vote_type": "",
                             "extrinsic": "",
                             "timestamp": ""
@@ -404,7 +434,7 @@ async def autonomous_voting():
         # Only cast a vote if we have any to cast
         if len(votes) > 0:
             logging.info("Casting on-chain votes")
-            voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
+            #  voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
             indexes, calls, extrinsic_hash = await voter.execute_multiple_votes(votes)
         else:
             return
@@ -444,7 +474,7 @@ async def autonomous_voting():
         last_six = extrinsic_hash[-8:]
         short_extrinsic_hash = f"{first_six}...{last_six}"
 
-        role = await client.create_or_get_role(guild, config.TAG_ROLE_NAME)
+        role = await client.create_or_get_role(guild, config.EXTRINSIC_ALERT)
 
         for proposal_index, data in onchain_votes.items():
             if data['decision_period_passed']:
@@ -452,8 +482,13 @@ async def autonomous_voting():
 
             vote_count = 2 if data['2nd_vote']['extrinsic'] else 1 if data['1st_vote']['extrinsic'] else 0
             vote_type = next((vote[1] for vote in votes if vote[0] == int(proposal_index)), None)
+            vote_data = data['2nd_vote'] if vote_count == 2 else data['1st_vote'] if vote_count == 1 else None
 
             if vote_type:
+                aye = vote_data.get('aye', 'ERR')  # Returns 0 if 'aye' key is not found
+                nay = vote_data.get('nay', 'ERR')  # Returns 0 if 'nay' key is not found
+                recuse = vote_data.get('recuse', 'ERR')  # Returns 0 if 'recuse' key is not found
+
                 logging.info(f"Posting extrinsic URL on discord as a Proof-of-Vote on {proposal_index}")
                 discord_thread = channel.get_thread(int(data['thread_id']))
                 internal_vote_periods = vote_periods.get(data['origin'], {})
@@ -463,6 +498,10 @@ async def autonomous_voting():
                 extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
                 extrinsic_embed.add_field(name=f'Origin', value=f"{data['origin']}", inline=True)
                 extrinsic_embed.add_field(name=f'Vote count', value=f'{vote_count} out of 2', inline=True)
+                extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
+                extrinsic_embed.add_field(name='Aye', value=f"{aye}", inline=True)
+                extrinsic_embed.add_field(name='Nay', value=f"{nay}", inline=True)
+                extrinsic_embed.add_field(name='Recuse', value=f"{recuse}", inline=True)
                 extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
                 extrinsic_embed.add_field(name='Decision Period', value=f"{internal_vote_periods['decision_period']} days", inline=True)
                 extrinsic_embed.add_field(name=f'First vote', value=f"{internal_vote_periods['internal_vote_period']} day(s) after being on-chain", inline=True)
