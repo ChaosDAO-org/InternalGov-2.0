@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from distutils.util import strtobool
 import os
 
 
@@ -9,12 +10,12 @@ class Config:
 
             # Discord Settings
             self.DISCORD_API_KEY = os.getenv('DISCORD_API_KEY') or self.raise_error("Missing DISCORD_API_KEY")
+            self.DISCORD_SERVER_ID = int(os.getenv('DISCORD_SERVER_ID') or self.raise_error("Missing DISCORD_SERVER_ID"))
             self.DISCORD_FORUM_CHANNEL_ID = int(os.getenv('DISCORD_FORUM_CHANNEL_ID') or self.raise_error("Missing DISCORD_FORUM_CHANNEL_ID"))
-            self.DISCORD_PROXY_BALANCE_ALERT = int(os.getenv('DISCORD_PROXY_BALANCE_ALERT') or self.raise_error("Missing DISCORD_PROXY_BALANCE_ALERT"))
-            self.DISCORD_LOCK_THREAD = int(os.getenv('DISCORD_LOCK_THREAD') or self.raise_error("Missing DISCORD_LOCK_THREAD"))
+            self.DISCORD_SUMMARIZER_CHANNEL_ID = int(os.getenv('DISCORD_SUMMARIZER_CHANNEL_ID')) or None
+            self.DISCORD_SUMMARY_ROLE = os.getenv('DISCORD_SUMMARY_ROLE') or None
             self.DISCORD_ADMIN_ROLE = os.getenv('DISCORD_ADMIN_ROLE') or self.raise_error("Missing DISCORD_ADMIN_ROLE")
             self.DISCORD_VOTER_ROLE = os.getenv('DISCORD_VOTER_ROLE') or None
-            self.DISCORD_SERVER_ID = int(os.getenv('DISCORD_SERVER_ID') or self.raise_error("Missing DISCORD_SERVER_ID"))
             self.DISCORD_TITLE_MAX_LENGTH = int(os.getenv('DISCORD_TITLE_MAX_LENGTH') or self.raise_error("Missing DISCORD_TITLE_MAX_LENGTH"))
             self.DISCORD_BODY_MAX_LENGTH = int(os.getenv('DISCORD_BODY_MAX_LENGTH') or self.raise_error("Missing DISCORD_BODY_MAX_LENGTH"))
             self.TAG_ROLE_NAME = os.getenv('DISCORD_NOTIFY_ROLE') or self.raise_error("Missing SYMBOL")
@@ -27,11 +28,14 @@ class Config:
             self.SUBSTRATE_WSS = os.getenv('SUBSTRATE_WSS') or self.raise_error("Missing SUBSTRATE_WSS")
 
             # Wallet Settings
+            self.SOLO_MODE = bool(strtobool(os.getenv('SOLO_MODE', ''))) if os.getenv('SOLO_MODE') is not None else self.raise_error("Missing SOLO_MODE")
             self.PROXIED_ADDRESS = os.getenv('PROXIED_ADDRESS') or self.raise_error("Missing PROXIED_ADDRESS")
             self.PROXY_ADDRESS = os.getenv('PROXY_ADDRESS') or self.raise_error("Missing PROXY_ADDRESS")
             self.MNEMONIC = os.getenv('MNEMONIC') or self.raise_error("Missing MNEMONIC")
             self.CONVICTION = os.getenv('CONVICTION') or self.raise_error("Missing CONVICTION")
+            self.DISCORD_PROXY_BALANCE_ALERT = int(os.getenv('DISCORD_PROXY_BALANCE_ALERT') or self.raise_error("Missing DISCORD_PROXY_BALANCE_ALERT"))
             self.PROXY_BALANCE_ALERT = float(os.getenv('PROXY_BALANCE_ALERT') or self.raise_error("Missing PROXY_BALANCE_ALERT"))
+            self.MIN_PARTICIPATION = float(os.getenv('MIN_PARTICIPATION') or self.raise_error("Missing MIN_PARTICIPATION"))
 
         except ValueError as e:
             print(f"Error: {e}")
