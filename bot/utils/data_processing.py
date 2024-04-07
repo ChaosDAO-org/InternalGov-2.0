@@ -70,6 +70,7 @@ class Text:
 
         return img_byte_arr
 
+
 class CacheManager:
     @staticmethod
     def save_data_to_cache(filename: str, data: Dict[str, Any]) -> None:
@@ -102,6 +103,13 @@ class CacheManager:
             return {}
         else:
             return result
+
+    @staticmethod
+    def get_details_by_index(data, index):
+        for key, value in data.items():
+            if value["index"] == str(index):
+                return value
+        return "No data found for index {}".format(index)
 
     @staticmethod
     def delete_old_keys_and_archive(json_file_path, days=14, archive_filename="archived_votes.json"):
@@ -142,6 +150,48 @@ class CacheManager:
         return keys_to_delete
 
     @staticmethod
+    def delete_executed_keys_and_archive(json_file_path, active_proposals, archive_filename="archived_votes.json"):
+
+        # Load JSON data from the file
+        with open(json_file_path, "r") as json_file:
+            json_data = json.load(json_file)
+
+        vote_count_proposals = []
+        for key, value in json_data.items():
+            vote_count_proposals.append(int(value['index']))
+
+        # Invert the structure to map indexes to keys
+        index_to_key = {value['index']: key for key, value in json_data.items()}
+
+        # Add thread id into keys_to_delete if they're not in active proposals
+        keys_to_delete = []
+        for index in vote_count_proposals:
+            if index not in active_proposals:
+                keys_to_delete.append(index_to_key[str(index)])
+
+        # Load archived data or create an empty dictionary if the file doesn't exist
+        if os.path.exists(archive_filename):
+            with open(archive_filename, "r") as archive_file:
+                archived_data = json.load(archive_file)
+        else:
+            archived_data = {}
+
+        # Archive keys to be deleted
+        for key in keys_to_delete:
+            archived_data[key] = json_data[key]
+            del json_data[key]
+
+        # Save the archived data to the file
+        with open(archive_filename, "w") as archive_file:
+            json.dump(archived_data, archive_file, indent=2)
+
+        # Save the updated JSON data back to the original file
+        with open(json_file_path, "w") as json_file:
+            json.dump(json_data, json_file, indent=2)
+
+        # Return the list of archived keys
+        return keys_to_delete
+    @staticmethod
     def rotating_backup_file(source_path, backup_dir, max_versions=3):
         """
         Creates a rotating backup of a file. Overwrites the oldest backup to maintain
@@ -175,6 +225,7 @@ class CacheManager:
         except Exception as e:
             return f"Error during backup: {e}"
 
+
 class DiscordFormatting:
     def __init__(self):
         self.config = Config()
@@ -200,7 +251,9 @@ class DiscordFormatting:
                 "Ongoing.tally.ayes": "AYES",
                 "Ongoing.tally.nays": "NAYS",
                 "Ongoing.tally.support": "SUPPORT",
-                "Ongoing.track": "TRACK"
+                "Ongoing.track": "TRACK",
+                "call.section": "SECTION",
+                "call.method": "METHOD"
             }
 
             if isinstance(key, list):
@@ -218,8 +271,11 @@ class DiscordFormatting:
         return formatted_key.upper()
 
     async def extract_and_embed(self, data, embed, parent_key=""):
-        if 'proposed_call' in data:
-            data = data['proposed_call']
+        if 'polkassembly' in data.get('successful_url', {}):
+            data = data.get('proposed_call', {})
+
+        if 'subsquare' in data.get('successful_url', {}):
+            data = data.get('onchainData', {}).get('proposal', {}).get('call', {})
 
         for key, value in data.items():
             new_key = f"{parent_key}.{key}" if parent_key else key
@@ -246,7 +302,6 @@ class DiscordFormatting:
                 if len(str(value)) > 255:
                     value = str(value)[:252] + "..."
                 embed.add_field(name=formatted_key, value=value, inline=True)
-
         return embed
 
     async def flatten_dict(self, data, parent_key='', sep='.'):
