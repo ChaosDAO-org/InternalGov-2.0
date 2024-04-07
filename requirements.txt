@@ -4,5 +4,7 @@ PyYAML==6.0
 requests==2.25.1
 substrate-interface==1.7.4
 markdownify==0.11.6
-psycopg2==2.9.7
 python-dotenv==1.0.0
+qrcode==7.4.2
+pillow==10.2.0
+aiofiles==23.2.1
