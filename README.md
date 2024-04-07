@@ -129,7 +129,7 @@ pm2 save
 ## Autonomous voting
 ![alt text](https://i.imgur.com/5d0HJsY.png)  
 
-When the bot votes is dictated in `/data/vote_periods`. Each origin of a proposal has its own setting on when the first vote should be cast & second. A second vote will only be made if the result differs from the previous. If the first vote is AYE and it remains AYE on the second period then no vote will be made on the network.  
+When the bot votes is dictated by `/data/vote_periods`. Each origin of a proposal has its own setting on when the first vote should be made & second. A second vote will only be made if the result differs from the first vote. If the first vote is AYE and it remains AYE on the second period then no vote will be made on the network.  
 [Polkadot vote periods](/data/vote_periods/polkadot.json)  
 [Kusama vote periods](/data/vote_periods/kusama.json)
 
