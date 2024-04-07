@@ -16,8 +16,9 @@ We encourage everyone to actively participate in these discussions, as your inpu
 ![alt text](https://i.imgur.com/bHTgBIX.png)
 3. Next, click on the "Bot" section in the left-hand menu and then click "Add Bot". Give your bot a username and profile picture, and click "Save Changes".  
 ![alt text](https://i.imgur.com/kxHZxsV.png)
-4. The bot does not need require any Privileged Gateway Intents.
-5. Under the "Token" section, click the "Copy" button to copy the API key. This key is what you'll use to authenticate your bot and allow it to interact with the Discord API.  
+4. Enable Server Members Intent (This is used when MIN_PARTICIPATION in the .env config is set to a number > 0. It is used to fetch the total amount of users in a particular role to calculate the participation)
+![](https://i.imgur.com/HT2l8mV.png)
+6. Under the "Token" section, click the "Copy" button to copy the API key. This key is what you'll use to authenticate your bot and allow it to interact with the Discord API.  
 ![alt text](https://i.imgur.com/2zhE3qT.png)
 6. Under Oauth2 -> URL Generator select `bot` and then select:
    - Manage Roles
@@ -25,44 +26,90 @@ We encourage everyone to actively participate in these discussions, as your inpu
    - Send Messages in Threads
    - Manage Messages
    - Manage Threads
-   - Mention Everyone (This is required so that it can mention the notification role)
-
+   - Mention Everyone 
 ![](bot_permissions.png)
 
 NOTE: `Manage Roles` is only needed initially to create the [SYMBOL]-GOV role to notify members to vote. You can either create the role yourself or remove `Manage Roles` permission once the role is created to limit any attack surface. The created role has no inherent permission and is only used for tagging.
 7. Be sure to keep your API key secret! Don't share it with anyone or include it in any public code repositories.
 
-###### server / forum id
-1. Open Discord and click on the gear icon next to your username in the bottom left corner of your screen.
+---
+
+### server / forum id
+1. Open Discord and click on the gear icon next to your username in the bottom left corner of your screen.  
+![](https://i.imgur.com/fbtU1Lv.png)
 2. Under App Settings, click Advanced and enable Developer Mode
-3. Right-click on your server and copy id. The same step is repeated for the forum channel.
+![](https://i.imgur.com/c85bjLA.png)
+3. Right-click on your server and copy Server ID. The same step is repeated for the forum channel.
 
+---
 
+### .env.sample
+#### This file should be renamed from .env.sample -> .env
 ```dotenv
-# Discord Settings
-DISCORD_API_KEY=<api-key>
-DISCORD_SERVER_ID=<server-id>
-DISCORD_FORUM_CHANNEL_ID=<forum-id>
-DISCORD_LOCK_THREAD=28
-DISCORD_VOTER_ROLE=<role that is allowed to vote>
-DISCORD_ADMIN_ROLE=<role for administrative commands>
+###### [ Discord Settings ] ########################
+DISCORD_API_KEY='Bot API key'
+DISCORD_SERVER_ID='0'
+DISCORD_FORUM_CHANNEL_ID='0'
+
+# These settings create a thread in a separate channel with the
+# results of the internal vote for users to summarise the decision.
+# OPTIONAL: (Leave as '0' if you don't want to use this feature)
+DISCORD_SUMMARIZER_CHANNEL_ID='0'
+DISCORD_SUMMARY_ROLE=''
+
+# This role can participate in internal voting.
+# If nothing is set, anyone can vote.
+DISCORD_VOTER_ROLE=''
+
+# This role can perform administrative commands.
+DISCORD_ADMIN_ROLE='admin'
+
+# These settings dictate the max title/body length.
+# It is recommended to leave the default values.
 DISCORD_TITLE_MAX_LENGTH=95
 DISCORD_BODY_MAX_LENGTH=2000
+
+# This role notifies when a new proposal is on the network.
 DISCORD_NOTIFY_ROLE='KSM-GOV'
 
-# Network Settings
-NETWORK_NAME=kusama
-SYMBOL=KSM
-TOKEN_DECIMAL=1e12 (set to 1e10 for Polkadot)
+# This role notifies when a vote has been cast onchain.
+DISCORD_EXTRINSIC_ROLE='The role you want to use to notify when a vote has been cast onchain'
+
+
+###### [ Network Settings ] ########################
+NETWORK_NAME='kusama'
+SYMBOL='KSM'
+
+# Polkadot: 1e10 (10 decimals)
+# Kusama:   1e12 (12 decimals)
+TOKEN_DECIMAL=1e12
+
+# RPC address (IBP favoured for stability)
 SUBSTRATE_WSS=wss://rpc.ibp.network/kusama
 
-# Wallet Settings
-PROXIED_ADDRESS=<Address of the account the proxy controls>
-MNEMONIC='<Mnemonic of proxy account>'
+
+###### [ Wallet Settings ] ########################
+# when solo mode is set to True, automatic voting is disabled.
+SOLO_MODE=False
+PROXIED_ADDRESS='Address that the gov proxy controls'
+PROXY_ADDRESS='Gov proxy address'
+MNEMONIC='Mnemonic to the governance proxy address'
+
+# This option can be set to Locked1,2,3,4,5,6x
 CONVICTION='Locked4x'
 
+# This allows you to receive a wallet balance alert to a specific channel
+# and at what balance to issue an alert at.
+DISCORD_PROXY_BALANCE_ALERT='0'
+PROXY_BALANCE_ALERT=0.015
+
+# This setting allows you to set minimum participation percentage
+# internally. If 90 people have DISCORD_VOTER_ROLE and only 6 people
+# vote, then the default decision will be abstain.
+# OPTIONAL: (Set to 0 to turn off minimum participation)
+MIN_PARTICIPATION=12.8
+
 ```
-note: `discord_role` is optional. If left as `null` it will allow anyone to cast a vote.
 
 ---
 
@@ -80,7 +127,13 @@ pm2 save
 
 ---
 ## Autonomous voting
-![alt text](https://i.imgur.com/5d0HJsY.png)
+![alt text](https://i.imgur.com/5d0HJsY.png)  
+
+When the bot votes is dictated by `/data/vote_periods`. Each origin of a proposal has its own setting on when the first vote should be made & second. A second vote will only be made if the result differs from the first vote. If the first vote is AYE and it remains AYE on the second period then no vote will be made on the network.  
+[Polkadot vote periods](/data/vote_periods/polkadot.json)  
+[Kusama vote periods](/data/vote_periods/kusama.json)
+
+
 ### vote settings
 ###### Kusama vote periods
 | Role               | Decision Period (days) | Internal Vote Period (days) | Revote Period (days) |
@@ -103,6 +156,8 @@ pm2 save
 > Example:
 > > A proposal is submitted with its origin designated as 'Treasurer'. Following a period of five days after its on-chain introduction, a vote is conducted in accordance with the predetermined internal outcome. Should there be a shift in the voting stance from 'AYE' to 'NAY', a subsequent vote will be executed on the tenth day of the proposal's on-chain presence. In instances where the initial decision remains unaltered and the proposal has aged ten days or more, no further on-chain voting action will be undertaken.
 
+---
+
 ###### Polkadot vote periods
 | Role               | Decision Period (days) | Internal Vote Period (days) | Revote Period (days) |
 |--------------------|------------------------|-----------------------------|----------------------|
@@ -123,3 +178,15 @@ pm2 save
 | BigSpender         | 28                     | 7                           | 20                   |
 > Example:
 > > A proposal is submitted with its origin designated as 'AuctionAdmin'. Following a period of seven days after its on-chain introduction, a vote is conducted in accordance with the predetermined internal outcome. Should there be a shift in the voting stance from 'AYE' to 'NAY', a subsequent vote will be executed on the twentieth day of the proposal's on-chain presence. In instances where the initial decision remains unaltered and the proposal has aged ten days or more, no further on-chain voting action will be undertaken.
+
+---
+
+## Support
+For assistance or inquiries, please refer to the following official channels of communication: 
+
+| Platform | User   | UID/URL                       |
+|----------|--------|-------------------------------|
+| Discord  | n4dro  | 185365893499322368            |
+| Twitter  | n4dro  | https://twitter.com/N4DRO     |
+| Telegram | n4droj | https://t.me/n4droj           |
+| Discord  |        | https://discord.gg/fGJe2AWkGe |

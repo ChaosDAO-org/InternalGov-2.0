@@ -28,31 +28,25 @@ class SubstrateAPI:
 
             except WebSocketBadStatusException as ws_error:
                 self.logger.exception(f"WebSocket error occurred while making a request to Substrate: {ws_error.args}")
-                print(f"WebSocket error occurred while making a request to Substrate: {ws_error.args}")
 
                 if attempt < max_retries:  # If the current attempt is less than max_retries.
                     self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
-                    print(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
                     await asyncio.sleep(wait_seconds)
                     raise
                 else:  # If we reached max_retries and couldn't establish a connection.
                     self.logger.error("Max retries reached. Could not establish a connection.")
-                    print("Max retries reached. Could not establish a connection.")
                     raise
 
             except SubstrateRequestException as req_error:
                 self.logger.exception(f"An error occurred while making a request to Substrate: {req_error.args}")
-                print(f"An error occurred while making a request to Substrate: {req_error.args}")
                 raise
 
             except ConfigurationError as config_error:
                 self.logger.exception(f"Config error: {config_error.args}")
-                print(f"Config error: {config_error.args}")
                 raise
 
             except Exception as error:
                 self.logger.exception(f"An error occurred while initializing the Substrate connection: {error.args}")
-                print(f"An error occurred while initializing the Substrate connection: {error.args}")
                 raise
 
     @staticmethod
@@ -66,6 +60,16 @@ class SubstrateAPI:
             return current_time - file_modification_time > 24 * 3600
         except FileNotFoundError:
             return True
+
+    async def ongoing_referendums_idx(self):
+        substrate = None
+        try:
+            substrate = await self._connect()
+            ongoing_referendas = [int(index.value) for index, info in substrate.query_map(module='Referenda', storage_function='ReferendumInfoFor', params=[]) if 'Ongoing' in info]
+            return ongoing_referendas
+        finally:
+            if substrate:
+                substrate.close()
 
     async def referendumInfoFor(self, index=None):
         """

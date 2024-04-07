@@ -6,18 +6,20 @@ import discord
 import requests
 import aiofiles
 from typing import Dict, Any
-from discord import app_commands
+from discord import app_commands, Embed
 from utils.logger import Logger
 from utils.config import Config
+from utils.proxy import ProxyVoter
 from utils.data_processing import Text
 from utils.button_handler import ButtonHandler
 from aiohttp.web_exceptions import HTTPException
+from datetime import datetime, timezone
 import sys
 
 
 class GovernanceMonitor(discord.Client):
-    def __init__(self, guild, discord_role, permission_checker):
-        super().__init__(intents=None)
+    def __init__(self, guild, discord_role, permission_checker, intents):
+        super().__init__(intents=intents)
         self.button_cooldowns = {}
         self.config = Config()
         self.logger = Logger()
@@ -71,11 +73,11 @@ class GovernanceMonitor(discord.Client):
         if data.get('title') != 'None':
             try:
                 if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
-                    if data['proposed_call']['method'] == 'spend':
+                    if 'spend' in data['proposed_call']['method']:
                         amount = int(data['proposed_call']['args']['amount']) / float(self.config.TOKEN_DECIMAL)
                         requested_spend = f"```markdown\n{self.config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
                 elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
-                    if data['onchainData']['proposal'] and data['onchainData']['proposal']['call']['method'] == 'spend':
+                    if data['onchainData']['proposal'] and 'spend' in data['onchainData']['proposal']['call']['method']:
                         amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(self.config.TOKEN_DECIMAL)
                         requested_spend = f"```markdown\n{self.config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
                 else:
@@ -89,6 +91,40 @@ class GovernanceMonitor(discord.Client):
             requested_spend = ""
 
         return requested_spend
+
+    async def check_permissions(self, interaction, required_role, user_id, user_roles):
+        self.logger.info(f"Checking {interaction.user.name} has the appropriate permissions")
+        if required_role and not any(role.name == required_role for role in user_roles):
+            self.logger.warning(f"<@{user_id}> doesn't have the necessary role assigned to participate: {required_role}")
+            interaction_message = await interaction.followup.send(
+                f"You have insufficient access to execute this command! Required role: `{required_role}`.",
+                ephemeral=True)
+            await asyncio.sleep(10)
+            await interaction_message.delete()
+            return False
+        elif any(role.name == required_role for role in user_roles):
+            self.logger.info(f"TRUE")
+            return True
+
+    async def check_balance(self, interaction):
+        self.logger.info(f"Checking wallet balance of {self.config.PROXIED_ADDRESS}")
+        voter = ProxyVoter(main_address=self.config.PROXIED_ADDRESS, proxy_mnemonic=self.config.MNEMONIC, url=self.config.SUBSTRATE_WSS)
+        proxy_balance = await voter.proxy_balance()
+
+        if proxy_balance <= self.config.PROXY_BALANCE_ALERT:
+            self.logger.warning(f"Wallet balance is too low: {proxy_balance}")
+
+            # Post on discord with balance and public address to make it easier to top up
+            proxy_address_qr = Text.generate_qr_code(publickey=self.config.PROXY_ADDRESS)
+            balance_embed = Embed(color=0xFF0000, title=f'Low balance detected',
+                                  description=f'Balance is {proxy_balance:.4f}, which is below the minimum required for voting with the proxy. Please add funds to continue without interruption.',
+                                  timestamp=datetime.utcnow())
+            balance_embed.add_field(name='Address', value=f'{self.config.PROXY_ADDRESS}', inline=True)
+            balance_embed.set_thumbnail(url="attachment://proxy_address_qr.png")
+            await interaction.followup.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
+
+            return False
+        return True
 
     @staticmethod
     def proposals_with_no_context(filename):
@@ -176,6 +212,12 @@ class GovernanceMonitor(discord.Client):
         else:
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
+
+    @staticmethod
+    def check_minimum_participation(total_members, total_vote_count, min_participation):
+        participation_percentage = (total_vote_count / total_members) * 100
+        meets_minimum = participation_percentage >= min_participation
+        return meets_minimum, participation_percentage
 
     @staticmethod
     async def load_vote_counts():
@@ -442,7 +484,7 @@ class GovernanceMonitor(discord.Client):
                 seconds = int(remaining_time)
 
                 interaction_message = await interaction.followup.send(f"{seconds} second waiting period remaining before you may cast your vote again. We appreciate your patience and understanding.",
-                                                        ephemeral=True)
+                                                                      ephemeral=True)
                 await asyncio.sleep(seconds)
                 await interaction_message.delete()
 
@@ -499,6 +541,23 @@ class GovernanceMonitor(discord.Client):
 
         return governance_tag
 
+    async def total_member_contributors(self, guild, role_name):
+
+        try:
+            guild = self.get_guild(guild)
+            existing_role = discord.utils.get(guild.roles, name=role_name)
+            total_members = guild.get_role(existing_role.id).members
+
+            if existing_role:
+                member_count = len(total_members)
+                return member_count
+        except discord.Forbidden:
+            self.logger.error(f"Permission error: Unable to get total members from {role_name} in guild {guild.id}")
+            raise
+        except discord.HTTPException as e:
+            self.logger.error(f"HTTP error while fetching total members from {role_name} in guild {guild.id}: {e}")
+            raise
+
     async def create_or_get_role(self, guild, role_name):
         # Check if the role already exists
         existing_role = discord.utils.get(guild.roles, name=role_name)
@@ -549,6 +608,7 @@ class GovernanceMonitor(discord.Client):
                     view = ButtonHandler(self, message_id)
                     await view.set_buttons_lock_status(lock_status=True)
                     await message_id.edit(view=view)
+                    self.logger.info(f"Locking thread: {thread.name}")
 
                 self.logger.info(f"The following threads have been locked by {username} (ID: {user_id}): {threads_to_lock}")
 
@@ -558,6 +618,16 @@ class GovernanceMonitor(discord.Client):
     async def calculate_proxy_vote(self, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
         """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
         total_votes = aye_votes + nay_votes
+
+        # Default to abstain if the turnout internally is <= config.MIN_PARTICIPATION
+        # Set to 0 to turn off this feature
+        if self.config.MIN_PARTICIPATION > 0:
+            total_members = await self.total_member_contributors(guild=self.config.DISCORD_SERVER_ID, role_name=self.config.DISCORD_VOTER_ROLE)
+            meets_minimum, participation_percentage = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
+
+            if not meets_minimum:
+                self.logger.warning("Participation too low, defaulting to Abstain")
+                return "abstain"
 
         if total_votes == 0:
             return "abstain"
