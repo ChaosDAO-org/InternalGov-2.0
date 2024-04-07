@@ -36,9 +36,9 @@ class ProxyVoter:
         """
         try:
             self.substrate = SubstrateInterface(
-                url=url
+                url=url,
+                auto_reconnect=True
             )
-            #self.substrate.get_block() - REMOVE
 
         except SubstrateRequestException as e:
             print(f"Failed to connect to Substrate node: {e}")
@@ -257,6 +257,7 @@ class ProxyVoter:
                     self.logger.error("vote(s) were not successful")
             else:
                 self.logger.warning("vote_calls variable was empty, no vote(s) casted.")
+                return False, False, False
         except SubstrateRequestException as e:
             self.logger.exception(f"Failed to execute multiple votes: {e}")
         finally:
