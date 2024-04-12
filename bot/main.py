@@ -649,7 +649,7 @@ if __name__ == '__main__':
     if config.SOLO_MODE is False:
         @client.tree.command(name='forcevote', description='This command can only be executed in channels where an internal vote is active.', guild=discord.Object(id=config.DISCORD_SERVER_ID))
         async def forcevote(interaction: discord.Interaction):
-            await interaction.response.defer(ephemeral=True)
+
             channel = interaction.channel
             user_id = interaction.user.id
 
