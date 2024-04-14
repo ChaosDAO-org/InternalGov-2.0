@@ -515,7 +515,7 @@ async def autonomous_voting():
                     internal_thread = vote_counts[data['thread_id']]
                     summary_channel = client.get_channel(config.DISCORD_SUMMARIZER_CHANNEL_ID)
                     external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME)
-                    summarize_vote_thread = await summary_channel.create_thread(name=f"{proposal_index}: {internal_thread['title']}", reason='Vote has been cast onchain',
+                    summarize_vote_thread = await summary_channel.create_thread(name=f"{proposal_index}: {internal_thread['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip()}", reason='Vote has been cast onchain',
                                                                                 type=discord.ChannelType.public_thread)
                     await summarize_vote_thread.send(content=f"<@&{summary_notification_role.id}>\n<#{data['thread_id']}>", embed=extrinsic_embed, view=external_links)
                 await asyncio.sleep(0.5)
