@@ -347,7 +347,7 @@ class DiscordFormatting:
                 identity = await self.substrate.check_identity(address=value, network=self.config.NETWORK_NAME)
                 value = f"[{identity if identity else value}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value})"
 
-            if formatted_key == "ENDING BLOCK":
+            if formatted_key == "ENDING BLOCK" and value is not None:
                 value = f"[{value[0]}](https://{self.config.NETWORK_NAME}.subscan.io/block/{value[0]})"
 
             if formatted_key in ["CONFIRMING SINCE", "SUBMITTED"]:

@@ -743,7 +743,7 @@ if __name__ == '__main__':
                                         app_commands.Choice(name='NAY', value='nay'),
                                         app_commands.Choice(name='ABSTAIN', value='abstain')])
         async def vote(interaction: discord.Interaction, referendum: int, conviction: app_commands.Choice[str], decision: app_commands.Choice[str]):
-            await interaction.response.defer(ephemeral=True)
+
             user_id = interaction.user.id
 
             member = await interaction.guild.fetch_member(user_id)
@@ -799,7 +799,7 @@ if __name__ == '__main__':
     @app_commands.choices(action=[app_commands.Choice(name='enable', value='enable'),
                                   app_commands.Choice(name='disable', value='disable')])
     async def thread(interaction: discord.Interaction, action: app_commands.Choice[str], thread_ids: str):
-        await interaction.response.defer(ephemeral=True)
+
         user_id = interaction.user.id
 
         # Fetch the Member object for the user
