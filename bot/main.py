@@ -244,7 +244,7 @@ async def check_governance():
             await start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
 
 
-@tasks.loop(hours=1)
+@tasks.loop(hours=2)
 async def sync_embeds():
     """
     This asynchronous function is designed to run every hour to synchronize embeds on discord threads.
