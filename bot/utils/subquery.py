@@ -229,8 +229,14 @@ class SubstrateAPI:
             else:
                 return 'N/A'
 
-        display = result['info']['display']
-        twitter = result['info']['twitter']
+        display, twitter = None, None
+
+        if isinstance(result, dict):
+            display = result['info']['display']
+            twitter = result['info']['twitter']
+        elif isinstance(result, list):
+            display = result[0]['info']['display']
+            twitter = result[0]['info']['twitter']
 
         display_name = display.get('Raw', '')  # Get the 'Raw' value from display, default to empty string if not present
         twitter_name = twitter.get('Raw', '')  # Get the 'Raw' value from twitter, default to empty string if not present
