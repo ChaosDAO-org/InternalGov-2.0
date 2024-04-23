@@ -73,5 +73,10 @@
     "decision_period": 28,
     "internal_vote_period": 7,
     "revote_period": 20
+  },
+  "WishForChange": {
+    "decision_period": 28,
+    "internal_vote_period": 7,
+    "revote_period": 20
   }
 }
