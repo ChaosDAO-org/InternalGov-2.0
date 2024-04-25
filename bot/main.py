@@ -510,17 +510,20 @@ async def autonomous_voting():
                         await message.delete()
 
                 if config.DISCORD_SUMMARIZER_CHANNEL_ID:
-                    logging.info(f"Creating thread for summarizing vote on {proposal_index}")
-                    summary_notification_role = await client.create_or_get_role(guild, config.DISCORD_SUMMARY_ROLE)
-                    internal_thread = vote_counts[data['thread_id']]
-                    summary_channel = client.get_channel(config.DISCORD_SUMMARIZER_CHANNEL_ID)
-                    external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME)
-                    await summary_channel.create_thread(name=f"{proposal_index}: {internal_thread['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip()}",
-                                                        content=f"<@&{summary_notification_role.id}>\n<#{data['thread_id']}>",
-                                                        embed=extrinsic_embed,
-                                                        view=external_links,
-                                                        reason='Vote has been cast onchain')
-                await asyncio.sleep(0.5)
+                    try:
+                        logging.info(f"Creating thread for summarizing vote on {proposal_index}")
+                        summary_notification_role = await client.create_or_get_role(guild, config.DISCORD_SUMMARY_ROLE)
+                        internal_thread = vote_counts[data['thread_id']]
+                        summary_channel = client.get_channel(config.DISCORD_SUMMARIZER_CHANNEL_ID)
+                        external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME)
+                        await summary_channel.create_thread(name=f"{proposal_index}: {internal_thread['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip()}",
+                                                            content=f"<@&{summary_notification_role.id}>\n<#{data['thread_id']}>",
+                                                            embed=extrinsic_embed,
+                                                            view=external_links,
+                                                            reason='Vote has been cast onchain')
+                        await asyncio.sleep(0.5)
+                    except Exception as summary_error:
+                        logging.exception(f"An error has occurred: {summary_error}")
             else:
                 continue
 
