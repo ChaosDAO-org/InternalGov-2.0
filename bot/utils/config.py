@@ -20,6 +20,7 @@ class Config:
             self.DISCORD_BODY_MAX_LENGTH = int(os.getenv('DISCORD_BODY_MAX_LENGTH') or self.raise_error("Missing DISCORD_BODY_MAX_LENGTH"))
             self.TAG_ROLE_NAME = os.getenv('DISCORD_NOTIFY_ROLE') or self.raise_error("Missing SYMBOL")
             self.EXTRINSIC_ALERT = os.getenv('DISCORD_EXTRINSIC_ROLE') or self.raise_error("Missing DISCORD_EXTRINSIC_ROLE")
+            self.ANONYMOUS_MODE = bool(strtobool(os.getenv('DISCORD_ANONYMOUS_MODE', ''))) if os.getenv('DISCORD_ANONYMOUS_MODE') is not None else self.raise_error("Missing ANONYMOUS_MODE")
 
             # Network Settings
             self.NETWORK_NAME = f"{os.getenv('NETWORK_NAME')}" or self.raise_error("Missing NETWORK_NAME")
