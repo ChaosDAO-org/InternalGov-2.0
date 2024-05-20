@@ -11,7 +11,7 @@ from utils.logger import Logger
 from utils.config import Config
 from utils.proxy import ProxyVoter
 from utils.data_processing import Text
-from utils.button_handler import ButtonHandler
+from utils.button_handler import ButtonHandler, ExternalLinkButton
 from aiohttp.web_exceptions import HTTPException
 from datetime import datetime, timezone
 import sys
@@ -443,7 +443,7 @@ class GovernanceMonitor(discord.Client):
                     # If the user has voted for the same option, ignore the vote
                     if previous_vote == vote_type:
                         await interaction.followup.send(
-                            f"Your vote of **{previous_vote}** has already been recorded. To change it, select an alternative option.",
+                            f"Your vote of __**{previous_vote.upper()}**__ has already been recorded. To change it, select an alternative option.",
                             ephemeral=True)
                         await asyncio.sleep(2)
                         # await interaction.delete_original_response()
@@ -467,17 +467,24 @@ class GovernanceMonitor(discord.Client):
                 else:
                     results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
+                proposal_index = self.vote_counts[message_id]['index']
+                external_links = ExternalLinkButton(proposal_index, self.config.NETWORK_NAME)
+
                 new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
                                       f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
-                await results_message.edit(content=new_results_message)
+                await results_message.edit(content=new_results_message, view=external_links)
 
-                # Acknowledge the vote and delete the message 10 seconds later
-                # (this notification is only visible to the user that interacts with AYE, NAY
-                await interaction.followup.send(
-                    f"Your vote of **{vote_type}** has been successfully registered. We appreciate your valuable input in this decision-making process.",
-                    ephemeral=True)
-                await asyncio.sleep(2)
-                # await interaction.delete_original_response()
+                # Acknowledge the vote and notify the user with a message
+                if self.config.ANONYMOUS_MODE is True:
+                    await interaction.followup.send(
+                        f"Your vote of __**{vote_type.upper()}**__ has been successfully registered. We appreciate your valuable input in this decision-making process.", ephemeral=True)
+                    await asyncio.sleep(2)
+
+                if self.config.ANONYMOUS_MODE is False:
+                    await interaction.followup.send(
+                        f"<@{interaction.user.id}> Your vote of __**{vote_type.upper()}**__ has been successfully registered. We appreciate your valuable input in this decision-making process.", ephemeral=False)
+                    await asyncio.sleep(2)
+
             else:
                 # Block the user from pressing the AYE, NAY to prevent unnecessary spam
                 remaining_time = cooldown_time - current_time
