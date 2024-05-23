@@ -1,6 +1,5 @@
 import time
 import json
-import shutil
 import discord
 import asyncio
 from utils.config import Config
