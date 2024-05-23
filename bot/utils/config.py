@@ -27,6 +27,7 @@ class Config:
             self.SYMBOL = os.getenv('SYMBOL') or self.raise_error("Missing SYMBOL")
             self.TOKEN_DECIMAL = float(os.getenv('TOKEN_DECIMAL') or self.raise_error("Missing TOKEN_DECIMAL"))
             self.SUBSTRATE_WSS = os.getenv('SUBSTRATE_WSS') or self.raise_error("Missing SUBSTRATE_WSS")
+            self.PEOPLE_WSS = os.getenv('PEOPLE_WSS')
 
             # Wallet Settings
             self.SOLO_MODE = bool(strtobool(os.getenv('SOLO_MODE', ''))) if os.getenv('SOLO_MODE') is not None else self.raise_error("Missing SOLO_MODE")
