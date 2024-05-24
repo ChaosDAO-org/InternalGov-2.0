@@ -1,8 +1,7 @@
 deepdiff==5.6.0
 discord.py==2.3.2
-PyYAML==6.0
 requests==2.25.1
-substrate-interface==1.7.4
+substrate-interface==1.7.8
 markdownify==0.11.6
 python-dotenv==1.0.0
 qrcode==7.4.2
