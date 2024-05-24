@@ -14,7 +14,7 @@ class SubstrateAPI:
         self.logger = Logger()
         self.logger.info("Initializing SubstrateAPI")
 
-    async def _connect(self):
+    async def _connect(self, wss):
         max_retries = 3
         wait_seconds = 10
 
@@ -22,7 +22,7 @@ class SubstrateAPI:
             try:
                 await asyncio.sleep(0.5)
                 return SubstrateInterface(
-                    url=self.config.SUBSTRATE_WSS,
+                    url=wss,
                     type_registry_preset=self.config.NETWORK_NAME
                 )
 
@@ -64,7 +64,7 @@ class SubstrateAPI:
     async def ongoing_referendums_idx(self):
         substrate = None
         try:
-            substrate = await self._connect()
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
             ongoing_referendas = [int(index.value) for index, info in substrate.query_map(module='Referenda', storage_function='ReferendumInfoFor', params=[]) if 'Ongoing' in info]
             return ongoing_referendas
         finally:
@@ -82,7 +82,7 @@ class SubstrateAPI:
         referendum = {}
         substrate = None
         try:
-            substrate = await self._connect()
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
             if index is not None:
                 return substrate.query(
                     module='Referenda',
@@ -108,7 +108,7 @@ class SubstrateAPI:
     async def check_ss58_address(self, address) -> bool:
         substrate = None
         try:
-            substrate = await self._connect()
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
             if not isinstance(address, str):
                 return False
             try:
@@ -132,19 +132,33 @@ class SubstrateAPI:
         :param network::
         :return: The super-identity of an alternative 'sub' identity together with its name, within that
         """
-        substrate = await self._connect()
-        result_tmp = {}
-        result = substrate.query_map(
-            module='Identity',
-            storage_function='SuperOf',
-            params=[])
-        substrate.close()
+        substrate = None
 
-        for key, values in result:
-            result_tmp.update({key.value: values.value})
+        try:
+            if not self.config.PEOPLE_WSS:
+                substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
 
-        with open(f'../data/off-chain-querying/{network}-superof.json', 'w') as superof:
-            json.dump(result_tmp, indent=4, fp=superof)
+            if self.config.PEOPLE_WSS:
+                substrate = await self._connect(wss=self.config.PEOPLE_WSS)
+
+            result_tmp = {}
+            result = substrate.query_map(
+                module='Identity',
+                storage_function='SuperOf',
+                params=[])
+            substrate.close()
+
+            for key, values in result:
+                result_tmp.update({key.value: values.value})
+
+            with open(f'../data/off-chain-querying/{network}-superof.json', 'w') as superof:
+                json.dump(result_tmp, indent=4, fp=superof)
+
+        except Exception as error:
+            self.logger.error(f"An error occurred whilst executing cache_identities: {error}")
+        finally:
+            if substrate:
+                substrate.close()
 
     @staticmethod
     async def check_cached_super_of(address, network):
@@ -189,21 +203,34 @@ class SubstrateAPI:
             IOError: If the function cannot write to 'identity.json'.
             JSONDecodeError: If the function cannot serialize the dictionary to JSON.
         """
+        substrate = None
 
-        substrate = await self._connect()
-        result_tmp = {}
-        result = substrate.query_map(
-            module='Identity',
-            storage_function='IdentityOf',
-            params=[]
-        )
-        substrate.close()
+        try:
+            if not self.config.PEOPLE_WSS:
+                substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
 
-        for key, values in result:
-            result_tmp.update({key.value: values.value})
+            if self.config.PEOPLE_WSS:
+                substrate = await self._connect(wss=self.config.PEOPLE_WSS)
 
-        with open(f'../data/off-chain-querying/{network}-identity.json', 'w') as identityof:
-            json.dump(result_tmp, indent=4, fp=identityof)
+            result_tmp = {}
+            result = substrate.query_map(
+                module='Identity',
+                storage_function='IdentityOf',
+                params=[]
+            )
+            substrate.close()
+
+            for key, values in result:
+                result_tmp.update({key.value: values.value})
+
+            with open(f'../data/off-chain-querying/{network}-identity.json', 'w') as identityof:
+                json.dump(result_tmp, indent=4, fp=identityof)
+
+        except Exception as error:
+            self.logger.error(f"An error occurred whilst executing cache_identities: {error}")
+        finally:
+            if substrate:
+                substrate.close()
 
     @staticmethod
     async def check_cached_identity(address, network):
@@ -227,7 +254,7 @@ class SubstrateAPI:
             if super_of:
                 result = await self.check_cached_identity(address=super_of, network=network)
             else:
-                return 'N/A'
+                return address
 
         display, twitter = None, None
 
@@ -253,7 +280,7 @@ class SubstrateAPI:
     async def get_average_block_time(self, num_blocks=255):
         substrate = None
         try:
-            substrate = await self._connect()
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
             latest_block_num = substrate.get_block_number(block_hash=substrate.block_hash)
             first_block_num = latest_block_num - num_blocks
 
@@ -290,7 +317,7 @@ class SubstrateAPI:
         """
         substrate = None
         try:
-            substrate = await self._connect()
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
 
             # Get the current block number
             current_block = substrate.get_block_number(block_hash=substrate.block_hash)
@@ -321,7 +348,7 @@ class SubstrateAPI:
     async def get_block_epoch(self, block_number):
         substrate = None
         try:
-            substrate = await self._connect()
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
             blockhash = substrate.get_block_hash(block_id=block_number)
             epoch = substrate.query(
                 module='Timestamp',
