@@ -61,7 +61,7 @@ class Text:
         qr.make(fit=True)
 
         img = qr.make_image(fill_color="black", back_color="white")
-        img = img.resize((250, 250), Image.ANTIALIAS)
+        img = img.resize((250, 250), Image.LANCZOS)
 
         # Save the image to a bytes object for Discord embed
         img_byte_arr = io.BytesIO()
