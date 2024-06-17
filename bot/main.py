@@ -710,7 +710,9 @@ if __name__ == '__main__':
                 extrinsic_embed.add_field(name='Recuse', value=f"{recuse}", inline=True)
                 extrinsic_embed.set_footer(text="This vote was forced using /forcevote")
 
-                extrinsic_receipt = await interaction.followup.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
+                channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+                channel_thread = channel.get_thread(interaction.channel.id)
+                extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
                 await extrinsic_receipt.pin()
 
                 # Delete pinned notification
@@ -788,7 +790,9 @@ if __name__ == '__main__':
             extrinsic_embed.add_field(name=f'Conviction', value=f"{conviction.value.upper()}", inline=True)
             extrinsic_embed.set_footer(text="This vote was made using /vote")
 
-            extrinsic_receipt = await interaction.followup.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
+            channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+            channel_thread = channel.get_thread(interaction.channel.id)
+            extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
             await extrinsic_receipt.pin()
 
             # Delete pinned notification
