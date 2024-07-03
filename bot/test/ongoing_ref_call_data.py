@@ -1,7 +1,7 @@
 import os
 import discord
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from scalecodec.base import ScaleBytes
 from substrateinterface import SubstrateInterface
@@ -148,7 +148,7 @@ class ProcessCallData:
             formatted_parts.append(formatted_part)
         return ' '.join(formatted_parts)
 
-    def find_and_collect_values(self, data, preimagehash, embeds, indent=0, path='', current_embed=None):
+    def find_and_collect_values(self, data, preimagehash, indent=0, path='', current_embed=None):
         """
         Recursively traverses through the given data (list, dictionary or other data types)
         and collects certain values to be added to a list of discord Embed objects.
@@ -159,8 +159,6 @@ class ProcessCallData:
         :type data: list, dict or other
         :param preimagehash: The hash of the preimage associated with the data
         :type preimagehash: str
-        :param embeds: The list of Embed objects to extend
-        :type embeds: list
         :param indent: The current indentation level for formatting Embed descriptions, default is 0
         :type indent: int
         :param path: The path to the current data element, default is ''
@@ -176,9 +174,8 @@ class ProcessCallData:
                 description = preimagehash
             else:
                 description = ""
-            current_embed = discord.Embed(title=":ballot_box: Call Detail", description=description, color=0x00ff00, timestamp=datetime.utcnow())
+            current_embed = discord.Embed(title=":ballot_box: Call Detail", description=description, color=0x00ff00, timestamp=datetime.now(timezone.utc))
             current_embed.set_thumbnail(url="attachment://symbol.png")
-            embeds.append(current_embed)
 
         max_description_length = 1000
         call_function = 0
@@ -192,10 +189,10 @@ class ProcessCallData:
                     continue
 
                 if len(current_embed.description) >= max_description_length:
-                    return embeds
+                    return current_embed
 
                 if isinstance(value, (dict, list)):
-                    self.find_and_collect_values(value, preimagehash, embeds, indent, new_path, current_embed)
+                    self.find_and_collect_values(value, preimagehash, indent, new_path, current_embed)
                 else:
                     value_str = str(value)
 
@@ -240,20 +237,20 @@ class ProcessCallData:
                         current_embed.description += f"\n{'　' * indent} **{self.format_key(key)[:256]}**: `{value_str[:253]}`"
 
                     if len(current_embed.description) >= max_description_length:
-                        return embeds
+                        return current_embed
 
-                    self.find_and_collect_values(value, preimagehash, embeds, indent, new_path, current_embed)
+                    self.find_and_collect_values(value, preimagehash, indent, new_path, current_embed)
 
         elif isinstance(data, (list, tuple)):
             for index, item in enumerate(data):
                 if len(current_embed.description) >= max_description_length:
                     current_embed.description += (f"\n\nThe call is too large to display here. Visit [**Subscan**](https://polkadot.subscan.io/preimage/{preimagehash}) for more details")
-                    return embeds
+                    return current_embed
 
                 new_path = f"{path}[{index}]"
-                self.find_and_collect_values(item, preimagehash, embeds, indent, new_path, current_embed)
+                self.find_and_collect_values(item, preimagehash, indent, new_path, current_embed)
 
-        return embeds
+        return current_embed
 
     def consolidate_call_args(self, data):
         """
@@ -297,16 +294,17 @@ async def on_message(message):
         price = get_asset_price(asset_id='polkadot')
 
         chainstate = MaterializedChainState()
+
         pdc = ProcessCallData(price=price)
         data, preimagehash = chainstate.ref_caller(index=index, gov1=False, call_data=False)
 
         data = pdc.consolidate_call_args(data)
 
         embeds = []
-        embed_data = pdc.find_and_collect_values(data, preimagehash, embeds)
+        embed_data = pdc.find_and_collect_values(data, preimagehash)
 
-        for embed in embed_data:
-            await message.channel.send(embed=embed, file=discord.File('../../assets/polkadot/polkadot.png', filename="symbol.png"))
+        #for embed in embed_data:
+        await message.channel.send(embed=embed_data, file=discord.File('../../assets/polkadot/polkadot.png', filename="symbol.png"))
 
 
 client.run(discord_token)

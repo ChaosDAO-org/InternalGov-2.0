@@ -10,11 +10,10 @@ from utils.subquery import SubstrateAPI
 from datetime import datetime, timezone
 from governance_monitor import GovernanceMonitor
 from utils.embed_config import EmbedVoteScheme
-from utils.data_processing import CacheManager, DiscordFormatting, Text
+from utils.data_processing import CacheManager, ProcessCallData, DiscordFormatting, Text
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
-from distutils.util import strtobool
 from discord import app_commands, Embed
 from discord.ext import tasks
 
@@ -109,19 +108,18 @@ async def check_governance():
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
-            current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
+            current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
             referendum_info = await substrate.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
-                requested_spend = ""
                 try:
                     available_channel_tags = []
                     if channel is not None:
                         available_channel_tags = [tag for tag in channel.available_tags]
                     else:
                         logging.error(f"Channel with ID {config.DISCORD_FORUM_CHANNEL_ID} not found")
-                        # Handle the error as appropriate for your application
+
                     governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
                     # Create forum tags if they don't already exist.
@@ -129,11 +127,8 @@ async def check_governance():
 
                     if values['successful_url']:
                         logging.info(f"Getting on-chain data from: {values['successful_url']}")
-                        #  get_requested_spend handles the differences in returned JSON between Polkassembly & Subsquare
-                        requested_spend = await client.get_requested_spend(values, current_price)
                     else:
                         logging.error(f"No value: {values['successful_url']}")
-                        requested_spend = ""
 
                     title = values['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
 
@@ -145,7 +140,6 @@ async def check_governance():
                             operation='create',
                             title=title,
                             index=index,
-                            requested_spend=requested_spend,
                             content=values['content'],
                             governance_tag=governance_tag,
                             message_id=None,
@@ -175,11 +169,12 @@ async def check_governance():
                     results_message = await channel_thread.send(content=initial_results_message, view=external_links)
 
                     # results_message_id = results_message.id
+                    await asyncio.sleep(0.5)
                     message_id = thread.message.id
                     voting_buttons = ButtonHandler(client, message_id)
                     await thread.message.edit(view=voting_buttons)
-                    await asyncio.sleep(0.5)
 
+                    await asyncio.sleep(0.5)
                     await thread.message.pin()
                     await results_message.pin()
 
@@ -194,7 +189,7 @@ async def check_governance():
                         try:
                             role = await client.create_or_get_role(guild, config.TAG_ROLE_NAME)
                             if role:
-                                await channel_thread.send(content=
+                                instructions = await channel_thread.send(content=
                                                           f"||<@&{role.id}>||"
                                                           f"\n**INSTRUCTIONS:**"
                                                           f"\n- Vote **AYE** if you want to see this proposal pass"
@@ -206,17 +201,21 @@ async def check_governance():
                             logging.error(f"An unexpected error occurred: {error}")
 
                     general_info_embed = Embed(color=0x00FF00)
-                    polkasembly_info_embed = Embed(color=0xFFFFFF)
 
                     try:
                         # Add fields to embed
+                        await asyncio.sleep(0.5)
                         general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
                         await thread.message.edit(embed=general_info)
-                        await asyncio.sleep(0.5)
 
-                        passembly_call_data = await discord_format.extract_and_embed(values, polkasembly_info_embed)
-                        await channel_thread.send(embed=passembly_call_data)
+                        # Work-in-Progress
                         await asyncio.sleep(0.5)
+                        process_call_data = ProcessCallData(price=current_price)
+                        call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+                        call_data = await process_call_data.consolidate_call_args(call_data)
+                        embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
+
+                        await instructions.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
 
                     except Exception as e:
                         # Log the exception
@@ -428,14 +427,13 @@ async def autonomous_voting():
                 proxy_address_qr = Text.generate_qr_code(publickey=config.PROXY_ADDRESS)
                 balance_embed = Embed(color=0xFF0000, title=f'Low balance detected',
                                       description=f'Balance is {proxy_balance:.4f}, which is below the minimum required for voting with the proxy. Please add funds to continue without interruption.',
-                                      timestamp=datetime.utcnow())
+                                      timestamp=datetime.now(timezone.utc))
                 balance_embed.add_field(name='Address', value=f'{config.PROXY_ADDRESS}', inline=True)
                 balance_embed.set_thumbnail(url="attachment://proxy_address_qr.png")
                 await alert_channel.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
                 return
 
             logging.info("Casting on-chain votes")
-            #  voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
             indexes, calls, extrinsic_hash = await voter.execute_multiple_votes(votes)
         else:
             return
@@ -485,7 +483,7 @@ async def autonomous_voting():
 
                 # Craft extrinsic receipt as Discord Embed
                 extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast', description=f'{vote_scheme.emoji} {vote_type.upper()} on proposal **#{proposal_index}**',
-                                        timestamp=datetime.utcnow())
+                                        timestamp=datetime.now(timezone.utc))
                 extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
                 extrinsic_embed.add_field(name=f'Origin', value=f"{data['origin']}", inline=True)
                 extrinsic_embed.add_field(name=f'Vote count', value=f'{vote_count} out of 2', inline=True)
@@ -500,7 +498,8 @@ async def autonomous_voting():
                 extrinsic_embed.set_footer(text="A second vote is initiated only if the first vote's result is disputed or missed")
 
                 # Send Embed
-                extrinsic_receipt_message = await discord_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
+                external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME)
+                extrinsic_receipt_message = await discord_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed, view=external_links)
                 await extrinsic_receipt_message.pin()
 
                 # Delete pinned notification
@@ -556,7 +555,7 @@ async def recheck_proposals():
     vote_counts = await client.load_vote_counts()
     opengov2 = OpenGovernance2(config)
     channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
-    current_price = client.get_asset_price(asset_id=config.NETWORK_NAME)
+
     for message_id, value in vote_counts.items():
 
         proposal_index = value['index']
@@ -567,7 +566,6 @@ async def recheck_proposals():
         title_from_vote_counts = client.vote_counts[message_id]['title'].strip()
 
         if title_from_api != title_from_vote_counts:
-            requested_spend = await client.get_requested_spend(opengov, current_price)
             client.vote_counts[message_id]['title'] = title = opengov['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip()
             # set title on thread id contained in vote_counts.json
             await client.save_vote_counts()
@@ -581,7 +579,6 @@ async def recheck_proposals():
                     operation='edit',
                     title=title,
                     index=proposal_index,
-                    requested_spend=requested_spend,
                     content=opengov['content'],
                     governance_tag="",
                     message_id=message_id,
@@ -685,9 +682,11 @@ if __name__ == '__main__':
                 role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
                 await asyncio.sleep(0.5)
 
+                await interaction.followup.send("Initializing extrinsic, please wait...", ephemeral=True)
                 voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
                 votes = [(int(proposal_index), vote, config.CONVICTION)]
-                await asyncio.sleep(1)
+
+                await asyncio.sleep(0.5)
                 index, call, extrinsic_hash = await voter.execute_multiple_votes(votes)
                 vote_scheme = EmbedVoteScheme(vote_type=vote)
 
@@ -700,7 +699,7 @@ if __name__ == '__main__':
                 short_extrinsic_hash = f"{first_six}...{last_six}"
 
                 extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
-                                        description=f'{vote_scheme.emoji} {vote.upper()} on proposal **#{proposal_index}**', timestamp=datetime.utcnow())
+                                        description=f'{vote_scheme.emoji} {vote.upper()} on proposal **#{proposal_index}**', timestamp=datetime.now(timezone.utc))
                 extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
                 extrinsic_embed.add_field(name=f'Origin', value=f"{origin[0]}", inline=True)
                 extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
@@ -712,6 +711,8 @@ if __name__ == '__main__':
 
                 channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
                 channel_thread = channel.get_thread(interaction.channel.id)
+
+                await asyncio.sleep(0.5)
                 extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
                 await extrinsic_receipt.pin()
 
@@ -719,6 +720,8 @@ if __name__ == '__main__':
                 async for message in interaction.channel.history(limit=15, oldest_first=False):
                     if message.type == discord.MessageType.pins_add:
                         await message.delete()
+
+                await interaction.delete_original_response()
             else:
                 await interaction.followup.send(f"You are trying to force a vote on a channel that doesn't have an active internal vote ongoing", ephemeral=True)
 
@@ -739,7 +742,8 @@ if __name__ == '__main__':
         @client.tree.command(name='vote',
                              description='This command allows you to vote in Open Governance without depending on an internal vote.',
                              guild=discord.Object(id=config.DISCORD_SERVER_ID))
-        @app_commands.choices(conviction=[app_commands.Choice(name='x1', value='Locked1x'),
+        @app_commands.choices(conviction=[app_commands.Choice(name='x0.1', value='None'),
+                                          app_commands.Choice(name='x1', value='Locked1x'),
                                           app_commands.Choice(name='x2', value='Locked2x'),
                                           app_commands.Choice(name='x3', value='Locked3x'),
                                           app_commands.Choice(name='x4', value='Locked4x'),
@@ -763,13 +767,14 @@ if __name__ == '__main__':
             if not balance:
                 return
 
+            role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
             await asyncio.sleep(0.5)
 
-            role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
-
+            await interaction.followup.send("Initializing extrinsic, please wait...", ephemeral=True)
             voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
             votes = [(int(referendum), decision.value, conviction.value)]
-            await asyncio.sleep(1)
+
+            await asyncio.sleep(0.5)
             index, call, extrinsic_hash = await voter.execute_multiple_votes(votes)
             vote_scheme = EmbedVoteScheme(vote_type=decision.value)
 
@@ -782,7 +787,7 @@ if __name__ == '__main__':
             short_extrinsic_hash = f"{first_six}...{last_six}"
 
             extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
-                                    description=f'{vote_scheme.emoji} {decision.value.upper()} on proposal **#{referendum}**', timestamp=datetime.utcnow())
+                                    description=f'{vote_scheme.emoji} {decision.value.upper()} on proposal **#{referendum}**', timestamp=datetime.now(timezone.utc))
             extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
             extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
             extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
@@ -792,6 +797,8 @@ if __name__ == '__main__':
 
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
             channel_thread = channel.get_thread(interaction.channel.id)
+
+            await asyncio.sleep(0.5)
             extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
             await extrinsic_receipt.pin()
 
@@ -800,6 +807,7 @@ if __name__ == '__main__':
                 if message.type == discord.MessageType.pins_add:
                     await message.delete()
 
+            await interaction.delete_original_response()
 
     @client.tree.command(name='thread',
                          description='Disable the voting buttons to a thread',

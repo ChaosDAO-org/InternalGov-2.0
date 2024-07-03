@@ -34,7 +34,7 @@ class GovernanceMonitor(discord.Client):
         self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
 
-    def get_asset_price(self, asset_id, currencies='usd,gbp,eur'):
+    def get_asset_price_v2(self, asset_id, currencies='usd'):
         """
         Fetches the price of an asset in the specified currencies from the CoinGecko API.
 
@@ -54,43 +54,18 @@ class GovernanceMonitor(discord.Client):
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
             self.logger.error(f"An HTTP error occurred: {e}")
-            return None
+            return 0
         except requests.exceptions.RequestException as e:
             self.logger.error(f"A request error occurred: {e}")
-            return None
+            return 0
 
         data = response.json()
 
         if asset_id not in data:
             self.logger.warning(f"Asset ID '{asset_id}' not found in CoinGecko.")
-            return None
+            return 0
 
-        return data[asset_id]
-
-    async def get_requested_spend(self, data, current_price):
-        requested_spend = ""
-
-        if data.get('title') != 'None':
-            try:
-                if 'polkassembly' in data.get('successful_url', '') and 'proposed_call' in data:
-                    if 'spend' in data['proposed_call']['method']:
-                        amount = int(data['proposed_call']['args']['amount']) / float(self.config.TOKEN_DECIMAL)
-                        requested_spend = f"```markdown\n{self.config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-                elif 'subsquare' in data.get('successful_url', '') and 'proposal' in data.get('onchainData', {}):
-                    if data['onchainData']['proposal'] and 'spend' in data['onchainData']['proposal']['call']['method']:
-                        amount = int(data['onchainData']['proposal']['call']['args'][0]['value']) / float(self.config.TOKEN_DECIMAL)
-                        requested_spend = f"```markdown\n{self.config.SYMBOL}: {amount}\nUSD: ${format(amount * current_price['usd'], ',.2f')}```\n"
-                else:
-                    self.logger.error("Data does not match any known sources")
-                    requested_spend = ""
-            except Exception as e:
-                self.logger.error(f"Unable to pull information from data sources due to: {e}")
-                requested_spend = ""
-        else:
-            self.logger.error("Title: None")
-            requested_spend = ""
-
-        return requested_spend
+        return data[asset_id]['usd']
 
     async def check_permissions(self, interaction, required_role, user_id, user_roles):
         self.logger.info(f"Checking {interaction.user.name} has the appropriate permissions")
@@ -118,7 +93,7 @@ class GovernanceMonitor(discord.Client):
             proxy_address_qr = Text.generate_qr_code(publickey=self.config.PROXY_ADDRESS)
             balance_embed = Embed(color=0xFF0000, title=f'Low balance detected',
                                   description=f'Balance is {proxy_balance:.4f}, which is below the minimum required for voting with the proxy. Please add funds to continue without interruption.',
-                                  timestamp=datetime.utcnow())
+                                  timestamp=datetime.now(timezone.utc))
             balance_embed.add_field(name='Address', value=f'{self.config.PROXY_ADDRESS}', inline=True)
             balance_embed.set_thumbnail(url="attachment://proxy_address_qr.png")
             await interaction.followup.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
@@ -495,19 +470,18 @@ class GovernanceMonitor(discord.Client):
                 await asyncio.sleep(seconds)
                 await interaction_message.delete()
 
-    async def manage_discord_thread(self, channel, operation, title, index, requested_spend, content, governance_tag, message_id, client):
+    async def manage_discord_thread(self, channel, operation, title, index, content, governance_tag, message_id, client):
         thread = None
         char_exceed_msg = "\n```For more insights, visit the provided links below.```"
         content = Text.convert_markdown_to_discord(content) if content is not None else None
         try:
-            other_components_length = len(requested_spend + "\n\n")  # Newlines are 2 characters
             final_content = content or ''
-            if len(final_content) + other_components_length > self.config.DISCORD_BODY_MAX_LENGTH:
-                available_space = self.config.DISCORD_BODY_MAX_LENGTH - other_components_length - len(char_exceed_msg + "...")
+            if len(final_content) > self.config.DISCORD_BODY_MAX_LENGTH:
+                available_space = self.config.DISCORD_BODY_MAX_LENGTH - len(char_exceed_msg + "...")
                 truncated_content = re.sub(r'\s+\S+$', '', final_content[:available_space])
                 final_content = f"{truncated_content}...{char_exceed_msg}"
 
-            thread_content = f"{requested_spend}{final_content}\n\n"
+            thread_content = f"{final_content}\n\n"
             thread_title = f"{index}: {title}"
 
             if operation == 'create':
