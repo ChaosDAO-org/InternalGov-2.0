@@ -5,10 +5,12 @@ import time
 import json
 import shutil
 import qrcode
-from PIL import Image
+import discord
 import deepdiff
 import markdownify
+from PIL import Image
 from typing import Dict, Any
+from datetime import datetime
 from utils.config import Config
 from utils.subquery import SubstrateAPI
 from utils.logger import Logger
@@ -225,6 +227,165 @@ class CacheManager:
         except Exception as e:
             return f"Error during backup: {e}"
 
+
+class ProcessCallData:
+    def __init__(self, price):
+        self.config = Config()
+        self.substrate = SubstrateAPI(self.config)
+        self.price = price
+        self.general_index = None
+
+    @staticmethod
+    def format_key(key):
+        """
+        Formats a given key by splitting it on underscores, capitalizing each part except
+        for those containing 'id' which are made uppercase, and then joining them back together
+        with spaces in between.
+
+        :param key: The key to be formatted.
+        :type key: str
+        :return: The formatted key.
+        :rtype: str
+        """
+        parts = key.split('_')
+        formatted_parts = []
+        for part in parts:
+            if "id" in part.lower():
+                formatted_part = part.upper()
+            else:
+                formatted_part = part.capitalize()
+            formatted_parts.append(formatted_part)
+        return ' '.join(formatted_parts)
+
+    async def find_and_collect_values(self, data, preimagehash, indent=0, path='', current_embed=None):
+        """
+        Recursively traverses through the given data (list, dictionary or other data types)
+        and collects certain values to be added to a list of discord Embed objects.
+        The function modifies the given `embeds` list in-place,
+        appending new Embed objects when required.
+
+        :param data: The data to traverse
+        :type data: list, dict or other
+        :param preimagehash: The hash of the preimage associated with the data
+        :type preimagehash: str
+        :param indent: The current indentation level for formatting Embed descriptions, default is 0
+        :type indent: int
+        :param path: The path to the current data element, default is ''
+        :type path: str
+        :param current_embed: The currently active Embed object, default is None
+        :type current_embed: Embed or None
+        :return: The extended list of Embed objects
+        :rtype: list
+        """
+
+        if current_embed is None:
+            if data is False:
+                description = preimagehash
+            else:
+                description = ""
+            current_embed = discord.Embed(title=":ballot_box: Call Detail", description=description, color=0x00ff00, timestamp=datetime.utcnow())
+            current_embed.set_thumbnail(url="attachment://symbol.png")
+
+        max_description_length = 1000
+        call_function = 0
+        call_module = 0
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_path = f"{path}.{hash(key)}" if path else str(hash(key))
+
+                if key == 'call_index':
+                    continue
+
+                if len(current_embed.description) >= max_description_length:
+                    return current_embed
+
+                if isinstance(value, (dict, list)):
+                    await self.find_and_collect_values(value, preimagehash, indent, new_path, current_embed)
+                else:
+                    value_str = str(value)
+
+                    if key == 'call_function':
+                        call_function = call_function + 1
+
+                    if key == 'call_module':
+                        call_module = call_module + 1
+
+                    if key in ['X1', 'X2', 'X3', 'X4', 'X5']:
+                        indent = indent + 1
+
+                    if call_function == 1 and call_module == 0:
+                        indent = indent + 1
+
+                    if key == 'GeneralIndex':
+                        self.general_index = value
+
+                    #print(f"{key:<20} {call_function:<15} {call_module:<15} {indent:<15} {len(current_embed.description):<15} {key not in ['call_function', 'call_module']}")  # debugging
+
+                    if key not in ['call_function', 'call_module']:
+                        if key == 'amount':
+                            asset_dict = {1337: 'USDC', 1984: 'USDT'}
+                            if str(self.general_index) in ['1337', '1984']:
+                                decimal = 1e6
+                            else:
+                                decimal = self.config.TOKEN_DECIMAL
+
+                            asset_name = asset_dict.get(self.general_index, self.config.SYMBOL)
+
+                            value_str = float(value_str) / decimal
+                            current_embed.description += f"\n{'　' * (indent + 1)} **{self.format_key(key)[:256]}**: {value_str:,.2f} `{asset_name}`"
+
+                            if self.general_index is None:
+                                current_embed.description += f"\n{'　' * (indent + 1)} **USD**: {value_str * self.price:,.2f}"
+
+                        elif key in ['beneficiary', 'signed', 'curator']:
+                            display_name = await self.substrate.check_identity(address=value_str, network=self.config.NETWORK_NAME)
+                            current_embed.description += f"\n{'　' * (indent + 1)} **{self.format_key(key)[:256]}**: [{display_name}](https://{self.config.NETWORK_NAME}.subscan.io/account/{value_str})"
+                        else:
+                            current_embed.description += f"\n{'　' * (indent + 1)} **{self.format_key(key)[:256]}**: {(value_str[:253] + '...') if len(value_str) > 256 else value_str}"
+                    else:
+                        current_embed.description += f"\n{'　' * indent} **{self.format_key(key)[:256]}**: `{value_str[:253]}`"
+
+                    if len(current_embed.description) >= max_description_length:
+                        return current_embed
+
+                    await self.find_and_collect_values(value, preimagehash, indent, new_path, current_embed)
+
+        elif isinstance(data, (list, tuple)):
+            for index, item in enumerate(data):
+                if len(current_embed.description) >= max_description_length:
+                    current_embed.description += (f"\n\nThe call is too large to display here. Visit [**Subscan**](https://{self.config.NETWORK_NAME}.subscan.io/preimage/{preimagehash}) for more details")
+                    return current_embed
+
+                new_path = f"{path}[{index}]"
+                await self.find_and_collect_values(item, preimagehash, indent, new_path, current_embed)
+
+        return current_embed
+
+    async def consolidate_call_args(self, data):
+        """
+        Modifies the given data in-place by consolidating 'call_args' entries
+        from list of dictionaries into a single dictionary where the key is 'name'
+        and the value is 'value'.
+
+        :param data: The data to consolidate
+        :type data: dict or list
+        :return: The consolidated data
+        :rtype: dict or list
+        """
+        if isinstance(data, dict):
+            if "call_args" in data:
+                new_args = {}
+                for arg in data["call_args"]:
+                    if "name" in arg and "value" in arg:
+                        new_args[arg["name"]] = arg["value"]
+                data["call_args"] = new_args
+            for key, value in data.items():
+                data[key] = await self.consolidate_call_args(value)  # Recursive call for nested dictionaries
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                data[index] = await self.consolidate_call_args(item)  # Recursive call for lists
+        return data
 
 class DiscordFormatting:
     def __init__(self):
