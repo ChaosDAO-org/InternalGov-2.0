@@ -1,11 +1,12 @@
-from substrateinterface import SubstrateInterface
-from substrateinterface.exceptions import SubstrateRequestException, ConfigurationError
-from websocket._exceptions import WebSocketBadStatusException
-from utils.logger import Logger
-import asyncio
+import os
 import json
 import time
-import os
+import asyncio
+from utils.logger import Logger
+from scalecodec.base import ScaleBytes
+from substrateinterface import SubstrateInterface
+from websocket._exceptions import WebSocketBadStatusException
+from substrateinterface.exceptions import SubstrateRequestException, ConfigurationError
 
 
 class SubstrateAPI:
@@ -118,6 +119,67 @@ class SubstrateAPI:
                     return False
             except (SubstrateRequestException, ValueError):
                 return False
+
+        finally:
+            if substrate:
+                substrate.close()
+
+    async def referendum_call_data(self, index: int, gov1: bool, call_data: bool):
+        """
+        Retrieves and decodes the referendum call data based on given parameters.
+
+        Args:
+            index (int): The index of the referendum to query.
+            gov1 (bool): Determines which module to query ('Democracy' if True, 'Referenda' if False).
+            call_data (bool): Determines the type of data to return (raw call data if True, decoded call data if False).
+
+        Returns:
+            tuple: A tuple containing a boolean indicating success or failure, and the decoded call data or error message.
+
+        Raises:
+            Exception: If an error occurs during the retrieval or decoding process.
+        """
+        substrate = None
+
+        try:
+            substrate = await self._connect(wss=self.config.SUBSTRATE_WSS)
+            referendum = substrate.query(module="Democracy" if gov1 else "Referenda",
+                                              storage_function="ReferendumInfoOf" if gov1 else "ReferendumInfoFor",
+                                              params=[index]).serialize()
+
+            if referendum is None or 'Ongoing' not in referendum:
+                return False, f":warning: Referendum **#{index}** is inactive"
+
+            preimage = referendum['Ongoing']['proposal']
+
+            if 'Inline' in preimage:
+                call = preimage['Inline']
+                if not call_data:
+                    call_obj = substrate.create_scale_object('Call')
+                    decoded_call = call_obj.decode(ScaleBytes(call))
+                    return decoded_call, preimage
+                else:
+                    return call
+
+            if 'Lookup' in preimage:
+                preimage_hash = preimage['Lookup']['hash']
+                preimage_length = preimage['Lookup']['len']
+                call = substrate.query(module='Preimage', storage_function='PreimageFor', params=[(preimage_hash, preimage_length)]).value
+
+                if call is None:
+                    return False, ":warning: Preimage not found on chain"
+
+                if not call.isprintable():
+                    call = f"0x{''.join(f'{ord(c):02x}' for c in call)}"
+
+                if not call_data:
+                    call_obj = substrate.create_scale_object('Call')
+                    decoded_call = call_obj.decode(ScaleBytes(call))
+                    return decoded_call, preimage_hash
+                else:
+                    return call
+        except Exception as ref_caller_error:
+            raise ref_caller_error
 
         finally:
             if substrate:
