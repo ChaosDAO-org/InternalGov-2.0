@@ -274,8 +274,17 @@ async def sync_embeds():
         # Synchronize in reverse from latest to oldest active proposals
         for index, message_id in sorted(index_msgid.items(), reverse=True):
             sync_thread = client.get_channel(int(message_id))
-            logging.info(f"Synchronizing {sync_thread.name}")
+
+            # This will use fetch_channel() if the thread is marked as archived
+            # It will edit the thread setting archived=False making the thread
+            # visible for the bot to synchronise.
+            if sync_thread is None:
+                logging.info(f"Unable to see thread {message_id} using get_channel() - Attempting to fetch_channel and set archived=False")
+                sync_thread = await client.fetch_channel(int(message_id))
+                await sync_thread.edit(archived=False)
+
             if sync_thread is not None:
+                logging.info(f"Synchronizing {sync_thread.name}")
                 async for message in sync_thread.history(oldest_first=True, limit=1):
                     if referendum_info[index]['Ongoing']['tally']['ayes'] >= referendum_info[index]['Ongoing']['tally']['nays']:
                         general_info_embed = Embed(color=0x00FF00)

@@ -402,9 +402,18 @@ class GovernanceMonitor(discord.Client):
                 vote_type = "aye" if custom_id == "aye_button" else "recuse" if custom_id == "recuse_button" else "nay"
                 # Save or update vote in the database
                 if message_id not in list(self.vote_counts.keys()):
+                    # If the thread gets created but the data isn't available in vote_counts.json
+                    # then create it.
+                    origin_tag = discord_thread.applied_tags[0].name
+                    thread_index = discord_thread.name.split(':')[0]
+                    thread_proposal_title = discord_thread.name.split(':')[1].lstrip(' ')
+
                     self.vote_counts[message_id] = {
-                        "index": 'Proposal detected; corresponding vote_count.json entry absent, now added using first vote interaction.',
-                        "title": discord_thread.name,
+                        "index": thread_index,
+                        "title": thread_proposal_title,
+                        "origin": [
+                            origin_tag
+                        ],
                         "aye": 0,
                         "nay": 0,
                         "recuse": 0,
@@ -579,6 +588,11 @@ class GovernanceMonitor(discord.Client):
 
                 for message_id in threads_to_lock:
                     thread = self.get_channel(self.config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(message_id))
+                    if thread is None:
+                        self.logger.info(f"Unable to see thread {message_id} using get_channel() - Attempting to fetch_channel and set archived=False")
+                        thread = await self.fetch_channel(int(message_id))
+                        await thread.edit(archived=False)
+
                     if thread is None:
                         self.logger.warning(f"Thread with ID {message_id} not found.")
                         continue
