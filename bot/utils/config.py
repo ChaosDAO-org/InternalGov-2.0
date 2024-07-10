@@ -1,12 +1,15 @@
 from dotenv import load_dotenv
+from utils.logger import Logger
 from distutils.util import strtobool
 import os
+import json
 
 
 class Config:
     def __init__(self):
         try:
             load_dotenv("../.env")
+            self.logger = Logger()
 
             # Discord Settings
             self.DISCORD_API_KEY = os.getenv('DISCORD_API_KEY') or self.raise_error("Missing DISCORD_API_KEY")
@@ -41,6 +44,28 @@ class Config:
 
         except ValueError as e:
             print(f"Error: {e}")
+
+
+    def initialize_environment_files(self):
+        """
+        Ensure that required files exist for the bot's operation.
+        If a file does not exist, create it with an empty JSON object.
+        """
+        # Define the list of files to check
+        files_to_check = [
+            '../data/archived_votes.json',
+            '../data/governance.cache',
+            '../data/onchain-votes.json',
+            '../data/vote_counts.json'
+        ]
+
+        for file_name in files_to_check:
+            if not os.path.exists(file_name):
+                with open(file_name, 'w') as file:
+                    json.dump({}, file)
+                self.logger.info(f"{file_name} missing... creating file")
+            else:
+                self.logger.info(f"'{file_name}' already exists... skipping creation")
 
     def __getitem__(self, key):
         return getattr(self, key, None)
