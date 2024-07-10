@@ -492,6 +492,7 @@ class GovernanceMonitor(discord.Client):
 
             thread_content = f"{final_content}\n\n"
             thread_title = f"{index}: {title}"
+            thread_title = thread_title if len(thread_title) <= self.config.DISCORD_TITLE_MAX_LENGTH else thread_title[:self.config.DISCORD_TITLE_MAX_LENGTH - 3] + "..."
 
             if operation == 'create':
                 thread = await channel.create_thread(
