@@ -131,7 +131,6 @@ async def check_governance():
                         logging.error(f"No value: {values['successful_url']}")
 
                     title = values['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
-
                     logging.info(f"Creating thread on Discord: #{index} {title}")
 
                     try:
@@ -842,6 +841,7 @@ if __name__ == '__main__':
 
 
     try:
+        config.initialize_environment_files()
         client.run(token=config.DISCORD_API_KEY, reconnect=True)
     except discord.ConnectionClosed:
         logging.error("Failed to connect to Discord")
