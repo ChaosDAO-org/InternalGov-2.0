@@ -45,7 +45,6 @@ class Config:
         except ValueError as e:
             print(f"Error: {e}")
 
-
     def initialize_environment_files(self):
         """
         Ensure that required files exist for the bot's operation.
@@ -65,7 +64,7 @@ class Config:
                     json.dump({}, file)
                 self.logger.info(f"{file_name} missing... creating file")
             else:
-                self.logger.info(f"'{file_name}' already exists... skipping creation")
+                pass
 
     def __getitem__(self, key):
         return getattr(self, key, None)
