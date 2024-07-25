@@ -1,5 +1,6 @@
 # Ignore all JSON files in the data directory
 data/.*json
+data/.*cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
