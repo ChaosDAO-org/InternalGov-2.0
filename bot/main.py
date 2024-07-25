@@ -207,7 +207,7 @@ async def check_governance():
                         general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
                         await thread.message.edit(embed=general_info)
 
-                        # Work-in-Progress
+                        # Add call data
                         await asyncio.sleep(0.5)
                         process_call_data = ProcessCallData(price=current_price)
                         call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
@@ -261,6 +261,7 @@ async def sync_embeds():
     try:
         referendum_info = await substrate.referendumInfoFor()
         json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
+        current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
         logging.info("Synchronizing embeds")
         if json_data:
@@ -270,8 +271,10 @@ async def sync_embeds():
             return None
 
         logging.info(f"{len(index_msgid)} threads to synchronize")
+
         # Synchronize in reverse from latest to oldest active proposals
-        for index, message_id in sorted(index_msgid.items(), reverse=True):
+        for index, message_id in sorted(index_msgid.items(), key=lambda item: int(item[0]), reverse=True):
+
             sync_thread = client.get_channel(int(message_id))
 
             # This will use fetch_channel() if the thread is marked as archived
@@ -299,7 +302,25 @@ async def sync_embeds():
                         voting_buttons = ButtonHandler(client, message_id)
                         await message.edit(view=voting_buttons)
 
-                async for message in sync_thread.history(oldest_first=True):
+                async for message in sync_thread.history(oldest_first=True, limit=5):
+                    # This will update the embedded call data when the preimage wasn't available on-chain during the
+                    # creation of the internal thread. If the preimage still isn't stored on-chain then it will leave
+                    # the embed as :warning: Preimage not found on chain.
+                    if message.author == client.user and message.content.startswith("||<@&"):
+                        if message.embeds[0].description.startswith(":warning:"):
+
+                            await asyncio.sleep(0.5)
+                            logging.info(f"Checking if preimage has been stored on-chain")
+                            process_call_data = ProcessCallData(price=current_price)
+                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+
+                            if "Preimage not found" not in preimagehash:
+                                call_data = await process_call_data.consolidate_call_args(call_data)
+                                embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
+                                await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png',filename='symbol.png')])
+                            else:
+                                logging.warning("Preimage is still missing")
+
                     # Add hyperlinks to results if no components found on message
                     if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
                         logging.info("Adding missing hyperlink buttons")
