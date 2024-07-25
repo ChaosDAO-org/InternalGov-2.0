@@ -333,10 +333,10 @@ class ProcessCallData:
                             asset_name = asset_dict.get(self.general_index, self.config.SYMBOL)
 
                             value_str = float(value_str) / decimal
-                            current_embed.description += f"\n{'　' * (indent + 1)} **{self.format_key(key)[:256]}**: {value_str:,.2f} `{asset_name}`"
+                            current_embed.description += f"\n{'　' * (indent + 1)} **{self.format_key(key)[:256]}**: {value_str:,.0f} `{asset_name}`"
 
                             if self.general_index is None:
-                                current_embed.description += f"\n{'　' * (indent + 1)} **USD**: {value_str * self.price:,.2f}"
+                                current_embed.description += f"\n{'　' * (indent + 1)} **USD**: {value_str * self.price:,.0f}"
 
                         elif key in ['beneficiary', 'signed', 'curator']:
                             display_name = await self.substrate.check_identity(address=value_str, network=self.config.NETWORK_NAME)
