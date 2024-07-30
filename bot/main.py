@@ -608,7 +608,7 @@ async def recheck_proposals():
         title_from_vote_counts = client.vote_counts[message_id]['title'].strip()
 
         if title_from_api != title_from_vote_counts:
-            client.vote_counts[message_id]['title'] = title = opengov['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip()
+            client.vote_counts[message_id]['title'] = title = title_from_api
             # set title on thread id contained in vote_counts.json
             await client.save_vote_counts()
 
@@ -619,7 +619,7 @@ async def recheck_proposals():
                 await client.manage_discord_thread(
                     channel=channel,
                     operation='edit',
-                    title=title,
+                    title=title_from_api,
                     index=proposal_index,
                     content=opengov['content'],
                     governance_tag="",
