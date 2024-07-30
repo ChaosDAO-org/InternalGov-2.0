@@ -307,8 +307,20 @@ async def sync_embeds():
                     # creation of the internal thread. If the preimage still isn't stored on-chain then it will leave
                     # the embed as :warning: Preimage not found on chain.
                     if message.author == client.user and message.content.startswith("||<@&"):
-                        if message.embeds[0].description.startswith(":warning:"):
+                        if not message.embeds:
+                            await asyncio.sleep(0.5)
+                            logging.info(f"Embedded call data not found, checking if preimage has been stored on-chain")
+                            process_call_data = ProcessCallData(price=current_price)
+                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
 
+                            if "Preimage not found" not in preimagehash:
+                                call_data = await process_call_data.consolidate_call_args(call_data)
+                                embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
+                                await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png',filename='symbol.png')])
+                                logging.info("Embedded call data has now been added")
+                                continue
+
+                        if message.embeds[0].description.startswith(":warning:"):
                             await asyncio.sleep(0.5)
                             logging.info(f"Checking if preimage has been stored on-chain")
                             process_call_data = ProcessCallData(price=current_price)
@@ -318,6 +330,7 @@ async def sync_embeds():
                                 call_data = await process_call_data.consolidate_call_args(call_data)
                                 embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
                                 await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png',filename='symbol.png')])
+                                logging.info("Embedded call data has now been added")
                             else:
                                 logging.warning("Preimage is still missing")
 
