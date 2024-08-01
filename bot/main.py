@@ -318,6 +318,7 @@ async def sync_embeds():
                                 embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
                                 await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png',filename='symbol.png')])
                                 logging.info("Embedded call data has now been added")
+                                continue
                             else:
                                 logging.warning("Preimage is missing")
                                 continue
