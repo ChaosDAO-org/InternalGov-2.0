@@ -15,6 +15,8 @@ We encourage everyone to actively participate in these discussions, as your inpu
 - [Organising with categories](https://github.com/ChaosDAO-org/InternalGov-2.0/wiki/3.-Channel-Categories#adding-a-category)
 - [FAQ](https://github.com/ChaosDAO-org/InternalGov-2.0/wiki/99.-FAQ)
 
+  
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/SYnpgcgfDsA/0.jpg)](https://www.youtube.com/watch?v=SYnpgcgfDsA)
 ---
 
 ### [.env.sample](https://raw.githubusercontent.com/ChaosDAO-org/InternalGov-2.0/main/.env.sample)
