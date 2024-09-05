@@ -25,6 +25,7 @@ class ProxyVoter:
         >>> voter.execute_multiple_votes(votes)
 
     """
+
     def __init__(self, main_address, proxy_mnemonic, url):
         """
         Initialize the ProxyVoter instance.
@@ -57,7 +58,14 @@ class ProxyVoter:
             int: The free balance of the main address.
         """
         try:
+            # When no ss58 address is provided, use self.main_address which is the account
+            # that the governance proxy controls
             if not ss58_address:
+                # When VOTE_WITH_BALANCE is set to 0, the bot will vote with the entire balance that the
+                # governance proxy controls.
+                if self.config.VOTE_WITH_BALANCE != 0:
+                    return self.config.VOTE_WITH_BALANCE * (10 ** self.substrate.token_decimals)
+
                 result = self.substrate.query('System', 'Account', [self.main_address])
                 return result.value['data']['free']
             else:
@@ -99,6 +107,12 @@ class ProxyVoter:
             # ongoing ref
             if proposal_index not in ongoing_referendas:
                 self.logger.info(f"{proposal_index}# is not an ongoing referenda, skipping...")
+                return False
+
+            main_account_balance = await self.balance(ss58_address=self.main_address) / self.substrate.token_decimals
+
+            if self.config.VOTE_WITH_BALANCE != 0 and main_account_balance < self.config.VOTE_WITH_BALANCE:
+                self.logger.info(f"The balance of {self.main_address} is too low")
                 return False
 
             if vote_type == 'aye':
