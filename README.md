@@ -104,8 +104,8 @@ When the bot votes is dictated by `/data/vote_periods`. Each origin of a proposa
 ## Support
 For assistance or inquiries, please refer to the following official channels of communication: 
 
-| Platform | User   | UID/URL                                                                                                                                               |
-|----------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Telegram | n4droj | ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white&link=https://t.me/n4droj)                  |
-| Discord  | n4dro  | ![Discord]( 	https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white&link=https%3A%2F%2Fdiscord.gg%2FfGJe2AWkGe) |
-| Twitter  | n4dro  | ![Twitter](https://img.shields.io/twitter/follow/N4DRO)                                                                                               |
+| Platform | User   | UID/URL                                                                                                                                                                                      |
+|----------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Telegram | n4droj | [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white&link=https://t.me/n4droj)](https://t.me/n4droj)                                  |
+| Discord  | n4dro  | [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white&link=https%3A%2F%2Fdiscord.gg%2FfGJe2AWkGe)](https://discord.com/invite/fGJe2AWkGe) |
+| Twitter  | n4dro  | [![Twitter](https://img.shields.io/twitter/follow/N4DRO)](https://www.x.com/N4DRO)                                                                                                           |
