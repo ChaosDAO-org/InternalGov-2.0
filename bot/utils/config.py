@@ -37,6 +37,7 @@ class Config:
             self.PROXIED_ADDRESS = os.getenv('PROXIED_ADDRESS') or self.raise_error("Missing PROXIED_ADDRESS")
             self.PROXY_ADDRESS = os.getenv('PROXY_ADDRESS') or self.raise_error("Missing PROXY_ADDRESS")
             self.MNEMONIC = os.getenv('MNEMONIC') or self.raise_error("Missing MNEMONIC")
+            self.VOTE_WITH_BALANCE = float(os.getenv('VOTE_WITH_BALANCE') or self.raise_error("Missing VOTE_WITH_BALANCE"))
             self.CONVICTION = os.getenv('CONVICTION') or self.raise_error("Missing CONVICTION")
             self.DISCORD_PROXY_BALANCE_ALERT = int(os.getenv('DISCORD_PROXY_BALANCE_ALERT') or self.raise_error("Missing DISCORD_PROXY_BALANCE_ALERT"))
             self.PROXY_BALANCE_ALERT = float(os.getenv('PROXY_BALANCE_ALERT') or self.raise_error("Missing PROXY_BALANCE_ALERT"))

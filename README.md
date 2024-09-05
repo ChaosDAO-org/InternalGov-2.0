@@ -1,4 +1,8 @@
 # ChaosDAO Governance bot
+
+![GitHub License](https://img.shields.io/github/license/ChaosDAO-org/InternalGov-2.0)
+![GitHub commits since latest release](https://img.shields.io/github/commits-since/ChaosDAO-org/InternalGov-2.0/latest)
+
 A dedicated discussion forum within your Discord server, specifically designed to facilitate thoughtful and constructive conversations around ongoing proposals. This interactive platform empowers members to openly share their insights, perspectives, and opinions on each referendum prior to the submission of an official vote by the designated proxy account on behalf of the collective or DAO.
 
 The primary objective of this forum is to foster an environment of collaboration and informed decision-making, ensuring that every voice within the community is acknowledged and taken into consideration. By harnessing the collective wisdom of your community, you can make well-informed decisions that truly represent the best interests of the entire group.
@@ -100,9 +104,8 @@ When the bot votes is dictated by `/data/vote_periods`. Each origin of a proposa
 ## Support
 For assistance or inquiries, please refer to the following official channels of communication: 
 
-| Platform | User   | UID/URL                       |
-|----------|--------|-------------------------------|
-| Discord  | n4dro  | 185365893499322368            |
-| Twitter  | n4dro  | https://twitter.com/N4DRO     |
-| Telegram | n4droj | https://t.me/n4droj           |
-| Discord  |        | https://discord.gg/fGJe2AWkGe |
+| Platform | User   | UID/URL                                                                                                                                               |
+|----------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Telegram | n4droj | ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white&link=https://t.me/n4droj)                  |
+| Discord  | n4dro  | ![Discord]( 	https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white&link=https%3A%2F%2Fdiscord.gg%2FfGJe2AWkGe) |
+| Twitter  | n4dro  | ![Twitter](https://img.shields.io/twitter/follow/N4DRO)                                                                                               |
