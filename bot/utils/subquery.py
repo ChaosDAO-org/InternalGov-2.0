@@ -91,10 +91,9 @@ class SubstrateAPI:
     async def ongoing_referendums_idx(self):
         try:
             await self._connect(self.config.SUBSTRATE_WSS)
-            ongoing_referendas = [int(index.value) for index, info in
-                                  self.substrate.query_map(module='Referenda', storage_function='ReferendumInfoFor',
-                                                           params=[]) if 'Ongoing' in info]
+            ongoing_referendas = [int(index.value) for index, info in self.substrate.query_map(module='Referenda', storage_function='ReferendumInfoFor', params=[]) if 'Ongoing' in info]
             return ongoing_referendas
+
         except Exception as e:
             self.logger.error(f"Error fetching ongoing referendum index(s): {e}")
             raise e
@@ -128,6 +127,7 @@ class SubstrateAPI:
                 sort = json.dumps(referendum, sort_keys=True)
                 data = json.loads(sort)
                 return data
+
         except Exception as e:
             self.logger.error(f"Error fetching referendum info: {e}")
             raise e
@@ -203,6 +203,7 @@ class SubstrateAPI:
                     return decoded_call, preimage_hash
                 else:
                     return call
+
         except Exception as e:
             self.logger.error(f"Error fetching referendum call data: {e}")
             raise e
@@ -432,6 +433,7 @@ class SubstrateAPI:
             )
 
             return epoch.value
+
         except Exception as e:
             self.logger.error(f"Error fetching time_until_block: {e}")
             raise e
