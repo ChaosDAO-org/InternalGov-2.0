@@ -347,7 +347,8 @@ class SubstrateAPI:
         display_name = display.get('Raw', '')
 
         # Get the 'Raw' value from twitter, default to empty string if not present
-        twitter_name = twitter.get('Raw', '')
+        twitter_name = twitter.get('Raw', '').replace("https://", "").replace("http://", "").replace("www.", "").split('/')[-1]
+        twitter_name = f"@{twitter_name}" if not twitter_name.startswith('@') else twitter_name
 
         if display_name and twitter_name:
             return f"{display_name} / {twitter_name}"
