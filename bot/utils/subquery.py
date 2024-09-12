@@ -20,14 +20,13 @@ class SubstrateAPI:
             max_retries = 3
             wait_seconds = 10
 
-            self.logger.info(f"Initializing RPC connection to {self.config.SUBSTRATE_WSS}")
+            self.logger.info(f"Initializing RPC connection to {wss}")
 
             for attempt in range(1, max_retries + 1):
                 try:
                     await asyncio.sleep(0.5)
                     self.substrate = SubstrateInterface(
-                        url=wss,
-                        type_registry_preset=self.config.NETWORK_NAME
+                        url=wss
                     )
 
                     # Initialize the runtime
@@ -223,6 +222,7 @@ class SubstrateAPI:
                 await self._connect(wss=self.config.SUBSTRATE_WSS)
 
             if self.config.PEOPLE_WSS:
+                await self._disconnect()  # disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
                 await self._connect(wss=self.config.PEOPLE_WSS)
 
             result_tmp = {}
@@ -290,6 +290,7 @@ class SubstrateAPI:
                 await self._connect(wss=self.config.SUBSTRATE_WSS)
 
             if self.config.PEOPLE_WSS:
+                await self._disconnect()  # disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
                 await self._connect(wss=self.config.PEOPLE_WSS)
 
             result_tmp = {}
