@@ -56,46 +56,48 @@ When the bot votes is dictated by `/data/vote_periods`. Each origin of a proposa
 
 ### vote settings
 ###### Kusama vote periods
-| Role               | Decision Period (days) | Internal Vote Period (days) | Revote Period (days) |
-|--------------------|------------------------|-----------------------------|----------------------|
-| Root               | 14                     | 5                           | 10                   |
-| WhitelistedCaller  | 14                     | 3                           | 10                   |
-| StakingAdmin       | 14                     | 5                           | 10                   |
-| Treasurer          | 14                     | 5                           | 10                   |
-| LeaseAdmin         | 14                     | 5                           | 10                   |
-| FellowshipAdmin    | 14                     | 5                           | 10                   |
-| GeneralAdmin       | 14                     | 5                           | 10                   |
-| AuctionAdmin       | 14                     | 5                           | 10                   |
-| ReferendumCanceller| 7                      | 2                           | 4                    |
-| ReferendumKiller   | 14                     | 2                           | 10                   |
-| SmallTipper        | 7                      | 1                           | 4                    |
-| BigTipper          | 7                      | 1                           | 4                    |
-| SmallSpender       | 14                     | 5                           | 10                   |
-| MediumSpender      | 14                     | 5                           | 10                   |
-| BigSpender         | 14                     | 5                           | 10                   |
+| Role                | Decision Period (days) | Internal Vote Period (days) | Revote Period (days) |
+|---------------------|------------------------|-----------------------------|----------------------|
+| Root                | 14                     | 5                           | 10                   |
+| WhitelistedCaller   | 14                     | 3                           | 10                   |
+| StakingAdmin        | 14                     | 5                           | 10                   |
+| Treasurer           | 14                     | 5                           | 10                   |
+| LeaseAdmin          | 14                     | 5                           | 10                   |
+| FellowshipAdmin     | 14                     | 5                           | 10                   |
+| GeneralAdmin        | 14                     | 5                           | 10                   |
+| AuctionAdmin        | 14                     | 5                           | 10                   |
+| ReferendumCanceller | 7                      | 2                           | 4                    |
+| ReferendumKiller    | 14                     | 2                           | 10                   |
+| SmallTipper         | 7                      | 1                           | 4                    |
+| BigTipper           | 7                      | 1                           | 4                    |
+| SmallSpender        | 14                     | 5                           | 10                   |
+| MediumSpender       | 14                     | 5                           | 10                   |
+| BigSpender          | 14                     | 5                           | 10                   |
+| WishForChange       | 14                     | 5                           | 10                   |
 > Example:
 > > A proposal is submitted with its origin designated as 'Treasurer'. Following a period of five days after its on-chain introduction, a vote is conducted in accordance with the predetermined internal outcome. Should there be a shift in the voting stance from 'AYE' to 'NAY', a subsequent vote will be executed on the tenth day of the proposal's on-chain presence. In instances where the initial decision remains unaltered and the proposal has aged ten days or more, no further on-chain voting action will be undertaken.
 
 ---
 
 ###### Polkadot vote periods
-| Role               | Decision Period (days) | Internal Vote Period (days) | Revote Period (days) |
-|--------------------|------------------------|-----------------------------|----------------------|
-| Root               | 28                     | 7                           | 20                   |
-| WhitelistedCaller  | 28                     | 2                           | 20                   |
-| StakingAdmin       | 28                     | 7                           | 20                   |
-| Treasurer          | 28                     | 7                           | 20                   |
-| LeaseAdmin         | 28                     | 7                           | 20                   |
-| FellowshipAdmin    | 28                     | 7                           | 20                   |
-| GeneralAdmin       | 28                     | 7                           | 20                   |
-| AuctionAdmin       | 28                     | 7                           | 20                   |
-| ReferendumCanceller| 7                      | 2                           | 4                    |
-| ReferendumKiller   | 28                     | 4                           | 20                   |
-| SmallTipper        | 7                      | 2                           | 4                    |
-| BigTipper          | 7                      | 2                           | 4                    |
-| SmallSpender       | 28                     | 7                           | 20                   |
-| MediumSpender      | 28                     | 7                           | 20                   |
-| BigSpender         | 28                     | 7                           | 20                   |
+| Role                | Decision Period (days) | Internal Vote Period (days) | Revote Period (days) |
+|---------------------|------------------------|-----------------------------|----------------------|
+| Root                | 28                     | 7                           | 20                   |
+| WhitelistedCaller   | 28                     | 2                           | 20                   |
+| StakingAdmin        | 28                     | 7                           | 20                   |
+| Treasurer           | 28                     | 7                           | 20                   |
+| LeaseAdmin          | 28                     | 7                           | 20                   |
+| FellowshipAdmin     | 28                     | 7                           | 20                   |
+| GeneralAdmin        | 28                     | 7                           | 20                   |
+| AuctionAdmin        | 28                     | 7                           | 20                   |
+| ReferendumCanceller | 7                      | 2                           | 4                    |
+| ReferendumKiller    | 28                     | 4                           | 20                   |
+| SmallTipper         | 7                      | 2                           | 4                    |
+| BigTipper           | 7                      | 2                           | 4                    |
+| SmallSpender        | 28                     | 7                           | 20                   |
+| MediumSpender       | 28                     | 7                           | 20                   |
+| BigSpender          | 28                     | 7                           | 20                   |
+| WishForChange       | 28                     | 7                           | 20                   |
 > Example:
 > > A proposal is submitted with its origin designated as 'AuctionAdmin'. Following a period of seven days after its on-chain introduction, a vote is conducted in accordance with the predetermined internal outcome. Should there be a shift in the voting stance from 'AYE' to 'NAY', a subsequent vote will be executed on the twentieth day of the proposal's on-chain presence. In instances where the initial decision remains unaltered and the proposal has aged ten days or more, no further on-chain voting action will be undertaken.
 
