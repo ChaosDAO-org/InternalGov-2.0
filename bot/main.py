@@ -234,6 +234,7 @@ async def check_governance():
         logging.exception(f"An unexpected error occurred: {error}")
         raise error
     finally:
+        await substrate.close()
         if config.SOLO_MODE is False:
             await start_tasks(coroutine_task=[autonomous_voting, sync_embeds, recheck_proposals])
         if config.SOLO_MODE is True:
@@ -354,7 +355,8 @@ async def sync_embeds():
         logging.info("Waiting 3 seconds before restarting task loop")
         await asyncio.sleep(3)
         sync_embeds.restart()
-
+    finally:
+        await substrate.close()
 
 @tasks.loop(hours=12)
 async def autonomous_voting():
@@ -574,8 +576,8 @@ async def autonomous_voting():
         logging.exception(f"An unexpected error occurred: {error}")
         raise error
     finally:
+        await substrate.close()
         await start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
-
 
 @tasks.loop(hours=1)
 async def recheck_proposals():
@@ -595,48 +597,53 @@ async def recheck_proposals():
         - Saves the updated proposal data to the JSON file.
         - Logs the successful update of the proposals' data.
         """
-    await client.wait_until_ready()
-    logging.info("recheck_proposals task is running")
-    vote_counts = await client.load_vote_counts()
-    opengov2 = OpenGovernance2(config)
-    channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+    try:
+        await client.wait_until_ready()
+        logging.info("recheck_proposals task is running")
+        vote_counts = await client.load_vote_counts()
+        opengov2 = OpenGovernance2(config)
+        channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
 
-    for message_id, value in vote_counts.items():
+        for message_id, value in vote_counts.items():
 
-        proposal_index = value['index']
-        opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config.NETWORK_NAME)
-        await asyncio.sleep(1)
+            proposal_index = value['index']
+            opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config.NETWORK_NAME)
+            await asyncio.sleep(1)
 
-        title_from_api = opengov['title'].strip()
-        title_from_vote_counts = client.vote_counts[message_id]['title'].strip()
+            title_from_api = opengov['title'].strip()
+            title_from_vote_counts = client.vote_counts[message_id]['title'].strip()
 
-        if title_from_api != title_from_vote_counts:
-            client.vote_counts[message_id]['title'] = title = title_from_api
-            # set title on thread id contained in vote_counts.json
-            await client.save_vote_counts()
+            if title_from_api != title_from_vote_counts:
+                client.vote_counts[message_id]['title'] = title = title_from_api
+                # set title on thread id contained in vote_counts.json
+                await client.save_vote_counts()
 
-            # Edit existing thread with new data found from Polkassembly or SubSquare
-            logging.info(f"Editing discord thread with title + content: {proposal_index}# {title}")
+                # Edit existing thread with new data found from Polkassembly or SubSquare
+                logging.info(f"Editing discord thread with title + content: {proposal_index}# {title}")
 
-            try:
-                await client.manage_discord_thread(
-                    channel=channel,
-                    operation='edit',
-                    title=title_from_api,
-                    index=proposal_index,
-                    content=opengov['content'],
-                    governance_tag="",
-                    message_id=message_id,
-                    client=client
-                )
-                logging.info(f"Title updated from None -> {title} in vote_counts.json")
-                logging.info(f"Discord thread successfully amended")
-            except Exception as e:
-                logging.error(f"Failed to edit Discord thread: {e}")
-        else:
-            continue
-    logging.info("recheck_proposals complete")
-
+                try:
+                    await client.manage_discord_thread(
+                        channel=channel,
+                        operation='edit',
+                        title=title_from_api,
+                        index=proposal_index,
+                        content=opengov['content'],
+                        governance_tag="",
+                        message_id=message_id,
+                        client=client
+                    )
+                    logging.info(f"Title updated from None -> {title} in vote_counts.json")
+                    logging.info(f"Discord thread successfully amended")
+                except Exception as e:
+                    logging.error(f"Failed to edit Discord thread: {e}")
+            else:
+                continue
+        logging.info("recheck_proposals complete")
+    except Exception as error:
+        logging.exception(f"An unexpected error occurred: {error}")
+        raise error
+    finally:
+        await substrate.close()
 
 if __name__ == '__main__':
     config = Config()
