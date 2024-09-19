@@ -69,7 +69,6 @@ async def start_tasks(coroutine_task):
     for task in coroutine_task:
         try:
             if not task.is_running():
-                # Start the task before accessing its name
                 print(f"{get_timestamp()} - Starting task, please wait...")
                 task.start()
         except Exception as e:
@@ -119,7 +118,7 @@ async def sync_embeds():
         await start_tasks([recheck_proposals])
 
 
-@tasks.loop(hours=2)
+@tasks.loop(hours=1)
 async def recheck_proposals():
     try:
         task_name = recheck_proposals.get_task().get_name()
