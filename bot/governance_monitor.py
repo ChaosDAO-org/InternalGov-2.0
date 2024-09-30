@@ -508,8 +508,6 @@ class GovernanceMonitor(discord.Client):
                     name=thread_title,
                     content=thread_content
                 )
-                self.logger.info(f"Title updated from None -> {title} in vote_counts.json")
-                self.logger.info("Discord thread successfully amended")
             else:
                 self.logger.error(f"Invalid operation or missing parameters for {operation}")
         except Exception as e:
