@@ -613,7 +613,7 @@ async def recheck_proposals():
                         client=client
                     )
                     thread_channel = channel.get_thread(int(message_id))
-                    await thread_channel.send(content=f'**Was:**\n`{title_from_vote_counts}`\n\n**Now:**\n`{title_from_api}`')
+                    await thread_channel.send(content=f'Before the thread title was changed, it was:\n**{title_from_vote_counts}**')
                     logging.info(f"Title updated from {title_from_vote_counts} -> {title_from_api} in vote_counts.json")
                     logging.info(f"Discord thread successfully amended")
                 except Exception as e:
