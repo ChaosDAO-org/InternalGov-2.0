@@ -35,14 +35,30 @@ pip3 install -r requirements.txt
 ```
 
 ##### Installing PM2 (Process Manager)
-###### PM2 is a daemon process manager that will help you manage and keep your application/bot online 24/7 
+###### PM2 is a daemon process manager that will help you manage and keep your application/bot online 24/7  
+https://pm2.keymetrics.io/docs/usage/quick-start/  
+
 `npm install pm2 -g`
 
-###### Daemonize the bot to run 24/7 with PM2
+###### Daemonizing the bot to run 24/7 with PM2
 ```shell
+# change directory
 cd InternalGov-2.0/bot/
-pm2 start main.py --name ksmgov2 --interpreter python3
+
+# test before daemonizing (review log file in /data/logs/governance_bot.log)
+python3 main.py
+
+# daemonize
+pm2 start main.py --name polkadot_gov --interpreter python3
 pm2 save
+
+# stopping/starting & restarting pm2 process
+pm2 stop polkadot_gov
+pm2 start polkadot_gov
+pm2 restart polkadot_gov
+
+# list process(s); App name, ID, Mode, Status, CPU, Memory, Uptime, Restarts
+pm2 list
 ```
 
 ---
