@@ -53,7 +53,7 @@ class GovernanceMonitor(discord.Client):
             response = requests.get(url)
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            self.logger.error(f"An HTTP error occurred: {e}")
+            self.logger.error(f"A HTTP error occurred: {e}")
             return 0
         except requests.exceptions.RequestException as e:
             self.logger.error(f"A request error occurred: {e}")
@@ -65,7 +65,7 @@ class GovernanceMonitor(discord.Client):
             self.logger.warning(f"Asset ID '{asset_id}' not found in CoinGecko.")
             return 0
 
-        return data[asset_id]['usd']
+        return data[asset_id].get('usd', 0)
 
     async def check_permissions(self, interaction, required_role, user_id, user_roles):
         self.logger.info(f"Checking {interaction.user.name} has the appropriate permissions")
