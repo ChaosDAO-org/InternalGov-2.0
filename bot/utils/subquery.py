@@ -25,43 +25,28 @@ class SubstrateAPI:
             for attempt in range(1, max_retries + 1):
                 try:
                     await asyncio.sleep(0.5)
-                    self.substrate = SubstrateInterface(
-                        url=wss
+                    self.substrate = SubstrateInterface(url=wss)
+
+                    await asyncio.wait_for(
+                        asyncio.to_thread(self.substrate.init_runtime),
+                        timeout=10
                     )
 
-                    # Initialize the runtime
-                    try:
-                        self.substrate.init_runtime()
-                        self.logger.info(f"Runtime successfully initialized: {self.substrate.runtime_version}")
-                    except Exception as e:
-                        self.logger.error(f"Error during init_runtime(): {e}")
-                        raise e
-
+                    self.logger.info(f"Runtime successfully initialized: {self.substrate.runtime_version}")
                     return self.substrate
-
-                except WebSocketBadStatusException as ws_error:
-                    self.logger.exception(
-                        f"WebSocket error occurred while making a request to Substrate: {ws_error.args}")
-
-                    if attempt < max_retries:  # If the current attempt is less than max_retries.
+                except (WebSocketBadStatusException, SubstrateRequestException, ConfigurationError) as e:
+                    self.logger.error(f"Error during connection attempt {attempt}: {e}")
+                    if attempt < max_retries:
                         self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
                         await asyncio.sleep(wait_seconds)
-                        raise
-                    else:  # If we reached max_retries and couldn't establish a connection.
+                    else:
                         self.logger.error("Max retries reached. Could not establish a connection.")
-                        raise
-
-                except SubstrateRequestException as req_error:
-                    self.logger.exception(f"An error occurred while making a request to Substrate: {req_error.args}")
+                        raise e
+                except asyncio.TimeoutError:
+                    self.logger.error("Timeout while initializing Substrate connection.")
                     raise
-
-                except ConfigurationError as config_error:
-                    self.logger.exception(f"Config error: {config_error.args}")
-                    raise
-
                 except Exception as error:
-                    self.logger.exception(
-                        f"An error occurred while initializing the Substrate connection: {error.args}")
+                    self.logger.error(f"Unexpected error occurred during Substrate connection: {error}")
                     raise
 
     async def _disconnect(self):
@@ -90,12 +75,27 @@ class SubstrateAPI:
     async def ongoing_referendums_idx(self):
         try:
             await self._connect(self.config.SUBSTRATE_WSS)
-            ongoing_referendas = [int(index.value) for index, info in self.substrate.query_map(module='Referenda', storage_function='ReferendumInfoFor', params=[]) if 'Ongoing' in info]
-            return ongoing_referendas
+
+            qmap = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query_map,
+                    module='Referenda',
+                    storage_function='ReferendumInfoFor',
+                    params=[]
+                ),
+                timeout=10
+            )
+
+            ongoing_referendums = [int(index.value) for index, info in qmap if 'Ongoing' in info]
+            return ongoing_referendums
+
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout while fetching ongoing referendums.")
+            raise
 
         except Exception as e:
-            self.logger.error(f"Error fetching ongoing referendum index(s): {e}")
-            raise e
+            self.logger.error(f"Error fetching ongoing referendum indexes: {e}")
+            raise
 
     async def referendumInfoFor(self, index=None):
         """
@@ -110,15 +110,26 @@ class SubstrateAPI:
         await self._connect(self.config.SUBSTRATE_WSS)
         try:
             if index is not None:
-                return self.substrate.query(
-                    module='Referenda',
-                    storage_function='ReferendumInfoFor',
-                    params=[index]).serialize()
+                result = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.substrate.query,
+                        module='Referenda',
+                        storage_function='ReferendumInfoFor',
+                        params=[index]
+                    ),
+                    timeout=10
+                )
+                return result.serialize()
             else:
-                qmap = self.substrate.query_map(
-                    module='Referenda',
-                    storage_function='ReferendumInfoFor',
-                    params=[])
+                qmap = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.substrate.query_map,
+                        module='Referenda',
+                        storage_function='ReferendumInfoFor',
+                        params=[]
+                    ),
+                    timeout=10
+                )
                 for index, info in qmap:
                     if 'Ongoing' in info:
                         referendum.update({int(index.value): info.value})
@@ -126,6 +137,10 @@ class SubstrateAPI:
                 sort = json.dumps(referendum, sort_keys=True)
                 data = json.loads(sort)
                 return data
+
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout while fetching referendum info.")
+            raise
 
         except Exception as e:
             self.logger.error(f"Error fetching referendum info: {e}")
@@ -166,9 +181,17 @@ class SubstrateAPI:
 
         try:
             await self._connect(wss=self.config.SUBSTRATE_WSS)
-            referendum = self.substrate.query(module="Democracy" if gov1 else "Referenda",
-                                              storage_function="ReferendumInfoOf" if gov1 else "ReferendumInfoFor",
-                                              params=[index]).serialize()
+            referendum = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query,
+                    module="Democracy" if gov1 else "Referenda",
+                    storage_function="ReferendumInfoOf" if gov1 else "ReferendumInfoFor",
+                    params=[index]
+                ),
+                timeout=10
+            )
+
+            referendum = referendum.serialize()
 
             if referendum is None or 'Ongoing' not in referendum:
                 return False, f":warning: Referendum **#{index}** is inactive"
@@ -178,8 +201,10 @@ class SubstrateAPI:
             if 'Inline' in preimage:
                 call = preimage['Inline']
                 if not call_data:
-                    call_obj = self.substrate.create_scale_object('Call')
-                    decoded_call = call_obj.decode(ScaleBytes(call))
+                    decoded_call = await asyncio.wait_for(
+                        asyncio.to_thread(self.substrate.create_scale_object('Call').decode, ScaleBytes(call)),
+                        timeout=10
+                    )
                     return decoded_call, preimage
                 else:
                     return call
@@ -187,8 +212,17 @@ class SubstrateAPI:
             if 'Lookup' in preimage:
                 preimage_hash = preimage['Lookup']['hash']
                 preimage_length = preimage['Lookup']['len']
-                call = self.substrate.query(module='Preimage', storage_function='PreimageFor',
-                                            params=[(preimage_hash, preimage_length)]).value
+                call = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.substrate.query,
+                        module='Preimage',
+                        storage_function='PreimageFor',
+                        params=[(preimage_hash, preimage_length)]
+                    ),
+                    timeout=10
+                )
+
+                call = call.value
 
                 if call is None:
                     return False, ":warning: Preimage not found on chain"
@@ -197,11 +231,17 @@ class SubstrateAPI:
                     call = f"0x{''.join(f'{ord(c):02x}' for c in call)}"
 
                 if not call_data:
-                    call_obj = self.substrate.create_scale_object('Call')
-                    decoded_call = call_obj.decode(ScaleBytes(call))
+                    decoded_call = await asyncio.wait_for(
+                        asyncio.to_thread(self.substrate.create_scale_object('Call').decode, ScaleBytes(call)),
+                        timeout=10
+                    )
                     return decoded_call, preimage_hash
                 else:
                     return call
+
+        except asyncio.TimeoutError:
+            self.logger.error(f"Timeout while fetching referendum call data for index: {index}")
+            raise
 
         except Exception as e:
             self.logger.error(f"Error fetching referendum call data: {e}")
@@ -216,7 +256,6 @@ class SubstrateAPI:
         :param network::
         :return: The super-identity of an alternative 'sub' identity together with its name, within that
         """
-
         try:
             if not self.config.PEOPLE_WSS:
                 await self._connect(wss=self.config.SUBSTRATE_WSS)
@@ -225,21 +264,30 @@ class SubstrateAPI:
                 await self._disconnect()  # disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
                 await self._connect(wss=self.config.PEOPLE_WSS)
 
-            result_tmp = {}
-            result = self.substrate.query_map(
-                module='Identity',
-                storage_function='SuperOf',
-                params=[])
+            result = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query_map,
+                    module='Identity',
+                    storage_function='SuperOf',
+                    params=[]
+                ),
+                timeout=10
+            )
 
+            result_tmp = {}
             for key, values in result:
                 result_tmp.update({key.value: values.value})
 
             with open(f'../data/off-chain-querying/{network}-superof.json', 'w') as superof:
                 json.dump(result_tmp, indent=4, fp=superof)
 
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout while fetching identities super_of.")
+            raise
+
         except Exception as e:
             self.logger.error(f"Error fetching identities super_of: {e}")
-            raise e
+            raise
 
     @staticmethod
     async def check_cached_super_of(address, network):
@@ -290,25 +338,33 @@ class SubstrateAPI:
                 await self._connect(wss=self.config.SUBSTRATE_WSS)
 
             if self.config.PEOPLE_WSS:
-                await self._disconnect()  # disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
+                await self._disconnect()  # Disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
                 await self._connect(wss=self.config.PEOPLE_WSS)
 
-            result_tmp = {}
-            result = self.substrate.query_map(
-                module='Identity',
-                storage_function='IdentityOf',
-                params=[]
+            result = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query_map,
+                    module='Identity',
+                    storage_function='IdentityOf',
+                    params=[]
+                ),
+                timeout=10
             )
 
+            result_tmp = {}
             for key, values in result:
                 result_tmp.update({key.value: values.value})
 
             with open(f'../data/off-chain-querying/{network}-identity.json', 'w') as identityof:
                 json.dump(result_tmp, indent=4, fp=identityof)
 
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout while fetching identities.")
+            raise
+
         except Exception as e:
             self.logger.error(f"Error fetching identities: {e}")
-            raise e
+            raise
 
     @staticmethod
     async def check_cached_identity(address, network):
@@ -362,30 +418,48 @@ class SubstrateAPI:
     async def get_average_block_time(self, num_blocks=255):
         try:
             await self._connect(wss=self.config.SUBSTRATE_WSS)
-            latest_block_num = self.substrate.get_block_number(block_hash=self.substrate.block_hash)
+
+            latest_block_num = await asyncio.wait_for(
+                asyncio.to_thread(self.substrate.get_block_number, block_hash=self.substrate.block_hash),
+                timeout=10
+            )
+
             first_block_num = latest_block_num - num_blocks
 
-            first_timestamp = self.substrate.query(
-                module='Timestamp',
-                storage_function='Now',
-                block_hash=self.substrate.get_block_hash(first_block_num)
-            ).value
+            first_timestamp = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query,
+                    module='Timestamp',
+                    storage_function='Now',
+                    block_hash=self.substrate.get_block_hash(first_block_num)
+                ),
+                timeout=10
+            )
 
-            last_timestamp = self.substrate.query(
-                module='Timestamp',
-                storage_function='Now',
-                block_hash=self.substrate.get_block_hash(latest_block_num)
-            ).value
+            last_timestamp = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query,
+                    module='Timestamp',
+                    storage_function='Now',
+                    block_hash=self.substrate.get_block_hash(latest_block_num)
+                ),
+                timeout=10
+            )
 
-            return (last_timestamp - first_timestamp) / (num_blocks * 1000)
+            # Calculate average block time
+            return (last_timestamp.value - first_timestamp.value) / (num_blocks * 1000)
+
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout while fetching block data for average block time.")
+            raise
 
         except Exception as e:
             self.logger.error(f"Error fetching average block time: {e}")
-            raise e
+            raise
 
     async def time_until_block(self, target_block: int) -> int:
         """
-        Calculate the estimated time in minutes until the specified target block is reached on the Kusama network.
+        Calculate the estimated time in minutes until the specified target block is reached on the substrate network.
 
         Args:
             target_block (int): The target block number for which the remaining time needs to be calculated.
@@ -409,7 +483,7 @@ class SubstrateAPI:
             # Calculate the difference in blocks
             block_difference = target_block - current_block
 
-            # Get the average block time (6 seconds for Kusama)
+            # Get the average block time
             avg_block_time = self.get_average_block_time()
 
             # Calculate the remaining time in seconds
@@ -424,18 +498,45 @@ class SubstrateAPI:
             self.logger.error(f"Error fetching time_until_block: {e}")
             raise e
 
-    async def get_block_epoch(self, block_number):
+    async def get_block_epoch(self, block_number: int) -> int:
+        """
+        Retrieves the timestamp (epoch) of a specific block.
+
+        Args:
+            block_number (int): The block number for which the epoch (timestamp) is to be retrieved.
+
+        Returns:
+            int: The timestamp (epoch) of the specified block in milliseconds.
+
+        Raises:
+            asyncio.TimeoutError: If the operation exceeds the specified timeout limit.
+            Exception: If an error occurs while fetching the block hash or timestamp.
+        """
         try:
             await self._connect(wss=self.config.SUBSTRATE_WSS)
-            blockhash = self.substrate.get_block_hash(block_id=block_number)
-            epoch = self.substrate.query(
-                module='Timestamp',
-                storage_function='Now',
-                block_hash=blockhash
+
+            block_hash = await asyncio.wait_for(
+                asyncio.to_thread(self.substrate.get_block_hash, block_id=block_number),
+                timeout=10
+            )
+
+            epoch = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.query,
+                    module='Timestamp',
+                    storage_function='Now',
+                    block_hash=block_hash
+                ),
+                timeout=10
             )
 
             return epoch.value
 
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout while fetching block epoch.")
+            raise
+
         except Exception as e:
-            self.logger.error(f"Error fetching time_until_block: {e}")
-            raise e
+            self.logger.error(f"Error fetching block epoch: {e}")
+            raise
+
