@@ -29,7 +29,7 @@ class SubstrateAPI:
 
                     await asyncio.wait_for(
                         asyncio.to_thread(self.substrate.init_runtime),
-                        timeout=10
+                        timeout=15
                     )
 
                     self.logger.info(f"Runtime successfully initialized: {self.substrate.runtime_version}")
@@ -83,7 +83,7 @@ class SubstrateAPI:
                     storage_function='ReferendumInfoFor',
                     params=[]
                 ),
-                timeout=10
+                timeout=15
             )
 
             ongoing_referendums = [int(index.value) for index, info in qmap if 'Ongoing' in info]
@@ -117,7 +117,7 @@ class SubstrateAPI:
                         storage_function='ReferendumInfoFor',
                         params=[index]
                     ),
-                    timeout=10
+                    timeout=15
                 )
                 return result.serialize()
             else:
@@ -128,7 +128,7 @@ class SubstrateAPI:
                         storage_function='ReferendumInfoFor',
                         params=[]
                     ),
-                    timeout=10
+                    timeout=15
                 )
                 for index, info in qmap:
                     if 'Ongoing' in info:
@@ -188,7 +188,7 @@ class SubstrateAPI:
                     storage_function="ReferendumInfoOf" if gov1 else "ReferendumInfoFor",
                     params=[index]
                 ),
-                timeout=10
+                timeout=15
             )
 
             referendum = referendum.serialize()
@@ -203,7 +203,7 @@ class SubstrateAPI:
                 if not call_data:
                     decoded_call = await asyncio.wait_for(
                         asyncio.to_thread(self.substrate.create_scale_object('Call').decode, ScaleBytes(call)),
-                        timeout=10
+                        timeout=15
                     )
                     return decoded_call, preimage
                 else:
@@ -219,7 +219,7 @@ class SubstrateAPI:
                         storage_function='PreimageFor',
                         params=[(preimage_hash, preimage_length)]
                     ),
-                    timeout=10
+                    timeout=15
                 )
 
                 call = call.value
@@ -233,7 +233,7 @@ class SubstrateAPI:
                 if not call_data:
                     decoded_call = await asyncio.wait_for(
                         asyncio.to_thread(self.substrate.create_scale_object('Call').decode, ScaleBytes(call)),
-                        timeout=10
+                        timeout=15
                     )
                     return decoded_call, preimage_hash
                 else:
@@ -271,7 +271,7 @@ class SubstrateAPI:
                     storage_function='SuperOf',
                     params=[]
                 ),
-                timeout=10
+                timeout=15
             )
 
             result_tmp = {}
@@ -348,7 +348,7 @@ class SubstrateAPI:
                     storage_function='IdentityOf',
                     params=[]
                 ),
-                timeout=10
+                timeout=15
             )
 
             result_tmp = {}
@@ -421,7 +421,7 @@ class SubstrateAPI:
 
             latest_block_num = await asyncio.wait_for(
                 asyncio.to_thread(self.substrate.get_block_number, block_hash=self.substrate.block_hash),
-                timeout=10
+                timeout=15
             )
 
             first_block_num = latest_block_num - num_blocks
@@ -433,7 +433,7 @@ class SubstrateAPI:
                     storage_function='Now',
                     block_hash=self.substrate.get_block_hash(first_block_num)
                 ),
-                timeout=10
+                timeout=15
             )
 
             last_timestamp = await asyncio.wait_for(
@@ -443,7 +443,7 @@ class SubstrateAPI:
                     storage_function='Now',
                     block_hash=self.substrate.get_block_hash(latest_block_num)
                 ),
-                timeout=10
+                timeout=15
             )
 
             # Calculate average block time
@@ -517,7 +517,7 @@ class SubstrateAPI:
 
             block_hash = await asyncio.wait_for(
                 asyncio.to_thread(self.substrate.get_block_hash, block_id=block_number),
-                timeout=10
+                timeout=15
             )
 
             epoch = await asyncio.wait_for(
@@ -527,7 +527,7 @@ class SubstrateAPI:
                     storage_function='Now',
                     block_hash=block_hash
                 ),
-                timeout=10
+                timeout=15
             )
 
             return epoch.value
