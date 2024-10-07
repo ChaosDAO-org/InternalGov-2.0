@@ -1,4 +1,5 @@
 import json
+import asyncio
 import aiohttp
 import logging
 from utils.subquery import SubstrateAPI
@@ -49,7 +50,10 @@ class OpenGovernance2:
         async with aiohttp.ClientSession() as session:
             for url in urls:
                 try:
-                    async with session.get(url, headers=headers) as response:
+                    # Make the request separately and use async with for the response
+                    response = await asyncio.wait_for(session.get(url, headers=headers), timeout=10)
+
+                    async with response:
                         response.raise_for_status()
                         json_response = await response.json()
 
@@ -64,6 +68,8 @@ class OpenGovernance2:
                             # Once a successful response is found, no need to continue checking other URLs
                             break
 
+                except asyncio.TimeoutError:
+                    logging.error(f"Request to {url} timed out.")
                 except aiohttp.ClientResponseError as http_error:
                     logging.error(f"HTTP exception occurred while accessing {url}: {http_error}")
 
