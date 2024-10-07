@@ -51,7 +51,7 @@ class OpenGovernance2:
             for url in urls:
                 try:
                     # Make the request separately and use async with for the response
-                    response = await asyncio.wait_for(session.get(url, headers=headers), timeout=10)
+                    response = await asyncio.wait_for(session.get(url, headers=headers), timeout=15)
 
                     async with response:
                         response.raise_for_status()
@@ -95,24 +95,29 @@ class OpenGovernance2:
             str: The new referendums as a JSON string or False if there are no new referendums.
         """
         new_referenda = {}
-        referendum_info = await self.substrate.referendumInfoFor()
 
-        results = self.util.get_cache_difference(filename='../data/governance.cache', data=referendum_info)
-        self.util.save_data_to_cache(filename='../data/governance.cache', data=referendum_info)
+        try:
+            referendum_info = await self.substrate.referendumInfoFor()
 
-        if results:
-            for key, value in results.items():
-                if 'added' in key:
-                    for index in results['dictionary_item_added']:
-                        index = index.strip('root').replace("['", "").replace("']", "")
-                        onchain_info = referendum_info[index]['Ongoing']
-                        polkassembly_info = await self.fetch_referendum_data(referendum_id=index, network=self.config.NETWORK_NAME)
+            results = self.util.get_cache_difference(filename='../data/governance.cache', data=referendum_info)
 
-                        new_referenda.update({
-                            f"{index}": polkassembly_info
-                        })
+            if results:
+                for key, value in results.items():
+                    if 'added' in key:
+                        for index in results['dictionary_item_added']:
+                            index = index.strip('root').replace("['", "").replace("']", "")
+                            onchain_info = referendum_info[index]['Ongoing']
+                            polkassembly_info = await self.fetch_referendum_data(referendum_id=index, network=self.config.NETWORK_NAME)
 
-                        new_referenda[index]['onchain'] = onchain_info
+                            new_referenda.update({
+                                f"{index}": polkassembly_info
+                            })
 
-            return new_referenda
-        return False
+                            new_referenda[index]['onchain'] = onchain_info
+
+                self.util.save_data_to_cache(filename='../data/governance.cache', data=referendum_info)
+                return new_referenda
+            return False
+        except Exception as e:
+            logging.error(f"Error checking referendums: {e}")
+            return False
