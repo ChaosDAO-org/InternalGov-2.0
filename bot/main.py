@@ -17,7 +17,6 @@ from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
 from discord import app_commands, Embed
 from discord.ext import tasks
-from discord.ext.tasks import Loop
 
 discord_format = DiscordFormatting()
 task_handler = TaskHandler()
@@ -69,9 +68,6 @@ async def check_governance():
                 logging.error(f"Failed to lock threads: {threads_to_lock}. Error: {e}")
         else:
             logging.info("No threads to lock")
-
-        await client.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(active_proposals)} proposal(s)"))
 
         if not new_referendums:
             logging.info("No new proposals have been found since last checking")
@@ -212,125 +208,6 @@ async def check_governance():
         if config.SOLO_MODE is True:
             logging.info("Solo mode is enabled. To automatically vote using settings in /data/vote_periods, set SOLO_MODE=True in the .env config file")
             await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
-
-
-@tasks.loop(hours=1)
-async def sync_embeds():
-    """
-    This asynchronous function is designed to run every hour to synchronize embeds on discord threads.
-    It interacts with OpenGovernance2 to retrieve referendum information and loads cached vote
-    counts from a local JSON file.
-
-    It then logs the synchronization process, finds message IDs by index from the
-    referendum info, and updates the embeds in the relevant Discord threads with the
-    new information.
-
-    Behavior:
-        - Updates Discord embeds in threads with new information and potentially new colors.
-        - Logs information, errors, and completion status of the synchronization process.
-        - Edits messages in Discord with new views and embeds.
-    """
-    try:
-        await client.wait_until_ready()
-        await task_handler.stop_tasks([recheck_proposals])
-        referendum_info = await substrate.referendumInfoFor()
-        json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
-        current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
-
-        logging.info("Synchronizing embeds")
-        if json_data:
-            index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
-        else:
-            logging.error("No data found in vote_counts.json")
-            return None
-
-        logging.info(f"{len(index_msgid)} threads to synchronize")
-
-        # Synchronize in reverse from latest to oldest active proposals
-        for index, message_id in sorted(index_msgid.items(), key=lambda item: int(item[0]), reverse=True):
-
-            sync_thread = client.get_channel(int(message_id))
-
-            # This will use fetch_channel() if the thread is marked as archived
-            # It will edit the thread setting archived=False making the thread
-            # visible for the bot to synchronise.
-            if sync_thread is None:
-                logging.info(f"Unable to see thread {message_id} using get_channel() - Attempting to fetch_channel and set archived=False")
-                sync_thread = await client.fetch_channel(int(message_id))
-                await sync_thread.edit(archived=False)
-
-            if sync_thread is not None:
-                logging.info(f"Synchronizing {sync_thread.name}")
-                async for message in sync_thread.history(oldest_first=True, limit=1):
-                    if referendum_info[index]['Ongoing']['tally']['ayes'] >= referendum_info[index]['Ongoing']['tally']['nays']:
-                        general_info_embed = Embed(color=0x00FF00)
-                    else:
-                        general_info_embed = Embed(color=0xFF0000)
-
-                    # Update initial post
-                    general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
-                    await message.edit(embed=general_info)
-
-                    # Add voting buttons if no components found on message
-                    if not message.components:
-                        voting_buttons = ButtonHandler(client, message_id)
-                        await message.edit(view=voting_buttons)
-
-                async for message in sync_thread.history(oldest_first=True, limit=5):
-                    # This will update the embedded call data when the preimage wasn't available on-chain during the
-                    # creation of the internal thread. If the preimage still isn't stored on-chain then it will leave
-                    # the embed as :warning: Preimage not found on chain.
-                    if message.author == client.user and message.content.startswith("||<@&"):
-                        if not message.embeds:
-                            await asyncio.sleep(0.5)
-                            logging.info(f"Embedded call data not found, checking if preimage has been stored on-chain")
-                            process_call_data = ProcessCallData(price=current_price)
-                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
-
-                            if "Preimage not found" not in preimagehash:
-                                call_data = await process_call_data.consolidate_call_args(call_data)
-                                embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
-                                await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
-                                logging.info("Embedded call data has now been added")
-                                continue
-                            else:
-                                logging.warning("Preimage is missing")
-                                continue
-
-                        if message.embeds[0].description.startswith(":warning:"):
-                            await asyncio.sleep(0.5)
-                            logging.info(f"Checking if preimage has been stored on-chain")
-                            process_call_data = ProcessCallData(price=current_price)
-                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
-
-                            if "Preimage not found" not in preimagehash:
-                                call_data = await process_call_data.consolidate_call_args(call_data)
-                                embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
-                                await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
-                                logging.info("Embedded call data has now been added")
-                            else:
-                                logging.warning("Preimage is still missing")
-
-                    # Add hyperlinks to results if no components found on message
-                    if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
-                        logging.info("Adding missing hyperlink buttons")
-                        external_links = ExternalLinkButton(index, config.NETWORK_NAME)
-                        await message.edit(view=external_links)
-                        break
-
-                logging.info(f"Successfully synchronized {sync_thread.name}")
-                await asyncio.sleep(2.5)
-            else:
-                logging.error(f"Thread with index {index} - {message_id} not found.")
-        logging.info("synchronization complete")
-    except Exception as sync_embeds_error:
-        logging.exception(f"An error occurred whilst synchronizing embeds: {sync_embeds_error}")
-        logging.info("Waiting 3 seconds before restarting task loop")
-        await asyncio.sleep(3)
-        sync_embeds.restart()
-    finally:
-        await substrate.close()
-        await task_handler.start_tasks([recheck_proposals])
 
 
 @tasks.loop(hours=12)
@@ -557,6 +434,125 @@ async def autonomous_voting():
 
 
 @tasks.loop(hours=1)
+async def sync_embeds():
+    """
+    This asynchronous function is designed to run every hour to synchronize embeds on discord threads.
+    It interacts with OpenGovernance2 to retrieve referendum information and loads cached vote
+    counts from a local JSON file.
+
+    It then logs the synchronization process, finds message IDs by index from the
+    referendum info, and updates the embeds in the relevant Discord threads with the
+    new information.
+
+    Behavior:
+        - Updates Discord embeds in threads with new information and potentially new colors.
+        - Logs information, errors, and completion status of the synchronization process.
+        - Edits messages in Discord with new views and embeds.
+    """
+    try:
+        await client.wait_until_ready()
+        await task_handler.stop_tasks([recheck_proposals])
+        referendum_info = await substrate.referendumInfoFor()
+        json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
+        current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
+
+        logging.info("Synchronizing embeds")
+        if json_data:
+            index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
+        else:
+            logging.error("No data found in vote_counts.json")
+            return None
+
+        logging.info(f"{len(index_msgid)} threads to synchronize")
+
+        # Synchronize in reverse from latest to oldest active proposals
+        for index, message_id in sorted(index_msgid.items(), key=lambda item: int(item[0]), reverse=True):
+
+            sync_thread = client.get_channel(int(message_id))
+
+            # This will use fetch_channel() if the thread is marked as archived
+            # It will edit the thread setting archived=False making the thread
+            # visible for the bot to synchronise.
+            if sync_thread is None:
+                logging.info(f"Unable to see thread {message_id} using get_channel() - Attempting to fetch_channel and set archived=False")
+                sync_thread = await client.fetch_channel(int(message_id))
+                await sync_thread.edit(archived=False)
+
+            if sync_thread is not None:
+                logging.info(f"Synchronizing {sync_thread.name}")
+                async for message in sync_thread.history(oldest_first=True, limit=1):
+                    if referendum_info[index]['Ongoing']['tally']['ayes'] >= referendum_info[index]['Ongoing']['tally']['nays']:
+                        general_info_embed = Embed(color=0x00FF00)
+                    else:
+                        general_info_embed = Embed(color=0xFF0000)
+
+                    # Update initial post
+                    general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
+                    await message.edit(embed=general_info)
+
+                    # Add voting buttons if no components found on message
+                    if not message.components:
+                        voting_buttons = ButtonHandler(client, message_id)
+                        await message.edit(view=voting_buttons)
+
+                async for message in sync_thread.history(oldest_first=True, limit=5):
+                    # This will update the embedded call data when the preimage wasn't available on-chain during the
+                    # creation of the internal thread. If the preimage still isn't stored on-chain then it will leave
+                    # the embed as :warning: Preimage not found on chain.
+                    if message.author == client.user and message.content.startswith("||<@&"):
+                        if not message.embeds:
+                            await asyncio.sleep(0.5)
+                            logging.info(f"Embedded call data not found, checking if preimage has been stored on-chain")
+                            process_call_data = ProcessCallData(price=current_price)
+                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+
+                            if "Preimage not found" not in preimagehash:
+                                call_data = await process_call_data.consolidate_call_args(call_data)
+                                embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
+                                await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
+                                logging.info("Embedded call data has now been added")
+                                continue
+                            else:
+                                logging.warning("Preimage is missing")
+                                continue
+
+                        if message.embeds[0].description.startswith(":warning:"):
+                            await asyncio.sleep(0.5)
+                            logging.info(f"Checking if preimage has been stored on-chain")
+                            process_call_data = ProcessCallData(price=current_price)
+                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+
+                            if "Preimage not found" not in preimagehash:
+                                call_data = await process_call_data.consolidate_call_args(call_data)
+                                embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
+                                await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
+                                logging.info("Embedded call data has now been added")
+                            else:
+                                logging.warning("Preimage is still missing")
+
+                    # Add hyperlinks to results if no components found on message
+                    if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
+                        logging.info("Adding missing hyperlink buttons")
+                        external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                        await message.edit(view=external_links)
+                        break
+
+                logging.info(f"Successfully synchronized {sync_thread.name}")
+                await asyncio.sleep(2.5)
+            else:
+                logging.error(f"Thread with index {index} - {message_id} not found.")
+        logging.info("synchronization complete")
+    except Exception as sync_embeds_error:
+        logging.exception(f"An error occurred whilst synchronizing embeds: {sync_embeds_error}")
+        logging.info("Waiting 3 seconds before restarting task loop")
+        await asyncio.sleep(3)
+        sync_embeds.restart()
+    finally:
+        await substrate.close()
+        await task_handler.start_tasks([recheck_proposals])
+
+
+@tasks.loop(hours=1)
 async def recheck_proposals():
     """
     Asynchronously rechecks past proposals to update internal threads when the title has been changes on Polkassembly or Subsquare.
@@ -585,7 +581,7 @@ async def recheck_proposals():
 
             proposal_index = value['index']
             opengov = await opengov2.fetch_referendum_data(referendum_id=int(proposal_index), network=config.NETWORK_NAME)
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
 
             title_from_api = opengov['title'].strip()
             title_from_vote_counts = client.vote_counts[message_id]['title'].strip()
@@ -628,14 +624,14 @@ async def recheck_proposals():
         await substrate.close()
 
 
-@autonomous_voting.before_loop
-async def before_voting():
-    autonomous_voting.get_task().set_name('autonomous_governance')
-
-
 @check_governance.before_loop
 async def before_governance():
     check_governance.get_task().set_name('check_governance')
+
+
+@autonomous_voting.before_loop
+async def before_voting():
+    autonomous_voting.get_task().set_name('autonomous_governance')
 
 
 @sync_embeds.before_loop
