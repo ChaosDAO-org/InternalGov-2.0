@@ -680,7 +680,7 @@ if __name__ == '__main__':
             await task_handler.stop_tasks([check_governance, sync_embeds, autonomous_voting, recheck_proposals])
 
         except Exception as error:
-            logging.error(f"An orror occurred on on_ready(): {error}")
+            logging.error(f"An error occurred on on_ready(): {error}")
             await task_handler.stop_tasks([check_governance, sync_embeds, autonomous_voting, recheck_proposals])
             await task_handler.start_tasks([check_governance])
 
