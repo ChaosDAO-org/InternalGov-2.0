@@ -24,24 +24,27 @@ task_handler = TaskHandler()
 
 @tasks.loop(hours=3)
 async def check_governance():
-    """A function that checks for new referendums on OpenGovernance2, creates a thread for each new
-    referendum on a Discord channel with a specified ID, and adds reactions to the thread.
+    """
+    Periodically checks for new governance proposals and creates Discord threads for them.
 
-    This function uses the Discord API to interact with the Discord platform. The Discord API provides
-    methods for creating a thread and adding reactions to it, as well as accessing information about
-    channels and tags.
+    This function runs every 3 hours to check for new referendums on OpenGov and creates corresponding threads
+    in a configured Discord channel. It also manages archiving old proposals, locking their threads.
 
-    The `check_referendums` function from the `OpenGovernance2` class is called to get the new
-    referendums. The code then iterates through each new referendum and performs the following actions:
-
-    Behavior:
-        - Gets the available tags for the Discord channel.
-        - Creates a new tag for the origin of the referendum if it doesn't already exist.
-        - Creates a new thread for the referendum on the Discord channel, with the title and content of the referendum, and the newly created or existing tag.
-        - Adds reactions to the thread to allow users to vote on the referendum.
-
-    The loop is set to run every 3 hrs, during this time the bot will check for new referendums
-    and create threads for them on the Discord channel set in the .env config.
+    Function workflow:
+        - Waits until the Discord bot is fully ready.
+        - Temporarily stops overlapping tasks (e.g., `sync_embeds`, `recheck_proposals`).
+        - Backs up the current `vote_counts.json` file.
+        - Checks for ongoing referendums on the blockchain and identifies new proposals.
+        - Archives and locks threads for proposals that are no longer active.
+        - If new proposals are found:
+            - Retrieves the Discord channel and existing tags.
+            - Creates new tags for the proposal's origin if necessary.
+            - Creates a new Discord thread for each new proposal with the title, content, and appropriate tag.
+            - Adds voting reactions (AYE, NAY, RECUSE) and relevant voting instructions to the thread.
+            - Saves the new proposal data to `vote_counts.json`.
+        - Sends notifications and embeds to the thread with updated proposal data, call information, and
+          voting instructions.
+        - Re-enables previously stopped tasks and closes the Substrate connection once check_governance is complete.
     """
     try:
         await client.wait_until_ready()
@@ -197,7 +200,6 @@ async def check_governance():
                 except Exception as error:
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
-
     except Exception as error:
         logging.exception(f"An unexpected error occurred: {error}")
         raise error
@@ -212,6 +214,31 @@ async def check_governance():
 
 @tasks.loop(hours=12)
 async def autonomous_voting():
+    """
+    Periodically casts on-chain votes based on when a proposal was submitted on-chain.
+
+    This function runs every 12 hours to automatically vote on governance proposals
+    using cached data and real-time information. It retrieves voting data, determines
+    vote actions, and casts votes via a proxy account if necessary. It also handles
+    updating on-chain voting records and notifying users on Discord.
+
+    Function workflow:
+        - Waits until the Discord bot is fully ready.
+        - Temporarily stops other tasks (e.g., `sync_embeds`, `recheck_proposals`) to avoid conflicts.
+        - Loads cached vote counts and on-chain voting data from local files.
+        - Retrieves ongoing referendum and voting periods from the blockchain.
+        - Iterates through each proposal in `vote_counts.json`:
+            - Checks whether the proposal is still active on-chain.
+            - Determines the appropriate vote action (aye, nay, abstain) based on internal result and proposal date.
+            - Casts the first or second vote if needed, and updates the vote details in the `onchain-votes.json` file.
+        - If votes are cast, the proxy account balance is checked, and a warning is logged and sent to Discord if the
+          balance is too low.
+        - After casting votes, updates the on-chain voting data with extrinsic hashes and timestamps.
+        - Sends notifications to Discord, including vote details and extrinsic links, and pins the messages in
+          the relevant threads.
+        - Optionally, creates a summary thread for the vote results if a summarizer channel is configured.
+        - Re-enables previously stopped tasks and closes the Substrate connection once autonomous_voting is complete.
+    """
     try:
         await client.wait_until_ready()
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
@@ -424,7 +451,6 @@ async def autonomous_voting():
                         logging.exception(f"An error has occurred: {summary_error}")
             else:
                 continue
-
     except Exception as error:
         logging.exception(f"An unexpected error occurred: {error}")
         raise error
@@ -436,18 +462,28 @@ async def autonomous_voting():
 @tasks.loop(hours=1)
 async def sync_embeds():
     """
-    This asynchronous function is designed to run every hour to synchronize embeds on discord threads.
-    It interacts with OpenGovernance2 to retrieve referendum information and loads cached vote
-    counts from a local JSON file.
+    Periodically updates Discord thread embeds with the latest referendum data.
 
-    It then logs the synchronization process, finds message IDs by index from the
-    referendum info, and updates the embeds in the relevant Discord threads with the
-    new information.
+    This function runs every hour to ensure that Discord threads linked to referendums
+    are updated with the latest information from the blockchain. It checks if new
+    referendum details, like vote tallies or preimage data, are available and updates
+    the embeds in the relevant Discord threads accordingly.
 
-    Behavior:
-        - Updates Discord embeds in threads with new information and potentially new colors.
-        - Logs information, errors, and completion status of the synchronization process.
-        - Edits messages in Discord with new views and embeds.
+    Function workflow:
+        - Waits until the Discord bot is fully ready.
+        - Temporarily stops any conflicting tasks (e.g., `recheck_proposals`).
+        - Fetches the latest referendum data using the OpenGovernance2 object.
+        - Loads cached vote counts from a local JSON file.
+        - Iterates through each proposal stored in `vote_counts.json`:
+            - If a thread is archived, un-archives it to allow updates.
+            - Updates the thread's embed with the latest referendum information,
+              including vote tallies (ayes/nays) and preimage data if available.
+            - Sets the embed color to green or red based on the current vote tally.
+            - Adds missing components to the thread messages, like voting buttons or
+              external links, if they are not already present.
+        - Logs relevant information throughout the process, including synchronization
+          status, errors, and successes.
+        - Re-enables previously stopped tasks and closes the Substrate connection once sync_embeds is complete.
     """
     try:
         await client.wait_until_ready()
@@ -555,21 +591,26 @@ async def sync_embeds():
 @tasks.loop(hours=1)
 async def recheck_proposals():
     """
-    Asynchronously rechecks past proposals to update internal threads when the title has been changes on Polkassembly or Subsquare.
+    Periodically checks and updates the titles of active proposals that have a Discord thread associated with them.
 
-    This function is a periodic task that runs every hour. It checks for past proposals where
-    the title has changed and attempts to populate them with relevant data.
+    This function runs every hour to check if the titles of active governance proposals
+    have changed on Polkassembly or Subsquare, and updates the corresponding Discord
+    threads with the new titles and content.
 
-    Behavior:
-        - Logs the start of the checking process for past proposals.
-        - Retrieves proposals from vote_counts.json.
-        - Initializes an OpenGovernance2 object.
-        - Fetches the current price of a specified asset.
-        - Iterates through each proposal, fetching and updating the title/content of a thread.
-        - Updates the titles on the Discord threads for the proposals.
-        - Saves the updated proposal data to the JSON file.
-        - Logs the successful update of the proposals' data.
-        """
+    Function workflow:
+        - Waits until the Discord bot is fully ready.
+        - Loads the existing vote counts from a JSON file.
+        - Initializes the OpenGovernance2 object to fetch governance data.
+        - Retrieves the specified Discord channel for proposal threads.
+        - Iterates through each proposal stored in `vote_counts.json`:
+            - Fetches the latest data for each proposal from Polkassembly or Subsquare.
+            - Compares the current title with the stored title.
+            - If the title has changed, updates the stored title in `vote_counts.json` and saves the file.
+            - Updates the corresponding Discord thread with the new title and content.
+            - Sends a message to the thread indicating the previous title before the change.
+        - Logs relevant information during each step, including successes and any errors.
+        - Closes the Substrate connection once recheck_proposals is complete
+    """
     try:
         await client.wait_until_ready()
         logging.info("recheck_proposals task is running")
