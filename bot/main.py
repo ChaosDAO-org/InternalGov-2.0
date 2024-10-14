@@ -46,13 +46,14 @@ async def check_governance():
           voting instructions.
         - Re-enables previously stopped tasks and closes the Substrate connection once check_governance is complete.
     """
+    exception_occurred = False
     try:
+        logging.info("Checking for new proposals")
         await client.wait_until_ready()
         await task_handler.evaluate_task_schedule(autonomous_voting)
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
         CacheManager.rotating_backup_file(source_path='../data/vote_counts.json', backup_dir='../data/backup/')
 
-        logging.info("Checking for new proposals")
         opengov2 = OpenGovernance2(config)
         new_referendums = await opengov2.check_referendums()
 
@@ -201,15 +202,18 @@ async def check_governance():
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
     except Exception as error:
+        exception_occurred = True
         logging.exception(f"An unexpected error occurred: {error}")
-        raise error
-    finally:
         await substrate.close()
-        if config.SOLO_MODE is False:
-            await task_handler.start_tasks(coroutine_task=[autonomous_voting, sync_embeds, recheck_proposals])
-        if config.SOLO_MODE is True:
-            logging.info("Solo mode is enabled. To automatically vote using settings in /data/vote_periods, set SOLO_MODE=True in the .env config file")
-            await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
+        check_governance.restart()
+    finally:
+        if not exception_occurred:
+            await substrate.close()
+            if config.SOLO_MODE is False:
+                await task_handler.start_tasks(coroutine_task=[autonomous_voting, sync_embeds, recheck_proposals])
+            if config.SOLO_MODE is True:
+                logging.info("Solo mode is enabled. To automatically vote using settings in /data/vote_periods, set SOLO_MODE=True in the .env config file")
+                await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
 
 
 @tasks.loop(hours=12)
@@ -239,7 +243,9 @@ async def autonomous_voting():
         - Optionally, creates a summary thread for the vote results if a summarizer channel is configured.
         - Re-enables previously stopped tasks and closes the Substrate connection once autonomous_voting is complete.
     """
+    exception_occurred = False
     try:
+        logging.info("autonomous_voting task is running")
         await client.wait_until_ready()
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
         vote_counts = await client.load_vote_counts()
@@ -254,8 +260,6 @@ async def autonomous_voting():
         guild = client.get_guild(config.DISCORD_SERVER_ID)
 
         votes = []
-
-        logging.info("autonomous_voting task is running")
 
         for thread_id, vote_data in vote_counts.items():
             await asyncio.sleep(2)
@@ -452,11 +456,14 @@ async def autonomous_voting():
             else:
                 continue
     except Exception as error:
-        logging.exception(f"An unexpected error occurred: {error}")
-        raise error
+        exception_occurred = True
+        logging.exception(f"An error occurred whilst running [autonomous_voting]: {error}")
+        logging.info("Waiting 30 seconds before restarting task loop")
+        autonomous_voting.restart()
     finally:
-        await substrate.close()
-        await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
+        if not exception_occurred:
+            await substrate.close()
+            await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
 
 
 @tasks.loop(hours=1)
@@ -485,14 +492,15 @@ async def sync_embeds():
           status, errors, and successes.
         - Re-enables previously stopped tasks and closes the Substrate connection once sync_embeds is complete.
     """
+    exception_occurred = False
     try:
+        logging.info("Synchronizing embeds")
         await client.wait_until_ready()
         await task_handler.stop_tasks([recheck_proposals])
         referendum_info = await substrate.referendumInfoFor()
         json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
         current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
-        logging.info("Synchronizing embeds")
         if json_data:
             index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
         else:
@@ -578,14 +586,16 @@ async def sync_embeds():
             else:
                 logging.error(f"Thread with index {index} - {message_id} not found.")
         logging.info("synchronization complete")
-    except Exception as sync_embeds_error:
-        logging.exception(f"An error occurred whilst synchronizing embeds: {sync_embeds_error}")
-        logging.info("Waiting 3 seconds before restarting task loop")
-        await asyncio.sleep(3)
+    except Exception as error:
+        logging.exception(f"An error occurred whilst synchronizing embeds: {error}")
+        logging.info("Waiting 30 seconds before restarting task loop")
+        await substrate.close()
+        await asyncio.sleep(30)
         sync_embeds.restart()
     finally:
-        await substrate.close()
-        await task_handler.start_tasks([recheck_proposals])
+        if not exception_occurred:
+            await substrate.close()
+            await task_handler.start_tasks([recheck_proposals])
 
 
 @tasks.loop(hours=1)
@@ -612,8 +622,8 @@ async def recheck_proposals():
         - Closes the Substrate connection once recheck_proposals is complete
     """
     try:
-        await client.wait_until_ready()
         logging.info("recheck_proposals task is running")
+        await client.wait_until_ready()
         vote_counts = await client.load_vote_counts()
         opengov2 = OpenGovernance2(config)
         channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
@@ -691,7 +701,8 @@ if __name__ == '__main__':
     substrate = SubstrateAPI(config)
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
-    logging = Logger(arguments.args.verbose)
+    logging = Logger()
+    logging.configure(log_level=3, filename_prefix='governance_bot', output_dir="../data/logs", days_to_keep=10)
     permission_checker = PermissionCheck()
 
     # Required to count members of a specific role
