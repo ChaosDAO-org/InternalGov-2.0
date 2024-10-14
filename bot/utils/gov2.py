@@ -51,7 +51,7 @@ class OpenGovernance2:
             for url in urls:
                 try:
                     # Make the request separately and use async with for the response
-                    response = await asyncio.wait_for(session.get(url, headers=headers), timeout=15)
+                    response = await asyncio.wait_for(session.get(url, headers=headers), timeout=60)
 
                     async with response:
                         response.raise_for_status()
