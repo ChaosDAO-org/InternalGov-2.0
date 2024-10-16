@@ -293,6 +293,8 @@ class SubstrateAPI:
         except Exception as e:
             self.logger.error(f"Error fetching identities super_of: {e}")
             raise
+        finally:
+            await self._disconnect()  # Disconnect from people chain
 
     @staticmethod
     async def check_cached_super_of(address, network):
@@ -369,6 +371,8 @@ class SubstrateAPI:
         except Exception as e:
             self.logger.error(f"Error fetching identities: {e}")
             raise
+        finally:
+            await self._disconnect()  # Disconnect from people chain
 
     @staticmethod
     async def check_cached_identity(address, network):

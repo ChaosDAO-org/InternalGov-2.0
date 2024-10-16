@@ -18,9 +18,8 @@ from utils.permission_check import PermissionCheck
 from discord import app_commands, Embed
 from discord.ext import tasks
 
-discord_format = DiscordFormatting()
-task_handler = TaskHandler()
 
+task_handler = TaskHandler()
 
 @tasks.loop(hours=3)
 async def check_governance():
@@ -54,8 +53,8 @@ async def check_governance():
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
         CacheManager.rotating_backup_file(source_path='../data/vote_counts.json', backup_dir='../data/backup/')
 
-        opengov2 = OpenGovernance2(config)
-        new_referendums = await opengov2.check_referendums()
+        opengov2 = OpenGovernance2(config, substrate)
+        new_referendums, referendum_info_for = await opengov2.check_referendums()
 
         # Get the guild object where the role is located
         guild = client.get_guild(config.DISCORD_SERVER_ID)
@@ -82,7 +81,6 @@ async def check_governance():
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
             current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
-            referendum_info = await substrate.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 try:
@@ -176,7 +174,7 @@ async def check_governance():
                     try:
                         # Add fields to embed
                         await asyncio.sleep(0.5)
-                        general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
+                        general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info_for[index])
                         await thread.message.edit(embed=general_info)
 
                         # Add call data
@@ -203,8 +201,9 @@ async def check_governance():
                     raise error
     except Exception as error:
         exception_occurred = True
-        logging.exception(f"An unexpected error occurred: {error}")
+        logging.exception(f"An unexpected error occurred whilst running [check_governance]: {error}")
         await substrate.close()
+        await asyncio.sleep(30)
         check_governance.restart()
     finally:
         if not exception_occurred:
@@ -457,8 +456,10 @@ async def autonomous_voting():
                 continue
     except Exception as error:
         exception_occurred = True
-        logging.exception(f"An error occurred whilst running [autonomous_voting]: {error}")
+        logging.exception(f"An unexpected error occurred whilst running [automous_voting]: {error}")
         logging.info("Waiting 30 seconds before restarting task loop")
+        await substrate.close()
+        await asyncio.sleep(30)
         autonomous_voting.restart()
     finally:
         if not exception_occurred:
@@ -587,7 +588,8 @@ async def sync_embeds():
                 logging.error(f"Thread with index {index} - {message_id} not found.")
         logging.info("synchronization complete")
     except Exception as error:
-        logging.exception(f"An error occurred whilst synchronizing embeds: {error}")
+        exception_occurred = True
+        logging.exception(f"An unexpected error occurred whilst running [sync_embeds]: {error}")
         logging.info("Waiting 30 seconds before restarting task loop")
         await substrate.close()
         await asyncio.sleep(30)
@@ -669,7 +671,7 @@ async def recheck_proposals():
                 continue
         logging.info("recheck_proposals complete")
     except Exception as error:
-        logging.exception(f"An unexpected error occurred: {error}")
+        logging.exception(f"An unexpected error occurred whilst running [recheck_proposals]: {error}")
         raise error
     finally:
         await substrate.close()
@@ -697,8 +699,9 @@ async def before_recheck_proposals():
 
 if __name__ == '__main__':
     config = Config()
-
     substrate = SubstrateAPI(config)
+    discord_format = DiscordFormatting(substrate)
+
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
     logging = Logger()
