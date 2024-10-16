@@ -388,9 +388,9 @@ class ProcessCallData:
         return data
 
 class DiscordFormatting:
-    def __init__(self):
+    def __init__(self, substrate=None):
         self.config = Config()
-        self.substrate = SubstrateAPI(self.config)
+        self.substrate = substrate
         self.logging = Logger()
 
     async def format_key(self, key, parent_key):
