@@ -86,7 +86,6 @@ class SubstrateAPI:
             int: The free balance of the main address.
         """
         try:
-            # Establish the connection (similar to referendumInfoFor)
             await self._connect(self.config.SUBSTRATE_WSS)
 
             # When no ss58_address is provided, use self.main_address (the account controlled by the proxy)
@@ -135,7 +134,6 @@ class SubstrateAPI:
 
     async def proxy_balance(self):
         try:
-            # Establish the connection before querying balance
             await self._connect(self.config.SUBSTRATE_WSS)
 
             # Fetch the balance using the same logic as the updated balance function
@@ -327,6 +325,7 @@ class SubstrateAPI:
         """
         try:
             await self._connect(self.config.SUBSTRATE_WSS)
+
             self.logger.info("Attempting to execute batch of calls.")
             batch_call = await self.compose_utility_batch_call(calls)
             self.logger.info("Utility_batch_call complete")
