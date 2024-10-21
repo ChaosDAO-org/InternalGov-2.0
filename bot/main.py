@@ -546,14 +546,14 @@ async def sync_embeds():
                                 logging.error(f"An error occurred: {e}")
                                 continue
 
-                            if "Preimage not found" not in preimagehash:
+                            if all(error not in preimagehash for error in ["Preimage not found", "Unable to decode"]):
                                 call_data = await process_call_data.consolidate_call_args(call_data)
                                 embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
                                 await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
                                 logging.info("Embedded call data has now been added")
                                 continue
                             else:
-                                logging.warning("Preimage is missing")
+                                logging.warning("Unable to retrieve call")
                                 continue
 
                         if message.embeds[0].description.startswith(":warning:"):
@@ -568,13 +568,13 @@ async def sync_embeds():
                                 logging.error(f"An error occurred: {e}")
                                 continue
 
-                            if "Preimage not found" not in preimagehash:
+                            if all(error not in preimagehash for error in ["Preimage not found", "Unable to decode"]):
                                 call_data = await process_call_data.consolidate_call_args(call_data)
                                 embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
                                 await message.edit(embed=embedded_call_data, attachments=[discord.File(f'../assets/{config.NETWORK_NAME}/{config.NETWORK_NAME}.png', filename='symbol.png')])
                                 logging.info("Embedded call data has now been added")
                             else:
-                                logging.warning("Preimage is still missing")
+                                logging.warning("Unable to retrieve call")
 
                     # Add hyperlinks to results if no components found on message
                     if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
