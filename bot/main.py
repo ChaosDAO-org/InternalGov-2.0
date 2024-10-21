@@ -537,8 +537,14 @@ async def sync_embeds():
                         if not message.embeds:
                             await asyncio.sleep(0.5)
                             logging.info(f"Embedded call data not found, checking if preimage has been stored on-chain")
-                            process_call_data = ProcessCallData(price=current_price, substrate=substrate)
-                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+
+                            try:
+                                process_call_data = ProcessCallData(price=current_price, substrate=substrate)
+                                call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+                            except Exception as e:
+                                # Log the exception
+                                logging.error(f"An error occurred: {e}")
+                                continue
 
                             if "Preimage not found" not in preimagehash:
                                 call_data = await process_call_data.consolidate_call_args(call_data)
@@ -553,8 +559,14 @@ async def sync_embeds():
                         if message.embeds[0].description.startswith(":warning:"):
                             await asyncio.sleep(0.5)
                             logging.info(f"Checking if preimage has been stored on-chain")
-                            process_call_data = ProcessCallData(price=current_price, substrate=substrate)
-                            call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+
+                            try:
+                                process_call_data = ProcessCallData(price=current_price, substrate=substrate)
+                                call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
+                            except Exception as e:
+                                # Log the exception
+                                logging.error(f"An error occurred: {e}")
+                                continue
 
                             if "Preimage not found" not in preimagehash:
                                 call_data = await process_call_data.consolidate_call_args(call_data)
