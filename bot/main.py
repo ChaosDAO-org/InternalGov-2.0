@@ -4,7 +4,6 @@ import discord
 import asyncio
 from utils.config import Config
 from utils.logger import Logger
-#from utils.proxy import ProxyVoter
 from utils.gov2 import OpenGovernance2
 from utils.subquery import SubstrateAPI
 from datetime import datetime, timezone
