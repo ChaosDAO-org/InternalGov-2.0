@@ -229,9 +229,9 @@ class CacheManager:
 
 
 class ProcessCallData:
-    def __init__(self, price):
+    def __init__(self, price, substrate=None):
         self.config = Config()
-        self.substrate = SubstrateAPI(self.config)
+        self.substrate = substrate
         self.price = price
         self.general_index = None
 
