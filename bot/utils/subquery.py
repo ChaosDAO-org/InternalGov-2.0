@@ -749,7 +749,7 @@ class SubstrateAPI:
 
         except Exception as e:
             self.logger.error(f"Error fetching referendum call data: {e}")
-            raise e
+            return False, ":warning: Unable to decode call"
 
     async def check_ss58_address(self, address) -> bool:
         try:
