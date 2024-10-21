@@ -136,6 +136,8 @@ class SubstrateAPI:
         try:
             await self._connect(self.config.SUBSTRATE_WSS)
 
+            self.logger.info(f"Checking balance of proxy account: {self.config.PROXY_ADDRESS}")
+
             # Fetch the balance using the same logic as the updated balance function
             proxy_balance = await self.balance(ss58_address=self.config.PROXY_ADDRESS)
 
@@ -181,68 +183,80 @@ class SubstrateAPI:
                 self.logger.info(f"{proposal_index}# is not an ongoing referenda, skipping...")
                 return False
 
-            main_account_balance = await self.balance(
-                ss58_address=self.config.PROXIED_ADDRESS) / self.substrate.token_decimals
+            proxied_address_balance = await self.balance(ss58_address=self.config.PROXIED_ADDRESS) / self.substrate.token_decimals
+            proxy_address_balance = await self.balance()
 
-            print(f"main acc balance: {main_account_balance}")
-
-            if self.config.VOTE_WITH_BALANCE != 0 and main_account_balance < self.config.VOTE_WITH_BALANCE:
-                self.logger.info(f"The balance of {self.config.PROXIED_ADDRESS} is too low")
+            if self.config.VOTE_WITH_BALANCE != 0 and proxied_address_balance < self.config.VOTE_WITH_BALANCE:
+                self.logger.warning(f"Balance of the proxied address: {self.config.PROXIED_ADDRESS} is low")
                 return False
 
-            print("A)")
-
             if vote_type == 'aye':
-                return self.substrate.compose_call(
-                    call_module="ConvictionVoting",
-                    call_function="vote",
-                    call_params={
-                        "poll_index": proposal_index,
-                        "vote": {
-                            "Standard": {
-                                "balance": int(await self.balance()),
-                                "vote": {
-                                    f"aye": True,
-                                    "conviction": conviction
+                return await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.substrate.compose_call,
+                        call_module="ConvictionVoting",
+                        call_function="vote",
+                        call_params={
+                            "poll_index": proposal_index,
+                            "vote": {
+                                "Standard": {
+                                    "balance": int(proxy_address_balance),
+                                    "vote": {
+                                        f"aye": True,
+                                        "conviction": conviction
+                                    }
                                 }
                             }
                         }
-                    }
+                    ),
+                    timeout=60
                 )
-            print("B")
+
             if vote_type == 'nay':
-                return self.substrate.compose_call(
-                    call_module="ConvictionVoting",
-                    call_function="vote",
-                    call_params={
-                        "poll_index": proposal_index,
-                        "vote": {
-                            "Standard": {
-                                "balance": int(await self.balance()),
-                                "vote": {
-                                    f"aye": False,
-                                    "conviction": conviction
+                return await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.substrate.compose_call,
+                        call_module="ConvictionVoting",
+                        call_function="vote",
+                        call_params={
+                            "poll_index": proposal_index,
+                            "vote": {
+                                "Standard": {
+                                    "balance": int(proxy_address_balance),
+                                    "vote": {
+                                        f"aye": False,
+                                        "conviction": conviction
+                                    }
                                 }
                             }
                         }
-                    }
+                    ),
+                    timeout=60
                 )
-            print("C")
+
             if vote_type == 'abstain':
-                return self.substrate.compose_call(
-                    call_module="ConvictionVoting",
-                    call_function="vote",
-                    call_params={
-                        "poll_index": proposal_index,
-                        "vote": {
-                            "SplitAbstain": {
-                                f"{vote_type}": int(await self.balance()),
-                                "aye": 0,
-                                "nay": 0
+                return await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.substrate.compose_call,
+                        call_module="ConvictionVoting",
+                        call_function="vote",
+                        call_params={
+                            "poll_index": proposal_index,
+                            "vote": {
+                                "SplitAbstain": {
+                                    f"{vote_type}": int(proxy_address_balance),
+                                    "aye": 0,
+                                    "nay": 0
+                                }
                             }
                         }
-                    }
+                    ),
+                    timeout=60
                 )
+
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout error while composing democracy vote call.")
+            raise
 
         except Exception as e:
             self.logger.error(f"Error composing democracy vote call: {e}")
@@ -273,7 +287,7 @@ class SubstrateAPI:
             return compose_utility_batch
 
         except asyncio.TimeoutError:
-            self.logger.error("composing utility batch call.")
+            self.logger.error("Timeout error while composing utility batch call.")
             raise
 
         except Exception as e:
@@ -309,7 +323,7 @@ class SubstrateAPI:
             return compose_proxy_call
 
         except asyncio.TimeoutError:
-            self.logger.error("composing utility batch call.")
+            self.logger.error("Timeout error while composing proxy call.")
             raise
 
         except Exception as e:
@@ -331,14 +345,34 @@ class SubstrateAPI:
             self.logger.info("Utility_batch_call complete")
             proxy_call = await self.compose_proxy_call(batch_call)
             self.logger.info("Proxy call complete")
-            extrinsic = self.substrate.create_signed_extrinsic(call=proxy_call, keypair=Keypair.create_from_mnemonic(self.config.MNEMONIC))
+            extrinsic = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.create_signed_extrinsic,
+                    call=proxy_call,
+                    keypair=Keypair.create_from_mnemonic(self.config.MNEMONIC)
+                ),
+                timeout=60
+            )
+
             self.logger.info("Signed extrinsic created")
 
-            result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+            result = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.substrate.submit_extrinsic,
+                    extrinsic,
+                    wait_for_inclusion=True
+                ),
+                timeout=60
+            )
+
             if result.is_success:
                 return result['extrinsic_hash']
             else:
                 return False
+
+        except asyncio.TimeoutError:
+            self.logger.error("Timeout error while executing call.")
+            raise
         except Exception as e:
             self.logger.exception(f"Failed to send extrinsic: {e}")
 
@@ -370,7 +404,8 @@ class SubstrateAPI:
                     continue
 
             if len(vote_calls) > 0:
-                print("Trying to execute call")
+                self.logger.info("Trying to execute call, please wait...")
+
                 extrinsic = await self.execute_calls(vote_calls)
 
                 if extrinsic:
