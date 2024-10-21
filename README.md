@@ -1,7 +1,8 @@
 # ChaosDAO Governance bot
 
 ![GitHub License](https://img.shields.io/github/license/ChaosDAO-org/InternalGov-2.0)
-![GitHub commits since latest release](https://img.shields.io/github/commits-since/ChaosDAO-org/InternalGov-2.0/latest)
+![Supported](https://img.shields.io/badge/python-3.9.5%2B-blue)
+![GitHub commits since latest release](https://img.shields.io/github/commits-since/ChaosDAO-org/InternalGov-2.0/latest)  
 
 A dedicated discussion forum within your Discord server, specifically designed to facilitate thoughtful and constructive conversations around ongoing proposals. This interactive platform empowers members to openly share their insights, perspectives, and opinions on each referendum prior to the submission of an official vote by the designated proxy account on behalf of the collective or DAO.
 

@@ -1,6 +1,7 @@
 from discord.ext.tasks import Loop
 from datetime import datetime, timezone
 from utils.logger import Logger
+import asyncio
 
 logging = Logger()
 
@@ -45,14 +46,21 @@ class TaskHandler:
 
         This function iterates through a list of predefined tasks. For each task, it checks if the task is running and, if so, attempts to stop it.
         """
+        cancel_tasks = []
+
         for task in coroutine_task:
             try:
                 if task.is_running():
                     task = task.get_task()
-                    logging.info(f"Stopping tasks [{task.get_name()}]")
                     task.cancel()
+                    logging.info(f"[{task.get_name()}]")
+                    cancel_tasks.append(task)
+
             except Exception as e:
-                logging.error(f"Error stopping {task.get_task().get_name()} task: {e}")
+                logging.error(f"An error occurred whilst trying to stop: [{task.get_task().get_name()}]: {e}")
+
+        if cancel_tasks:
+            await asyncio.wait(cancel_tasks)
 
     @staticmethod
     async def start_tasks(coroutine_task):
@@ -66,4 +74,4 @@ class TaskHandler:
                 if not task.is_running():
                     task.start()
             except Exception as e:
-                logging.error(f"Error starting {task.get_task().get_name()} task: {e}")
+                logging.error(f"An error occurred whilst trying to start: [{task.get_task().get_name()}]: {e}")

@@ -4,7 +4,6 @@ import discord
 import asyncio
 from utils.config import Config
 from utils.logger import Logger
-from utils.proxy import ProxyVoter
 from utils.gov2 import OpenGovernance2
 from utils.subquery import SubstrateAPI
 from datetime import datetime, timezone
@@ -18,9 +17,8 @@ from utils.permission_check import PermissionCheck
 from discord import app_commands, Embed
 from discord.ext import tasks
 
-discord_format = DiscordFormatting()
-task_handler = TaskHandler()
 
+task_handler = TaskHandler()
 
 @tasks.loop(hours=3)
 async def check_governance():
@@ -46,15 +44,16 @@ async def check_governance():
           voting instructions.
         - Re-enables previously stopped tasks and closes the Substrate connection once check_governance is complete.
     """
+    exception_occurred = False
     try:
+        logging.info("Checking for new proposals")
         await client.wait_until_ready()
         await task_handler.evaluate_task_schedule(autonomous_voting)
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
         CacheManager.rotating_backup_file(source_path='../data/vote_counts.json', backup_dir='../data/backup/')
 
-        logging.info("Checking for new proposals")
-        opengov2 = OpenGovernance2(config)
-        new_referendums = await opengov2.check_referendums()
+        opengov2 = OpenGovernance2(config, substrate)
+        new_referendums, referendum_info_for = await opengov2.check_referendums()
 
         # Get the guild object where the role is located
         guild = client.get_guild(config.DISCORD_SERVER_ID)
@@ -81,7 +80,6 @@ async def check_governance():
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
             current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
-            referendum_info = await substrate.referendumInfoFor()
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
                 try:
@@ -91,39 +89,38 @@ async def check_governance():
                     else:
                         logging.error(f"Channel with ID {config.DISCORD_FORUM_CHANNEL_ID} not found")
 
-                    governance_origin = [v for i, v in values['onchain']['origin'].items()]
-
-                    # Create forum tags if they don't already exist.
-                    governance_tag = await client.get_or_create_governance_tag(available_channel_tags, governance_origin, channel)
+                    title = values['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
+                    logging.info(f"Creating thread on Discord: #{index} {title}")
 
                     if values['successful_url']:
                         logging.info(f"Getting on-chain data from: {values['successful_url']}")
                     else:
-                        logging.error(f"No value: {values['successful_url']}")
+                        logging.error(f"No context has been set on this proposal: {values['successful_url']}")
 
-                    title = values['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip() if values['title'] is not None else None
-                    logging.info(f"Creating thread on Discord: #{index} {title}")
+                    governance_origin = [v for i, v in values['onchain']['origin'].items()]
 
-                    try:
-                        thread = await client.manage_discord_thread(
-                            channel=channel,
-                            operation='create',
-                            title=title,
-                            index=index,
-                            content=values['content'],
-                            governance_tag=governance_tag,
-                            message_id=None,
-                            client=client
-                        )
-                        logging.info(f"Thread created: {thread.message.id}")
-                    except Exception as e:
-                        logging.error(f"Failed to create thread: {e}")
-                        return None  # Make sure to return None if an exception occurs
+                    # Creates forum tags if they don't already exist.
+                    governance_tag = await client.get_or_create_governance_tag(available_channel_tags, governance_origin, channel)
+                    new_proposal_thread = await client.manage_discord_thread(
+                        channel=channel,
+                        operation='create',
+                        title=title,
+                        index=index,
+                        content=values['content'],
+                        governance_tag=governance_tag,
+                        message_id=None,
+                        client=client
+                    )
+
+                    if not new_proposal_thread:
+                        logging.error(f"Failed to create thread on Discord for: #{index} {title}")
+                        continue
+
                     # Send an initial results message in the thread
                     initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
 
-                    channel_thread = await guild.fetch_channel(thread.message.id)
-                    client.vote_counts[str(thread.message.id)] = {
+                    channel_thread = await guild.fetch_channel(new_proposal_thread.message.id)
+                    client.vote_counts[str(new_proposal_thread.message.id)] = {
                         "index": index,
                         "title": values['title'][:200].strip(),
                         "origin": governance_origin,
@@ -140,12 +137,12 @@ async def check_governance():
 
                     # results_message_id = results_message.id
                     await asyncio.sleep(0.5)
-                    message_id = thread.message.id
+                    message_id = new_proposal_thread.message.id
                     voting_buttons = ButtonHandler(client, message_id)
-                    await thread.message.edit(view=voting_buttons)
+                    await new_proposal_thread.message.edit(view=voting_buttons)
 
                     await asyncio.sleep(0.5)
-                    await thread.message.pin()
+                    await new_proposal_thread.message.pin()
                     await results_message.pin()
 
                     # Searches the last 5 messages
@@ -175,12 +172,12 @@ async def check_governance():
                     try:
                         # Add fields to embed
                         await asyncio.sleep(0.5)
-                        general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
-                        await thread.message.edit(embed=general_info)
+                        general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info_for[index])
+                        await new_proposal_thread.message.edit(embed=general_info)
 
                         # Add call data
                         await asyncio.sleep(0.5)
-                        process_call_data = ProcessCallData(price=current_price)
+                        process_call_data = ProcessCallData(price=current_price, substrate=substrate)
                         call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
                         call_data = await process_call_data.consolidate_call_args(call_data)
                         embedded_call_data = await process_call_data.find_and_collect_values(call_data, preimagehash)
@@ -201,15 +198,19 @@ async def check_governance():
                     logging.exception(f"An unexpected error occurred: {error}")
                     raise error
     except Exception as error:
-        logging.exception(f"An unexpected error occurred: {error}")
-        raise error
-    finally:
+        exception_occurred = True
+        logging.exception(f"An unexpected error occurred whilst running [check_governance]: {error}")
         await substrate.close()
-        if config.SOLO_MODE is False:
-            await task_handler.start_tasks(coroutine_task=[autonomous_voting, sync_embeds, recheck_proposals])
-        if config.SOLO_MODE is True:
-            logging.info("Solo mode is enabled. To automatically vote using settings in /data/vote_periods, set SOLO_MODE=True in the .env config file")
-            await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
+        await asyncio.sleep(30)
+        check_governance.restart()
+    finally:
+        if not exception_occurred:
+            await substrate.close()
+            if config.SOLO_MODE is False:
+                await task_handler.start_tasks(coroutine_task=[autonomous_voting, sync_embeds, recheck_proposals])
+            if config.SOLO_MODE is True:
+                logging.info("Solo mode is enabled. To automatically vote using settings in /data/vote_periods, set SOLO_MODE=True in the .env config file")
+                await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
 
 
 @tasks.loop(hours=12)
@@ -239,9 +240,12 @@ async def autonomous_voting():
         - Optionally, creates a summary thread for the vote results if a summarizer channel is configured.
         - Re-enables previously stopped tasks and closes the Substrate connection once autonomous_voting is complete.
     """
+    exception_occurred = False
     try:
+        logging.info("autonomous_voting task is running")
         await client.wait_until_ready()
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
+        await client.disable_command(command_name='forcevote', guild_id=config.DISCORD_SERVER_ID)
         vote_counts = await client.load_vote_counts()
         onchain_votes = await client.load_onchain_votes()
         onchain_votes_length = len(str(onchain_votes))
@@ -254,8 +258,6 @@ async def autonomous_voting():
         guild = client.get_guild(config.DISCORD_SERVER_ID)
 
         votes = []
-
-        logging.info("autonomous_voting task is running")
 
         for thread_id, vote_data in vote_counts.items():
             await asyncio.sleep(2)
@@ -342,25 +344,14 @@ async def autonomous_voting():
 
         # Only cast a vote if we have any to cast
         if len(votes) > 0:
-            voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
-            proxy_balance = await voter.proxy_balance()
 
-            if proxy_balance <= config.PROXY_BALANCE_ALERT:
-                logging.warning(f"Balance is too low: {proxy_balance}")
-                alert_channel = client.get_channel(config.DISCORD_PROXY_BALANCE_ALERT)
-
-                # Post on discord with balance and public address to make it easier to top up
-                proxy_address_qr = Text.generate_qr_code(publickey=config.PROXY_ADDRESS)
-                balance_embed = Embed(color=0xFF0000, title=f'Low balance detected',
-                                      description=f'Balance is {proxy_balance:.4f}, which is below the minimum required for voting with the proxy. Please add funds to continue without interruption.',
-                                      timestamp=datetime.now(timezone.utc))
-                balance_embed.add_field(name='Address', value=f'{config.PROXY_ADDRESS}', inline=True)
-                balance_embed.set_thumbnail(url="attachment://proxy_address_qr.png")
-                await alert_channel.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
+            proxy_balance = await substrate.proxy_balance()
+            balance = await client.check_balance(proxy_balance=proxy_balance)
+            if not balance:
                 return
 
             logging.info("Casting on-chain votes")
-            indexes, calls, extrinsic_hash = await voter.execute_multiple_votes(votes)
+            indexes, calls, extrinsic_hash = await substrate.execute_multiple_votes(votes)
         else:
             return
 
@@ -452,11 +443,17 @@ async def autonomous_voting():
             else:
                 continue
     except Exception as error:
-        logging.exception(f"An unexpected error occurred: {error}")
-        raise error
-    finally:
+        exception_occurred = True
+        logging.exception(f"An unexpected error occurred whilst running [automous_voting]: {error}")
+        logging.info("Waiting 30 seconds before restarting task loop")
         await substrate.close()
-        await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
+        await asyncio.sleep(30)
+        autonomous_voting.restart()
+    finally:
+        if not exception_occurred:
+            await substrate.close()
+            await task_handler.start_tasks(coroutine_task=[sync_embeds, recheck_proposals])
+            await client.enable_command(command=forcevote, guild_id=config.DISCORD_SERVER_ID)
 
 
 @tasks.loop(hours=1)
@@ -485,14 +482,15 @@ async def sync_embeds():
           status, errors, and successes.
         - Re-enables previously stopped tasks and closes the Substrate connection once sync_embeds is complete.
     """
+    exception_occurred = False
     try:
+        logging.info("Synchronizing embeds")
         await client.wait_until_ready()
         await task_handler.stop_tasks([recheck_proposals])
         referendum_info = await substrate.referendumInfoFor()
         json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
         current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
-        logging.info("Synchronizing embeds")
         if json_data:
             index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
         else:
@@ -539,7 +537,7 @@ async def sync_embeds():
                         if not message.embeds:
                             await asyncio.sleep(0.5)
                             logging.info(f"Embedded call data not found, checking if preimage has been stored on-chain")
-                            process_call_data = ProcessCallData(price=current_price)
+                            process_call_data = ProcessCallData(price=current_price, substrate=substrate)
                             call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
 
                             if "Preimage not found" not in preimagehash:
@@ -555,7 +553,7 @@ async def sync_embeds():
                         if message.embeds[0].description.startswith(":warning:"):
                             await asyncio.sleep(0.5)
                             logging.info(f"Checking if preimage has been stored on-chain")
-                            process_call_data = ProcessCallData(price=current_price)
+                            process_call_data = ProcessCallData(price=current_price, substrate=substrate)
                             call_data, preimagehash = await substrate.referendum_call_data(index=index, gov1=False, call_data=False)
 
                             if "Preimage not found" not in preimagehash:
@@ -578,14 +576,17 @@ async def sync_embeds():
             else:
                 logging.error(f"Thread with index {index} - {message_id} not found.")
         logging.info("synchronization complete")
-    except Exception as sync_embeds_error:
-        logging.exception(f"An error occurred whilst synchronizing embeds: {sync_embeds_error}")
-        logging.info("Waiting 3 seconds before restarting task loop")
-        await asyncio.sleep(3)
+    except Exception as error:
+        exception_occurred = True
+        logging.exception(f"An unexpected error occurred whilst running [sync_embeds]: {error}")
+        logging.info("Waiting 30 seconds before restarting task loop")
+        await substrate.close()
+        await asyncio.sleep(30)
         sync_embeds.restart()
     finally:
-        await substrate.close()
-        await task_handler.start_tasks([recheck_proposals])
+        if not exception_occurred:
+            await substrate.close()
+            await task_handler.start_tasks([recheck_proposals])
 
 
 @tasks.loop(hours=1)
@@ -612,8 +613,8 @@ async def recheck_proposals():
         - Closes the Substrate connection once recheck_proposals is complete
     """
     try:
-        await client.wait_until_ready()
         logging.info("recheck_proposals task is running")
+        await client.wait_until_ready()
         vote_counts = await client.load_vote_counts()
         opengov2 = OpenGovernance2(config)
         channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
@@ -659,7 +660,7 @@ async def recheck_proposals():
                 continue
         logging.info("recheck_proposals complete")
     except Exception as error:
-        logging.exception(f"An unexpected error occurred: {error}")
+        logging.exception(f"An unexpected error occurred whilst running [recheck_proposals]: {error}")
         raise error
     finally:
         await substrate.close()
@@ -687,11 +688,13 @@ async def before_recheck_proposals():
 
 if __name__ == '__main__':
     config = Config()
-
     substrate = SubstrateAPI(config)
+    discord_format = DiscordFormatting(substrate)
+
     guild = discord.Object(id=config.DISCORD_SERVER_ID)
     arguments = ArgumentParser()
-    logging = Logger(arguments.args.verbose)
+    logging = Logger()
+    logging.configure(log_level=3, filename_prefix='governance_bot', output_dir="../data/logs", days_to_keep=10)
     permission_checker = PermissionCheck()
 
     # Required to count members of a specific role
@@ -725,22 +728,14 @@ if __name__ == '__main__':
             await task_handler.stop_tasks([check_governance, sync_embeds, autonomous_voting, recheck_proposals])
             await task_handler.start_tasks([check_governance])
 
-
-    # ------------------------------------------
-    # ███╗   ██╗ ██████╗ ███╗   ██╗      ███████╗ ██████╗ ██╗      ██████╗
-    # ████╗  ██║██╔═══██╗████╗  ██║      ██╔════╝██╔═══██╗██║     ██╔═══██╗
-    # ██╔██╗ ██║██║   ██║██╔██╗ ██║█████╗███████╗██║   ██║██║     ██║   ██║
-    # ██║╚██╗██║██║   ██║██║╚██╗██║╚════╝╚════██║██║   ██║██║     ██║   ██║
-    # ██║ ╚████║╚██████╔╝██║ ╚████║      ███████║╚██████╔╝███████╗╚██████╔╝
-    # ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═══╝      ╚══════╝ ╚═════╝ ╚══════╝ ╚═════╝
-    # Slash command(s) available when solo mode is
-    # not enabled in the .env config
+    # Slash command(s) available when solo mode is NOT enabled in the .env config
     # Commands:
-    #   + /forcevote <conviction>
-    #   + /votes
-    # ------------------------------------------
+    #   + /forcevote
     if config.SOLO_MODE is False:
-        @client.tree.command(name='forcevote', description='This command can only be executed in channels where an internal vote is active.', guild=discord.Object(id=config.DISCORD_SERVER_ID))
+        @client.tree.command(name='forcevote',
+                             description='This command works only in threads with an active vote and when SOLO_MODE '
+                                         'is disabled.',
+                             guild=discord.Object(id=config.DISCORD_SERVER_ID))
         async def forcevote(interaction: discord.Interaction):
 
             channel = interaction.channel
@@ -756,83 +751,81 @@ if __name__ == '__main__':
             if not sufficient_permissions:
                 return
 
-            balance = await client.check_balance(interaction=interaction)
-            if not balance:
-                return
-
-            await asyncio.sleep(0.5)
-
-            # Make sure the channel the command is running in is a channel with ongoing votes
-            if str(channel.id) in vote_count_channels:
-                proposal_index = vote_counts.get(str(channel.id), {}).get('index', {})
-                aye = vote_counts.get(str(channel.id), {}).get('aye', {})
-                nay = vote_counts.get(str(channel.id), {}).get('nay', {})
-                recuse = vote_counts.get(str(channel.id), {}).get('recuse', {})
-                origin = vote_counts.get(str(channel.id), {}).get('origin', {})
-
-                vote = await client.calculate_proxy_vote(aye_votes=aye, nay_votes=nay)
-                role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
-                await asyncio.sleep(0.5)
-
-                await interaction.followup.send("Initializing extrinsic, please wait...", ephemeral=True)
-                voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
-                votes = [(int(proposal_index), vote, config.CONVICTION)]
-
-                await asyncio.sleep(0.5)
-                index, call, extrinsic_hash = await voter.execute_multiple_votes(votes)
-                vote_scheme = EmbedVoteScheme(vote_type=vote)
-
-                if extrinsic_hash is False:
-                    await interaction.followup.send(content="Unable to execute vote, please make sure the referendum is live!", ephemeral=True)
+            try:
+                proxy_balance = await substrate.proxy_balance()
+                balance = await client.check_balance(interaction=interaction, proxy_balance=proxy_balance)
+                if not balance:
                     return
 
-                first_six = extrinsic_hash[:8]
-                last_six = extrinsic_hash[-8:]
-                short_extrinsic_hash = f"{first_six}...{last_six}"
-
-                extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
-                                        description=f'{vote_scheme.emoji} {vote.upper()} on proposal **#{proposal_index}**', timestamp=datetime.now(timezone.utc))
-                extrinsic_embed.add_field(name='Extrinsic hash',value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
-                extrinsic_embed.add_field(name=f'Origin', value=f"{origin[0]}", inline=True)
-                extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
-                extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
-                extrinsic_embed.add_field(name='Aye', value=f"{aye}", inline=True)
-                extrinsic_embed.add_field(name='Nay', value=f"{nay}", inline=True)
-                extrinsic_embed.add_field(name='Recuse', value=f"{recuse}", inline=True)
-                extrinsic_embed.set_footer(text="This vote was forced using /forcevote")
-
-                channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
-                channel_thread = channel.get_thread(interaction.channel.id)
-
                 await asyncio.sleep(0.5)
-                extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
-                await extrinsic_receipt.pin()
 
-                # Delete pinned notification
-                async for message in interaction.channel.history(limit=15, oldest_first=False):
-                    if message.type == discord.MessageType.pins_add:
-                        await message.delete()
+                # Make sure the channel the command is running in is a channel with ongoing votes
+                if str(channel.id) in vote_count_channels:
+                    proposal_index = vote_counts.get(str(channel.id), {}).get('index', {})
+                    aye = vote_counts.get(str(channel.id), {}).get('aye', {})
+                    nay = vote_counts.get(str(channel.id), {}).get('nay', {})
+                    recuse = vote_counts.get(str(channel.id), {}).get('recuse', {})
+                    origin = vote_counts.get(str(channel.id), {}).get('origin', {})
 
+                    vote = await client.calculate_proxy_vote(aye_votes=aye, nay_votes=nay)
+                    role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
+                    await asyncio.sleep(0.5)
+
+                    await interaction.followup.send("Initializing extrinsic, please wait...", ephemeral=True)
+                    votes = [(int(proposal_index), vote, config.CONVICTION)]
+
+                    await asyncio.sleep(0.5)
+                    indexes, calls, extrinsic_hash = await substrate.execute_multiple_votes(votes)
+                    vote_scheme = EmbedVoteScheme(vote_type=vote)
+
+                    if extrinsic_hash is False:
+                        await interaction.followup.send(content="Unable to execute vote, please make sure the referendum is live!", ephemeral=True)
+                        return
+
+                    first_six = extrinsic_hash[:8]
+                    last_six = extrinsic_hash[-8:]
+                    short_extrinsic_hash = f"{first_six}...{last_six}"
+
+                    extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
+                                            description=f'{vote_scheme.emoji} {vote.upper()} on proposal **#{proposal_index}**', timestamp=datetime.now(timezone.utc))
+                    extrinsic_embed.add_field(name='Extrinsic hash',value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
+                    extrinsic_embed.add_field(name=f'Origin', value=f"{origin[0]}", inline=True)
+                    extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
+                    extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
+                    extrinsic_embed.add_field(name='Aye', value=f"{aye}", inline=True)
+                    extrinsic_embed.add_field(name='Nay', value=f"{nay}", inline=True)
+                    extrinsic_embed.add_field(name='Recuse', value=f"{recuse}", inline=True)
+                    extrinsic_embed.set_footer(text="This vote was forced using /forcevote")
+
+                    channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+                    channel_thread = channel.get_thread(interaction.channel.id)
+
+                    await asyncio.sleep(0.5)
+                    extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
+                    await extrinsic_receipt.pin()
+
+                    # Delete pinned notification
+                    async for message in interaction.channel.history(limit=15, oldest_first=False):
+                        if message.type == discord.MessageType.pins_add:
+                            await message.delete()
+
+                    await interaction.delete_original_response()
+                else:
+                    await interaction.followup.send(f"You are trying to force a vote on a channel that doesn't have an active internal vote ongoing", ephemeral=True)
+            except Exception as error:
                 await interaction.delete_original_response()
-            else:
-                await interaction.followup.send(f"You are trying to force a vote on a channel that doesn't have an active internal vote ongoing", ephemeral=True)
+                await interaction.followup.send(content="An unexpected error occurred whilst running `/forcevote`", ephemeral=True)
+                logging.exception(f"An unexpected error occurred whilst running /forcevote: {error}")
+            finally:
+                await substrate.close()
 
-    # ------------------------------------------
-    # ███████╗ ██████╗ ██╗      ██████╗
-    # ██╔════╝██╔═══██╗██║     ██╔═══██╗
-    # ███████╗██║   ██║██║     ██║   ██║
-    # ╚════██║██║   ██║██║     ██║   ██║
-    # ███████║╚██████╔╝███████╗╚██████╔╝
-    # ╚══════╝ ╚═════╝ ╚══════╝ ╚═════╝
-    # Slash command(s) available when solo mode is
-    # enabled in the .env config
+    # Slash command(s) available when solo mode IS enabled in the .env config
     # Commands:
     #   + /vote <referendum> <conviction> <decision>
-    #   + /votes
-    # ------------------------------------------
     if config.SOLO_MODE is True:
         @client.tree.command(name='vote',
-                             description='This command allows you to vote in Open Governance without depending on an internal vote.',
+                             description='This command works in or out of threads with an active vote and only when '
+                                         'SOLO_MODE is enabled.',
                              guild=discord.Object(id=config.DISCORD_SERVER_ID))
         @app_commands.choices(conviction=[app_commands.Choice(name='x0.1', value='None'),
                                           app_commands.Choice(name='x1', value='Locked1x'),
@@ -855,52 +848,57 @@ if __name__ == '__main__':
             if not sufficient_permissions:
                 return
 
-            balance = await client.check_balance(interaction=interaction)
-            if not balance:
-                return
+            try:
+                proxy_balance = await substrate.proxy_balance()
+                balance = await client.check_balance(interaction=interaction, proxy_balance=proxy_balance)
+                if not balance:
+                    return
 
-            role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
-            await asyncio.sleep(0.5)
+                role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
+                await asyncio.sleep(0.5)
 
-            await interaction.followup.send("Initializing extrinsic, please wait...", ephemeral=True)
-            voter = ProxyVoter(main_address=config.PROXIED_ADDRESS, proxy_mnemonic=config.MNEMONIC, url=config.SUBSTRATE_WSS)
-            votes = [(int(referendum), decision.value, conviction.value)]
+                await interaction.followup.send("Initializing extrinsic, please wait...", ephemeral=True)
+                votes = [(int(referendum), decision.value, conviction.value)]
 
-            await asyncio.sleep(0.5)
-            index, call, extrinsic_hash = await voter.execute_multiple_votes(votes)
-            vote_scheme = EmbedVoteScheme(vote_type=decision.value)
+                await asyncio.sleep(0.5)
+                indexes, calls, extrinsic_hash = await substrate.execute_multiple_votes(votes)
+                vote_scheme = EmbedVoteScheme(vote_type=decision.value)
 
-            if extrinsic_hash is False:
-                await interaction.followup.send(content="Unable to execute vote, please make sure the referendum is live!", ephemeral=True)
-                return
+                if extrinsic_hash is False:
+                    await interaction.followup.send(content="Unable to execute vote, please make sure the referendum is live!", ephemeral=True)
+                    return
 
-            first_six = extrinsic_hash[:8]
-            last_six = extrinsic_hash[-8:]
-            short_extrinsic_hash = f"{first_six}...{last_six}"
+                first_six = extrinsic_hash[:8]
+                last_six = extrinsic_hash[-8:]
+                short_extrinsic_hash = f"{first_six}...{last_six}"
 
-            extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
-                                    description=f'{vote_scheme.emoji} {decision.value.upper()} on proposal **#{referendum}**', timestamp=datetime.now(timezone.utc))
-            extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
-            extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
-            extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
-            extrinsic_embed.add_field(name=f'Decision', value=f"{decision.value.upper()}", inline=True)
-            extrinsic_embed.add_field(name=f'Conviction', value=f"{conviction.value.upper()}", inline=True)
-            extrinsic_embed.set_footer(text="This vote was made using /vote")
+                extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
+                                        description=f'{vote_scheme.emoji} {decision.value.upper()} on proposal **#{referendum}**', timestamp=datetime.now(timezone.utc))
+                extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
+                extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
+                extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
+                extrinsic_embed.add_field(name=f'Decision', value=f"{decision.value.upper()}", inline=True)
+                extrinsic_embed.add_field(name=f'Conviction', value=f"{conviction.value.upper()}", inline=True)
+                extrinsic_embed.set_footer(text="This vote was made using /vote")
 
-            channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
-            channel_thread = channel.get_thread(interaction.channel.id)
+                channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
+                channel_thread = channel.get_thread(interaction.channel.id)
 
-            await asyncio.sleep(0.5)
-            extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
-            await extrinsic_receipt.pin()
+                await asyncio.sleep(0.5)
+                extrinsic_receipt = await channel_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed)
+                await extrinsic_receipt.pin()
 
-            # Delete pinned notification
-            async for message in interaction.channel.history(limit=15, oldest_first=False):
-                if message.type == discord.MessageType.pins_add:
-                    await message.delete()
-
-            await interaction.delete_original_response()
-
+                # Delete pinned notification
+                async for message in interaction.channel.history(limit=15, oldest_first=False):
+                    if message.type == discord.MessageType.pins_add:
+                        await message.delete()
+                await interaction.delete_original_response()
+            except Exception as error:
+                await interaction.delete_original_response()
+                await interaction.followup.send(content="An unexpected error occurred whilst running `/vote`", ephemeral=True)
+                logging.exception(f"An unexpected error occurred whilst running /vote: {error}")
+            finally:
+                await substrate.close()
 
     @client.tree.command(name='thread',
                          description='Disable the voting buttons to a thread',
