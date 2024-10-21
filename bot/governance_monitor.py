@@ -11,7 +11,6 @@ from typing import Dict, Any
 from discord import app_commands, Embed
 from utils.logger import Logger
 from utils.config import Config
-from utils.proxy import ProxyVoter
 from utils.data_processing import Text
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from aiohttp.web_exceptions import HTTPException
@@ -94,16 +93,13 @@ class GovernanceMonitor(discord.Client):
             await interaction_message.delete()
             return False
         elif any(role.name == required_role for role in user_roles):
-            self.logger.info(f"TRUE")
+            self.logger.info(f"User has sufficient access")
             return True
 
-    async def check_balance(self, interaction):
-        self.logger.info(f"Checking wallet balance of {self.config.PROXIED_ADDRESS}")
-        voter = ProxyVoter(main_address=self.config.PROXIED_ADDRESS, proxy_mnemonic=self.config.MNEMONIC, url=self.config.SUBSTRATE_WSS)
-        proxy_balance = await voter.proxy_balance()
+    async def check_balance(self, proxy_balance, interaction=None):
 
         if proxy_balance <= self.config.PROXY_BALANCE_ALERT:
-            self.logger.warning(f"Wallet balance is too low: {proxy_balance}")
+            self.logger.warning(f"Balance is too low: {proxy_balance}, PROXY_BALANCE_ALERT={self.config.PROXY_BALANCE_ALERT}")
 
             # Post on discord with balance and public address to make it easier to top up
             proxy_address_qr = Text.generate_qr_code(publickey=self.config.PROXY_ADDRESS)
@@ -112,9 +108,13 @@ class GovernanceMonitor(discord.Client):
                                   timestamp=datetime.now(timezone.utc))
             balance_embed.add_field(name='Address', value=f'{self.config.PROXY_ADDRESS}', inline=True)
             balance_embed.set_thumbnail(url="attachment://proxy_address_qr.png")
-            await interaction.followup.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
-
-            return False
+            if interaction:
+                await interaction.followup.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
+                return False
+            else:
+                alert_channel = self.get_channel(self.config.DISCORD_PROXY_BALANCE_ALERT)
+                await alert_channel.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
+                return False
         return True
 
     @staticmethod
@@ -288,7 +288,6 @@ class GovernanceMonitor(discord.Client):
         None
 
         Note:
-
         - This function requires that a Discord client object named 'client' exists and is logged in.
         - The bot needs the 'Manage Threads' permission in the guild to be able to lock threads.
         - The function is asynchronous and must be called from within an async function or an event loop.
@@ -296,12 +295,8 @@ class GovernanceMonitor(discord.Client):
           error messages are logged but the function does not raise an exception.
 
         Example usage:
-
-        >>> await lock_threads_by_message_ids(123456789012345678, [111111111111111111, 222222222222222222])
-
-        or
-
-        >>> await lock_threads_by_message_ids(123456789012345678, 111111111111111111)
+        - await lock_threads_by_message_ids(123456789012345678, [111111111111111111, 222222222222222222])
+        - await lock_threads_by_message_ids(123456789012345678, 111111111111111111)
         """
         if not isinstance(message_ids, list):
             message_ids = [message_ids]
@@ -326,6 +321,60 @@ class GovernanceMonitor(discord.Client):
             # Lock the thread
             self.logger.info(f"Discord forum thread '{thread.name}' is >= threshold set in config, locking thread from future interactions.")
             await thread.edit(locked=True)
+
+    async def disable_command(self, command_name: str, guild_id: int):
+        """
+        Disables a command for a specific guild by removing it from the command tree and syncing it.
+
+        Args:
+            command_name (str): The name of the command to be disabled.
+            guild_id (int): The ID of the guild where the command will be disabled.
+
+        Behavior:
+            - Retrieves the command from the command tree for the specified guild.
+            - If the command exists, it is removed from the command tree.
+            - The command tree is then synced to apply the changes.
+            - Logs a message indicating whether the command was successfully disabled or not found.
+
+        Example:
+            await self.disable_command("forcevote", config.DISCORD_SERVER_ID)
+        """
+        command = self.tree.get_command(command_name, guild=discord.Object(id=guild_id))
+
+        try:
+            if command:
+                self.tree.remove_command(command.name, guild=discord.Object(id=guild_id))
+                await self.tree.sync(guild=discord.Object(id=guild_id))
+                self.logger.info(f"Command '{command_name}' has been disabled.")
+            else:
+                self.logger.warning(f"Command '{command_name}' not found or already disabled.")
+        except Exception as e:
+            self.logger.info(f"Failed to enable the command '{command_name}': {e}")
+
+    # Function to enable a command
+    async def enable_command(self, command, guild_id: int):
+        """
+        Enables a command for a specific guild by adding it to the command tree and syncing it.
+
+        Args:
+            command (discord.app_commands.Command): The command to be enabled.
+            guild_id (int): The ID of the guild where the command will be enabled.
+
+        Behavior:
+            - Adds the command to the command tree for the specified guild.
+            - Syncs the command tree to apply the changes.
+            - Logs success or failure.
+
+        Example:
+            await self.enable_command(forcevote, config.DISCORD_SERVER_ID)
+        """
+
+        try:
+            self.tree.add_command(command, guild=discord.Object(id=guild_id))
+            await self.tree.sync(guild=discord.Object(id=guild_id))
+            self.logger.info(f"Command '{command.name}' has been enabled.")
+        except Exception as e:
+            self.logger.info(f"Failed to enable the command '{command.name}': {e}")
 
     async def edit_thread(self, forum_channel: int, message_id: int, name: str, content: str) -> bool:
         """
@@ -528,6 +577,7 @@ class GovernanceMonitor(discord.Client):
                 self.logger.error(f"Invalid operation or missing parameters for {operation}")
         except Exception as e:
             self.logger.error(f"Failed to manage Discord thread: {e}")
+            return False
         return thread
 
     async def get_or_create_governance_tag(self, available_channel_tags, governance_origin, channel):
