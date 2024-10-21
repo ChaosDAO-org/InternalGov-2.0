@@ -12,7 +12,6 @@ from PIL import Image
 from typing import Dict, Any
 from datetime import datetime
 from utils.config import Config
-from utils.subquery import SubstrateAPI
 from utils.logger import Logger
 
 
