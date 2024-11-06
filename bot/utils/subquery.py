@@ -15,44 +15,62 @@ class SubstrateAPI:
         self.logger = Logger()
         self.substrate = None
 
-    async def _connect(self, wss):
-        if not self.substrate:
-            max_retries = 3
-            wait_seconds = 10
+    async def connect(self, wss):
+        caller_info = self.logger.get_caller_info()
+        max_retries, wait_seconds = 3, 10
 
-            # Get the caller information (which class and method called _connect)
-            caller_info = self.logger.get_caller_info()
-
-            self.logger.info(f"{caller_info} - Initializing RPC connection to {wss}")
-
-            for attempt in range(1, max_retries + 1):
-                try:
-                    await asyncio.sleep(0.5)
+        for attempt in range(1, max_retries + 1):
+            try:
+                if not self.substrate:
+                    self.logger.info(f"({attempt}/{max_retries}) - {caller_info} - Initializing SubstrateInterface object: {wss}")
                     self.substrate = SubstrateInterface(url=wss)
 
                     await asyncio.wait_for(
-                        asyncio.to_thread(self.substrate.init_runtime),
+                        asyncio.to_thread(
+                            self.substrate.init_runtime),
                         timeout=60
                     )
-
                     self.logger.info(f"Runtime successfully initialized: {self.substrate.runtime_version}")
-                    return self.substrate
-                except (WebSocketBadStatusException, SubstrateRequestException, ConfigurationError) as e:
-                    self.logger.error(f"Error during connection attempt {attempt}: {e}")
-                    if attempt < max_retries:
-                        self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
-                        await asyncio.sleep(wait_seconds)
-                    else:
-                        self.logger.error("Max retries reached. Could not establish a connection.")
-                        raise e
-                except asyncio.TimeoutError:
-                    self.logger.error("Timeout while initializing Substrate connection.")
-                    raise
-                except Exception as error:
-                    self.logger.error(f"Unexpected error occurred during Substrate connection: {error}")
+
+                # Check if the WebSocket connection is still active
+                if not self.substrate.websocket or not self.substrate.websocket.sock:
+                    self.logger.info("WebSocket connection is closed. Reconnecting...")
+                    await asyncio.to_thread(self.substrate.connect_websocket)
+                    await asyncio.wait_for(
+                        asyncio.to_thread(
+                            self.substrate.init_runtime),
+                        timeout=60
+                    )
+                    self.logger.info(f"Runtime successfully initialized: {self.substrate.runtime_version}")
+
+                return self.substrate
+
+            except (WebSocketBadStatusException, SubstrateRequestException, ConfigurationError) as e:
+                self.logger.error(f"Error during connection or reconnection on attempt {attempt}: {e}")
+                if attempt < max_retries:
+                    self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
+                    self.substrate = None
+                    await asyncio.sleep(wait_seconds)
+                else:
+                    self.logger.error("Max retries reached. Could not establish a connection.")
+                    raise e
+
+            except asyncio.TimeoutError:
+                self.logger.error("Timeout while initializing Substrate connection.")
+                self.substrate = None
+                raise
+
+            except Exception as error:
+                self.logger.error(f"Unexpected error occurred during Substrate connection on attempt {attempt}: {error}")
+                self.substrate = None
+                if attempt < max_retries:
+                    self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
+                    await asyncio.sleep(wait_seconds)
+                else:
+                    self.logger.error("Max retries reached. Could not establish a connection.")
                     raise
 
-    async def _disconnect(self):
+    async def disconnect(self):
         """Disconnects from the Substrate node."""
         if self.substrate:
             self.logger.info("Disconnecting from Substrate node...")
@@ -60,8 +78,10 @@ class SubstrateAPI:
             self.substrate = None
 
     async def close(self):
-        """Manually close the connection when done with queries."""
-        await self._disconnect()
+        """Close websocket connection."""
+        if self.substrate:
+            self.logger.info("Closing websocket connection...")
+            self.substrate.close()
 
     @staticmethod
     def cache_older_than_24hrs(file_path):
@@ -86,7 +106,7 @@ class SubstrateAPI:
             int: The free balance of the main address.
         """
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             # When no ss58_address is provided, use self.main_address (the account controlled by the proxy)
             if not ss58_address:
@@ -134,7 +154,7 @@ class SubstrateAPI:
 
     async def proxy_balance(self):
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             self.logger.info(f"Checking balance of proxy account: {self.config.PROXY_ADDRESS}")
 
@@ -175,7 +195,7 @@ class SubstrateAPI:
         """
         try:
 
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             # Prevent Failed（NotOngoing）- caused when voing on a referenda that is not ongoing.
             # ongoing ref
@@ -273,7 +293,7 @@ class SubstrateAPI:
             dict: The composed batch call.
         """
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             compose_utility_batch = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -305,7 +325,7 @@ class SubstrateAPI:
             GenericCall: The composed proxy call.
         """
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             compose_proxy_call = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -338,7 +358,7 @@ class SubstrateAPI:
             calls (list): A list of calls to execute.
         """
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             self.logger.info("Attempting to execute batch of calls.")
             batch_call = await self.compose_utility_batch_call(calls)
@@ -429,11 +449,11 @@ class SubstrateAPI:
         """
         try:
             if not self.config.PEOPLE_WSS:
-                await self._connect(wss=self.config.SUBSTRATE_WSS)
+                await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             if self.config.PEOPLE_WSS:
-                await self._disconnect()  # disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
-                await self._connect(wss=self.config.PEOPLE_WSS)
+                await self.disconnect()  # disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
+                await self.connect(wss=self.config.PEOPLE_WSS)
 
             result = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -460,7 +480,7 @@ class SubstrateAPI:
             self.logger.error(f"Error fetching identities super_of: {e}")
             raise
         finally:
-            await self._disconnect()  # Disconnect from people chain
+            await self.disconnect()  # Disconnect from people chain
 
     @staticmethod
     async def check_cached_super_of(address, network):
@@ -506,11 +526,11 @@ class SubstrateAPI:
         """
         try:
             if not self.config.PEOPLE_WSS:
-                await self._connect(wss=self.config.SUBSTRATE_WSS)
+                await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             if self.config.PEOPLE_WSS:
-                await self._disconnect()  # Disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
-                await self._connect(wss=self.config.PEOPLE_WSS)
+                await self.disconnect()  # Disconnect before connecting to switch from SUBSTRATE_WSS to PEOPLE_WSS
+                await self.connect(wss=self.config.PEOPLE_WSS)
 
             result = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -537,7 +557,7 @@ class SubstrateAPI:
             self.logger.error(f"Error fetching identities: {e}")
             raise
         finally:
-            await self._disconnect()  # Disconnect from people chain
+            await self.disconnect()  # Disconnect from people chain
 
     @staticmethod
     async def check_cached_identity(address, network):
@@ -594,7 +614,7 @@ class SubstrateAPI:
     # ----------------------
     async def ongoing_referendums_idx(self):
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             qmap = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -628,7 +648,7 @@ class SubstrateAPI:
         referendum = {}
 
         try:
-            await self._connect(self.config.SUBSTRATE_WSS)
+            await self.connect(self.config.SUBSTRATE_WSS)
 
             if index is not None:
                 result = await asyncio.wait_for(
@@ -683,7 +703,7 @@ class SubstrateAPI:
             Exception: If an error occurs during the retrieval or decoding process.
         """
         try:
-            await self._connect(wss=self.config.SUBSTRATE_WSS)
+            await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             referendum = await asyncio.wait_for(
                 asyncio.to_thread(
@@ -753,7 +773,7 @@ class SubstrateAPI:
 
     async def check_ss58_address(self, address) -> bool:
         try:
-            await self._connect(wss=self.config.SUBSTRATE_WSS)
+            await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             if not isinstance(address, str):
                 return False
@@ -771,7 +791,7 @@ class SubstrateAPI:
 
     async def get_average_block_time(self, num_blocks=255):
         try:
-            await self._connect(wss=self.config.SUBSTRATE_WSS)
+            await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             latest_block_num = await asyncio.wait_for(
                 asyncio.to_thread(self.substrate.get_block_number, block_hash=self.substrate.block_hash),
@@ -826,7 +846,7 @@ class SubstrateAPI:
             Exception: If any error occurs while trying to calculate the time remaining until the target block.
         """
         try:
-            await self._connect(wss=self.config.SUBSTRATE_WSS)
+            await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             # Get the current block number
             current_block = self.substrate.get_block_number(block_hash=self.substrate.block_hash)
@@ -867,7 +887,7 @@ class SubstrateAPI:
             Exception: If an error occurs while fetching the block hash or timestamp.
         """
         try:
-            await self._connect(wss=self.config.SUBSTRATE_WSS)
+            await self.connect(wss=self.config.SUBSTRATE_WSS)
 
             block_hash = await asyncio.wait_for(
                 asyncio.to_thread(self.substrate.get_block_hash, block_id=block_number),

@@ -9,7 +9,7 @@ from utils.subquery import SubstrateAPI
 from datetime import datetime, timezone
 from governance_monitor import GovernanceMonitor
 from utils.embed_config import EmbedVoteScheme
-from utils.data_processing import CacheManager, ProcessCallData, DiscordFormatting, Text
+from utils.data_processing import CacheManager, ProcessCallData, DiscordFormatting
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.task_handler import TaskHandler
 from utils.argument_parser import ArgumentParser
@@ -19,6 +19,7 @@ from discord.ext import tasks
 
 
 task_handler = TaskHandler()
+
 
 @tasks.loop(hours=3)
 async def check_governance():
