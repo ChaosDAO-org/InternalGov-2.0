@@ -1,12 +1,11 @@
 import os
-import ssl
 import json
 import time
+import random
 import asyncio
 from utils.logger import Logger
 from scalecodec.base import ScaleBytes
 from substrateinterface import SubstrateInterface, Keypair
-from websocket._exceptions import WebSocketException
 from substrateinterface.exceptions import SubstrateRequestException, ConfigurationError
 
 
@@ -20,7 +19,7 @@ class SubstrateAPI:
         """Establishes & restores WebSocket connection to the Substrate RPC node with retry mechanism.
         Returns initialized SubstrateInterface object if successful, raises exception after max retries."""
         caller_info = self.logger.get_caller_info()
-        max_retries, wait_seconds = 3, 10
+        max_retries, base_wait = 3, 10
 
         for attempt in range(1, max_retries + 1):
             try:
@@ -51,13 +50,9 @@ class SubstrateAPI:
                 self.substrate.websocket.ping('ping')
                 return self.substrate
 
-            except (WebSocketException, SubstrateRequestException, ssl.SSLEOFError, ssl.SSLError, asyncio.TimeoutError) as error:
-                error_msg = f"Error reconnecting to WebSocket - {error}"
-                await self.on_connection_error_retry(error_msg, attempt, max_retries, wait_seconds, error)
-
             except Exception as error:
-                error_msg = f"An unexpected error has occurred - {error}"
-                await self.on_connection_error_retry(error_msg, attempt, max_retries, wait_seconds, error)
+                error_msg = f"An unexpected error has occurred on connect() - {error}"
+                await self.on_connection_error_retry(error_msg, attempt, max_retries, base_wait, error)
 
     async def websocket_info(self):
         """Logs WebSocket connection details and runtime information."""
@@ -65,17 +60,21 @@ class SubstrateAPI:
         self.logger.info(f"Peer: {self.substrate.websocket.sock.getpeername()}")
         self.logger.info(f"Cipher: {self.substrate.websocket.sock.cipher()}")
 
-    async def on_connection_error_retry(self, error_msg, attempt, max_retries, wait_seconds, error):
-        """Handles WebSocket connection errors with retry logic and backoff timing."""
+    async def on_connection_error_retry(self, error_msg, attempt, max_retries, base_wait, error):
+        """Handles connection errors with exponential backoff retry timing."""
         self.logger.error(error_msg)
         await self.reset_connection()
 
-        if attempt < max_retries:
-            self.logger.info(f"Retrying in {wait_seconds} seconds... (Attempt {attempt}/{max_retries})")
-            await asyncio.sleep(wait_seconds)
-        else:
+        if attempt > max_retries:
             self.logger.error("Max retries reached. Could not establish a connection.")
             raise error
+
+        wait_time = base_wait * (6 ** (attempt - 1))  # 10s, 60s, 380s
+        jitter = random.uniform(0, 0.1 * wait_time)  # 10% jitter
+        total_wait = wait_time + jitter
+
+        self.logger.info(f"Retrying in {total_wait:.1f} seconds... (Attempt {attempt}/{max_retries})")
+        await asyncio.sleep(total_wait)
 
     async def reset_connection(self):
         """Closes connection and destroys the substrate object for fresh initialization."""
