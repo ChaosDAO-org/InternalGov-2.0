@@ -97,10 +97,8 @@ class GovernanceMonitor(discord.Client):
             return True
 
     async def check_balance(self, proxy_balance, interaction=None):
-
         if proxy_balance <= self.config.PROXY_BALANCE_ALERT:
             self.logger.warning(f"Balance is too low: {proxy_balance}, PROXY_BALANCE_ALERT={self.config.PROXY_BALANCE_ALERT}")
-
             # Post on discord with balance and public address to make it easier to top up
             proxy_address_qr = Text.generate_qr_code(publickey=self.config.PROXY_ADDRESS)
             balance_embed = Embed(color=0xFF0000, title=f'Low balance detected',
@@ -112,8 +110,9 @@ class GovernanceMonitor(discord.Client):
                 await interaction.followup.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
                 return False
             else:
+                admin_role = await self.create_or_get_role(self.get_guild(self.config.DISCORD_SERVER_ID), self.config.DISCORD_ADMIN_ROLE)
                 alert_channel = self.get_channel(self.config.DISCORD_PROXY_BALANCE_ALERT)
-                await alert_channel.send(embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
+                await alert_channel.send(content=f"<@&{admin_role.id}>", embed=balance_embed, file=discord.File(proxy_address_qr, "proxy_address_qr.png"))
                 return False
         return True
 
