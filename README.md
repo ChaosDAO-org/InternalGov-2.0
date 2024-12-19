@@ -62,6 +62,27 @@ pm2 restart polkadot_gov
 pm2 list
 ```
 
+
+###### Running docker version
+
+```shell
+# Build the image
+docker build -t internal-gov-2 .
+
+# Create volume for data
+docker volume create internal-gov-2-data
+
+# Run (+ restart) and mount data volume
+docker run -d \
+  --name internal-gov-2 \
+  --mount source=internal-gov-2-data,target=/app/data \
+  --restart always \
+  internal-gov-2
+
+# Copy .env file
+docker cp .env internal-gov-2:/app/
+```
+
 ---
 ## Autonomous voting
 ![alt text](https://i.imgur.com/5d0HJsY.png)  
