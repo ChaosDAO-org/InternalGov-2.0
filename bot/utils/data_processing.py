@@ -45,6 +45,9 @@ class Text:
         markdown_text = re.sub(r'(?:\s*\n){3,}', '\n\n', markdown_text)  # Replace three or more newlines with optional spaces with just one newline
         markdown_text = markdown_text.rstrip('\n')  # Remove trailing line breaks
 
+        if len(markdown_text) == 0:
+            return "Unable to retrieve content"
+
         return markdown_text
 
     @staticmethod
