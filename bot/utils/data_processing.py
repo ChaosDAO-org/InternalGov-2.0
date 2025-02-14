@@ -24,12 +24,8 @@ class Text:
             link_text = match.group(1)
             url = match.group(2)
 
-            # Check if the URL is relative
             if url.startswith("../"):
-                # Construct the absolute URL
                 url = base_url + url[3:]
-
-            # If the URL is just a positive integer, it's considered relative
             elif url.isdigit():
                 url = base_url + "referenda/referendum/" + url
 
@@ -39,11 +35,15 @@ class Text:
             url = match.group(1)
             return url
 
-        markdown_text = markdownify.markdownify(markdown_text)
+        # By default, markdownify adds backslashes before _ and * characters
+        # We turn this off by setting escape_underscores and escape_asterisks to False
+        # This keeps URLs clean and prevents unwanted backslashes from appearing
+        markdown_text = markdownify.markdownify(markdown_text, escape_underscores=False, escape_asterisks=False)
+
         markdown_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replacer_link, markdown_text)
         markdown_text = re.sub(r'!\[[^\]]*\]\(([^)]+)\)', replacer_image, markdown_text)
         markdown_text = re.sub(r'(?:\s*\n){3,}', '\n\n', markdown_text)  # Replace three or more newlines with optional spaces with just one newline
-        markdown_text = markdown_text.rstrip('\n')  # Remove trailing line breaks
+        markdown_text = markdown_text.rstrip('\n')                                   # Remove trailing line breaks
 
         if len(markdown_text) == 0:
             return "Unable to retrieve content"
