@@ -1,21 +1,22 @@
 import re
+import sys
 import time
 import json
 import asyncio
+import aiofiles
 import discord
+from discord import app_commands, Embed
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import aiofiles
 from typing import Dict, Any
-from discord import app_commands, Embed
 from utils.logger import Logger
 from utils.config import Config
 from utils.data_processing import Text
 from utils.button_handler import ButtonHandler, ExternalLinkButton
 from aiohttp.web_exceptions import HTTPException
 from datetime import datetime, timezone
-import sys
+from math import ceil
 
 
 class GovernanceMonitor(discord.Client):
@@ -203,10 +204,32 @@ class GovernanceMonitor(discord.Client):
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
 
-    @staticmethod
-    def check_minimum_participation(total_members, total_vote_count, min_participation):
+    def check_minimum_participation(self, total_members, total_vote_count, min_participation):
+        """
+        Check if the vote meets minimum participation requirements using ceiling for quorum.
+
+        Args:
+            total_members (int): Total number of members with voting rights
+            total_vote_count (int): Number of members who have voted
+            min_participation (float): Required participation percentage (e.g., 15 for 15%)
+
+        Returns:
+            tuple: (bool: meets minimum requirement, float: actual participation percentage)
+        """
+        # Calculate minimum required voters using ceiling
+        min_required_voters = ceil(total_members * (min_participation / 100))
+
+        # Calculate actual participation percentage
         participation_percentage = (total_vote_count / total_members) * 100
-        meets_minimum = participation_percentage >= min_participation
+
+        # Check if we meet the minimum
+        meets_minimum = total_vote_count >= min_required_voters
+
+        self.logger.info(f"Members: {total_members} | "
+                         f"Votes: {total_vote_count} | "
+                         f"Min Required: {min_participation}% ({min_required_voters} voters) | "
+                         f"Current: {participation_percentage:.2f}% | "
+                         f"Meets Min: {meets_minimum}")
         return meets_minimum, participation_percentage
 
     @staticmethod
