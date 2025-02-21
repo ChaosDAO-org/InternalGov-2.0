@@ -1,127 +1,221 @@
 {
-    "1341016744415858718": {
+    "1341035737788710985": {
         "index": "1388",
         "title": "Technical & Marketing Partnership - Polkadot & Team Vitality to revolutionize esports fan engagement thanks to Web3!",
         "origin": [
             "BigSpender"
         ],
         "aye": 0,
-        "nay": 0,
+        "nay": 2,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793707
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798235
     },
-    "1341016812992729158": {
-        "index": "1390",
-        "title": "Talisman - Mobile Wallet Proposal",
-        "origin": [
-            "BigSpender"
-        ],
-        "aye": 0,
-        "nay": 0,
-        "recuse": 0,
-        "users": {},
-        "epoch": 1739793723
-    },
-    "1341016842382086288": {
+    "1341035785272426527": {
         "index": "1398",
         "title": "Fine-tuned and Dedicated Onboarding Strategy into Polkadot",
         "origin": [
             "BigSpender"
         ],
         "aye": 0,
-        "nay": 0,
+        "nay": 1,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793730
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798246
     },
-    "1341016891854028913": {
+    "1341035808760528896": {
         "index": "1401",
         "title": "Tip for Six",
         "origin": [
             "SmallSpender"
         ],
         "aye": 0,
-        "nay": 0,
+        "nay": 1,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793742
+        "users": {
+            "414770832062283787": {
+                "username": "wirednkod#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798252
     },
-    "1341016934057119745": {
-        "index": "1405",
-        "title": "Live-Streamer Retroactive Proposal",
-        "origin": [
-            "SmallSpender"
-        ],
-        "aye": 0,
-        "nay": 0,
-        "recuse": 0,
-        "users": {},
-        "epoch": 1739793752
-    },
-    "1341016963698266133": {
+    "1341035855586005043": {
         "index": "1407",
         "title": "Set Curators for Legal Bounty",
         "origin": [
             "MediumSpender"
         ],
-        "aye": 0,
-        "nay": 0,
+        "aye": 1,
+        "nay": 1,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793759
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "aye"
+            }
+        },
+        "epoch": 1739798263
     },
-    "1341016995931623424": {
+    "1341035878922977402": {
         "index": "1410",
         "title": "RegionX - Coretime Marketplace Production Deployment Phase 1",
         "origin": [
             "MediumSpender"
         ],
-        "aye": 0,
+        "aye": 2,
         "nay": 0,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793767
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            },
+            "565746238562238474": {
+                "username": "pandres95#0",
+                "vote_type": "aye"
+            }
+        },
+        "epoch": 1739798269
     },
-    "1341017026407174194": {
+    "1341035903459659828": {
         "index": "1411",
         "title": "Spanish Bounty V3",
         "origin": [
             "MediumSpender"
         ],
         "aye": 0,
-        "nay": 0,
+        "nay": 2,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793774
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798275
     },
-    "1341017055079563275": {
+    "1341035927505469464": {
         "index": "1412",
         "title": "Polkadot + Brave Wallet: Driving Adoption Through Native Integration",
         "origin": [
             "Treasurer"
         ],
         "aye": 0,
-        "nay": 0,
+        "nay": 4,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793781
+        "users": {
+            "1187317362551169045": {
+                "username": "marioschraepen_72989#0",
+                "vote_type": "nay"
+            },
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "389129955482533889": {
+                "username": "recrafter#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798280
     },
-    "1341017085995651093": {
+    "1341035952994386031": {
         "index": "1413",
         "title": "[Retroactive Funding] JAM GrayPaper Reader",
         "origin": [
             "SmallSpender"
         ],
-        "aye": 0,
+        "aye": 2,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            },
+            "1225513589394378872": {
+                "username": "owahyudi#0",
+                "vote_type": "aye"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798286
+    },
+    "1341036031256039506": {
+        "index": "1416",
+        "title": "Polkadot Community Foundation: Allow the Marketing Bounty to Execute Formal Contracts through the Polkadot Community Foundation",
+        "origin": [
+            "WishForChange"
+        ],
+        "aye": 1,
         "nay": 0,
         "recuse": 0,
-        "users": {},
-        "epoch": 1739793788
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            }
+        },
+        "epoch": 1739798305
     },
-    "1341017121613680662": {
-        "index": "1414",
-        "title": "*sigh* please vote NAY",
+    "1341036054815183002": {
+        "index": "1417",
+        "title": "Closing Bounty 49. Technical Support Bounty.",
+        "origin": [
+            "Treasurer"
+        ],
+        "aye": 2,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            },
+            "1187317362551169045": {
+                "username": "marioschraepen_72989#0",
+                "vote_type": "aye"
+            },
+            "1225513589394378872": {
+                "username": "owahyudi#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798311
+    },
+    "1341036078848802837": {
+        "index": "1418",
+        "title": "[Whitelisted Caller] Increasing nDelayTranches from 89 to 213",
         "origin": [
             "WhitelistedCaller"
         ],
@@ -129,6 +223,474 @@
         "nay": 0,
         "recuse": 0,
         "users": {},
-        "epoch": 1739793796
+        "epoch": 1739798317
+    },
+    "1341036103653916753": {
+        "index": "1419",
+        "title": "None",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "414770832062283787": {
+                "username": "wirednkod#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798322
+    },
+    "1341036127217254401": {
+        "index": "1420",
+        "title": "SQD (fka Subsquid) - Public data indexing Infrastructure for Polkadot and Kusama (Q2 2024)",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798328
+    },
+    "1341036149338013739": {
+        "index": "1421",
+        "title": "Volmex Protocol Integration with Polkadot DEX Ecosystem",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798333
+    },
+    "1341036172344037470": {
+        "index": "1422",
+        "title": "Polkadot Anti-Scam Team 2025 Top-up",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798339
+    },
+    "1341036198734467103": {
+        "index": "1423",
+        "title": "ParaXerve NFT Marketplace Development",
+        "origin": [
+            "SmallSpender"
+        ],
+        "aye": 0,
+        "nay": 2,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798345
+    },
+    "1341036223279530044": {
+        "index": "1424",
+        "title": "Emergency Response Plan for Securing 200,000 DOT",
+        "origin": [
+            "Root"
+        ],
+        "aye": 1,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "1187317362551169045": {
+                "username": "marioschraepen_72989#0",
+                "vote_type": "aye"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798351
+    },
+    "1341036248541696061": {
+        "index": "1425",
+        "title": "Peer3 SDK - real time peer-to-peer smart contracts",
+        "origin": [
+            "BigSpender"
+        ],
+        "aye": 3,
+        "nay": 0,
+        "recuse": 1,
+        "users": {
+            "517258144628342785": {
+                "username": "luka99#0",
+                "vote_type": "recuse"
+            },
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "aye"
+            },
+            "961265753674358796": {
+                "username": "replghost#0",
+                "vote_type": "aye"
+            }
+        },
+        "epoch": 1739798357
+    },
+    "1341036271119761490": {
+        "index": "1426",
+        "title": "Polkadot Decoded 2024 post-event report",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 1,
+        "nay": 4,
+        "recuse": 0,
+        "users": {
+            "414770832062283787": {
+                "username": "wirednkod#0",
+                "vote_type": "aye"
+            },
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "1225513589394378872": {
+                "username": "owahyudi#0",
+                "vote_type": "nay"
+            },
+            "389129955482533889": {
+                "username": "recrafter#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798362
+    },
+    "1341036322348863518": {
+        "index": "1428",
+        "title": "Polkadot Growth Initiative  (Revised)",
+        "origin": [
+            "SmallSpender"
+        ],
+        "aye": 0,
+        "nay": 2,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798374
+    },
+    "1341036346759970847": {
+        "index": "1432",
+        "title": "Propose Curators OG Rust Bounty",
+        "origin": [
+            "BigSpender"
+        ],
+        "aye": 2,
+        "nay": 0,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "aye"
+            }
+        },
+        "epoch": 1739798380
+    },
+    "1341036371615158273": {
+        "index": "1433",
+        "title": "Vehicle Data on Asset Hub (We're All Gonna Own It)",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 1,
+        "users": {
+            "1187317362551169045": {
+                "username": "marioschraepen_72989#0",
+                "vote_type": "recuse"
+            }
+        },
+        "epoch": 1739798386
+    },
+    "1341036395086741597": {
+        "index": "1434",
+        "title": "Please vote Nay",
+        "origin": [
+            "BigSpender"
+        ],
+        "aye": 1,
+        "nay": 2,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "aye"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            },
+            "389129955482533889": {
+                "username": "recrafter#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798392
+    },
+    "1341036417794576416": {
+        "index": "1435",
+        "title": "DON'T VOTE or ADD DECISION DEPOSIT, ALLOW IT TIMEOUT.",
+        "origin": [
+            "BigSpender"
+        ],
+        "aye": 0,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "414770832062283787": {
+                "username": "wirednkod#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798397
+    },
+    "1341036441269960705": {
+        "index": "1436",
+        "title": "[Whitelisted Caller] Update schedulerParams.lookahead configuration parameter to 3",
+        "origin": [
+            "WhitelistedCaller"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798403
+    },
+    "1341036464619913269": {
+        "index": "1437",
+        "title": "Don't vote here. Vote on #1436 instead",
+        "origin": [
+            "WhitelistedCaller"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798408
+    },
+    "1341036488640430160": {
+        "index": "1438",
+        "title": "PolkaPulse: DeFi Dashboard for Polkadot Parachains",
+        "origin": [
+            "SmallSpender"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798414
+    },
+    "1341036512204161046": {
+        "index": "1439",
+        "title": "Polkadot DeFi Singularity",
+        "origin": [
+            "BigSpender"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798420
+    },
+    "1341036535012917248": {
+        "index": "1440",
+        "title": "Giant Squid Phase 2",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 2,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "1225513589394378872": {
+                "username": "owahyudi#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798425
+    },
+    "1341036559109066784": {
+        "index": "1441",
+        "title": "Polkadot Community Foundation: Conditions on transferring funds to Centrifuge-related instruments",
+        "origin": [
+            "WishForChange"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798431
+    },
+    "1341036588494225419": {
+        "index": "1442",
+        "title": "Please ignore",
+        "origin": [
+            "WhitelistedCaller"
+        ],
+        "aye": 0,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798438
+    },
+    "1341036610988277831": {
+        "index": "1443",
+        "title": "None",
+        "origin": [
+            "ReferendumCanceller"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798443
+    },
+    "1341036633092522055": {
+        "index": "1444",
+        "title": "None",
+        "origin": [
+            "ReferendumKiller"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1739798448
+    },
+    "1341036702604460133": {
+        "index": "1447",
+        "title": "SQD (fka Subsquid) - Public data indexing Infrastructure for Polkadot and Kusama (Q2 2024)",
+        "origin": [
+            "MediumSpender"
+        ],
+        "aye": 0,
+        "nay": 2,
+        "recuse": 0,
+        "users": {
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "1225513589394378872": {
+                "username": "owahyudi#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1739798465
+    },
+    "1341896298894196848": {
+        "index": "1448",
+        "title": "Investment in High-Performance AI Infrastructure for Community Access",
+        "origin": [
+            "BigSpender"
+        ],
+        "aye": 0,
+        "nay": 5,
+        "recuse": 0,
+        "users": {
+            "414770832062283787": {
+                "username": "wirednkod#0",
+                "vote_type": "nay"
+            },
+            "902124356841381890": {
+                "username": "chris.casini#0",
+                "vote_type": "nay"
+            },
+            "1225513589394378872": {
+                "username": "owahyudi#0",
+                "vote_type": "nay"
+            },
+            "389129955482533889": {
+                "username": "recrafter#0",
+                "vote_type": "nay"
+            },
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1740003409
+    },
+    "1342168098425405481": {
+        "index": "1449",
+        "title": "[Small Spender] Namaste Polkadot: Education and community for Polkadot India (#1449)",
+        "origin": [
+            "SmallSpender"
+        ],
+        "aye": 0,
+        "nay": 0,
+        "recuse": 0,
+        "users": {},
+        "epoch": 1740068211
+    },
+    "1342303983955349575": {
+        "index": "1450",
+        "title": "Tip for Managing Polkadot Portugal Channels",
+        "origin": [
+            "BigTipper"
+        ],
+        "aye": 0,
+        "nay": 1,
+        "recuse": 0,
+        "users": {
+            "429359693576667145": {
+                "username": ".wariomx#0",
+                "vote_type": "nay"
+            }
+        },
+        "epoch": 1740100608
     }
 }

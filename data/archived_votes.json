@@ -1,1 +1,91 @@
-{}
+{
+  "1341035762535239690": {
+    "index": "1390",
+    "title": "Talisman - Mobile Wallet Proposal",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798241
+  },
+  "1341036680064536616": {
+    "index": "1446",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798460
+  },
+  "1341035832362143796": {
+    "index": "1405",
+    "title": "Live-Streamer Retroactive Proposal",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798258
+  },
+  "1341036297220788266": {
+    "index": "1427",
+    "title": "[Whitelisted Caller] Upgrade Polkadot to v1.4",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798368
+  },
+  "1341035984841871461": {
+    "index": "1414",
+    "title": "*sigh* please vote NAY",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798294
+  },
+  "1341036009034616884": {
+    "index": "1415",
+    "title": "please ignore",
+    "origin": [
+      "Root"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798300
+  },
+  "1341036655632584762": {
+    "index": "1445",
+    "title": "Plan B: Rebond 200k DOT for Parallel Fi",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798454
+  }
+}

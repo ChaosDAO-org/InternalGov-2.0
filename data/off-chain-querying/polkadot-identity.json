@@ -8237,6 +8237,48 @@
         },
         null
     ],
+    "12R7g3EJoSFzq7hGWXAUjitgZFehaU15vu1WB5piAYRASjDC": [
+        {
+            "judgements": [
+                [
+                    4,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2007600000,
+            "info": {
+                "display": {
+                    "Raw": "Xulibe"
+                },
+                "legal": {
+                    "Raw": "Jose Mar\u00eda Chulia Beitia"
+                },
+                "web": {
+                    "None": null
+                },
+                "matrix": {
+                    "None": null
+                },
+                "email": {
+                    "Raw": "xulibe.d@proton.me"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "None": null
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
     "15fXhFo9XwFyBeTvuzsSTVYq2Jhc1EcgreTZGuxZAt1Pe4EC": [
         {
             "judgements": [
@@ -9734,6 +9776,48 @@
                 },
                 "twitter": {
                     "Raw": "@josemmm237"
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
+    "16dBfC3PW1KsDwXTEQzN66EPccPRMEwPJPoAvTyCYx3ubZkL": [
+        {
+            "judgements": [
+                [
+                    3,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2007300000,
+            "info": {
+                "display": {
+                    "Raw": "Arkain"
+                },
+                "legal": {
+                    "Raw": "arkainAK"
+                },
+                "web": {
+                    "None": null
+                },
+                "matrix": {
+                    "None": null
+                },
+                "email": {
+                    "Raw": "arkainstudio@gmail.com"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "Raw": "@ArkainArt"
                 },
                 "github": {
                     "None": null
@@ -12195,6 +12279,48 @@
                 },
                 "twitter": {
                     "Raw": "@snowfork_inc"
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
+    "15mLgbETez29r18XZUNJXXRdwGnw2na5CVcf4r7NmsG3CDt1": [
+        {
+            "judgements": [
+                [
+                    3,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2007200000,
+            "info": {
+                "display": {
+                    "Raw": "Morrisdata"
+                },
+                "legal": {
+                    "Raw": "Lydbrook Morris"
+                },
+                "web": {
+                    "None": null
+                },
+                "matrix": {
+                    "None": null
+                },
+                "email": {
+                    "Raw": "morrisdata@gmail.com"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "None": null
                 },
                 "github": {
                     "None": null
@@ -21191,9 +21317,7 @@
             "judgements": [
                 [
                     3,
-                    {
-                        "FeePaid": 5000000000
-                    }
+                    "Reasonable"
                 ]
             ],
             "deposit": 2010300000,
@@ -28525,6 +28649,48 @@
                 },
                 "email": {
                     "Raw": "OTV@epv.lol"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "None": null
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
+    "1566pkHBQHWy2sNwaAaaWHuKZmfYdb3Qar2wswusp1LJo5Vz": [
+        {
+            "judgements": [
+                [
+                    4,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2007600000,
+            "info": {
+                "display": {
+                    "Raw": "Katarina EB"
+                },
+                "legal": {
+                    "Raw": "Katarina Bingula"
+                },
+                "web": {
+                    "None": null
+                },
+                "matrix": {
+                    "None": null
+                },
+                "email": {
+                    "Raw": "katarina@dotevents.xyz"
                 },
                 "pgp_fingerprint": null,
                 "image": {
@@ -44499,9 +44665,7 @@
             "judgements": [
                 [
                     4,
-                    {
-                        "FeePaid": 5000000000
-                    }
+                    "Reasonable"
                 ]
             ],
             "deposit": 2014200000,
@@ -48998,6 +49162,48 @@
                 },
                 "twitter": {
                     "None": null
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
+    "13S541dQ5NXFCxSBqFUFghkCfUU6LsZUVem7z2tfvsJwWFys": [
+        {
+            "judgements": [
+                [
+                    3,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2012200000,
+            "info": {
+                "display": {
+                    "Raw": "P2P STAKING"
+                },
+                "legal": {
+                    "Raw": "P2P STAKING"
+                },
+                "web": {
+                    "Raw": "https://p2pstaking.org/"
+                },
+                "matrix": {
+                    "Raw": "@1l3c5:matrix.org"
+                },
+                "email": {
+                    "Raw": "contact@p2pstaking.org"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "Raw": "@P2pStaking"
                 },
                 "github": {
                     "None": null
@@ -53769,6 +53975,10 @@
                     {
                         "FeePaid": 0
                     }
+                ],
+                [
+                    3,
+                    "Reasonable"
                 ]
             ],
             "deposit": 2010100000,
@@ -60261,8 +60471,13 @@
     ],
     "14VUv8UR4uGsmXttUc2wzAtc3jV3zktehUDwcTHi5hB96TzF": [
         {
-            "judgements": [],
-            "deposit": 2013700000,
+            "judgements": [
+                [
+                    3,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2015700000,
             "info": {
                 "display": {
                     "Raw": "Parallel Finance 3"
@@ -60274,7 +60489,7 @@
                     "Raw": "https://www.parallel.fi"
                 },
                 "matrix": {
-                    "None": null
+                    "Raw": "@yuboruan:matrix.org"
                 },
                 "email": {
                     "Raw": "team@parallel.fi"
@@ -66315,6 +66530,48 @@
         },
         null
     ],
+    "1299EBDK3TSaQrGiNr3VVu3BniKJVKDsiUfcooStJfxp2Ssm": [
+        {
+            "judgements": [
+                [
+                    3,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2010200000,
+            "info": {
+                "display": {
+                    "Raw": "Alexandru Stefan"
+                },
+                "legal": {
+                    "Raw": "Alexandru Stefan"
+                },
+                "web": {
+                    "None": null
+                },
+                "matrix": {
+                    "None": null
+                },
+                "email": {
+                    "Raw": "stefan.i.alexandru@gmail.com"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "Raw": "AlexandruStefan"
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
     "14wu2VdLkhBMU5WcXqKTpif28WDjZeX9ceAUznnr342rqxnW": [
         {
             "judgements": [
@@ -66957,9 +67214,7 @@
             "judgements": [
                 [
                     4,
-                    {
-                        "FeePaid": 5000000000
-                    }
+                    "Reasonable"
                 ]
             ],
             "deposit": 2007100000,
@@ -79071,6 +79326,10 @@
                 [
                     3,
                     "Reasonable"
+                ],
+                [
+                    4,
+                    "Reasonable"
                 ]
             ],
             "deposit": 2008900000,
@@ -82974,6 +83233,10 @@
                 [
                     3,
                     "Reasonable"
+                ],
+                [
+                    4,
+                    "Reasonable"
                 ]
             ],
             "deposit": 2006800000,
@@ -84575,6 +84838,10 @@
                 [
                     3,
                     "Reasonable"
+                ],
+                [
+                    4,
+                    "Reasonable"
                 ]
             ],
             "deposit": 2012200000,
@@ -85951,6 +86218,48 @@
                 },
                 "twitter": {
                     "None": null
+                },
+                "github": {
+                    "None": null
+                },
+                "discord": {
+                    "None": null
+                }
+            }
+        },
+        null
+    ],
+    "13GivEUE2rpWnP2vXXyPzYHQdRK3ZsnCs9AFM86bqFJU5ju2": [
+        {
+            "judgements": [
+                [
+                    3,
+                    "Reasonable"
+                ]
+            ],
+            "deposit": 2008000000,
+            "info": {
+                "display": {
+                    "Raw": "Polkalotto"
+                },
+                "legal": {
+                    "Raw": "iliya pajkovic"
+                },
+                "web": {
+                    "None": null
+                },
+                "matrix": {
+                    "None": null
+                },
+                "email": {
+                    "Raw": "polkalotto@aol.com"
+                },
+                "pgp_fingerprint": null,
+                "image": {
+                    "None": null
+                },
+                "twitter": {
+                    "Raw": "@Polkalotto"
                 },
                 "github": {
                     "None": null
@@ -90884,9 +91193,7 @@
             "judgements": [
                 [
                     4,
-                    {
-                        "FeePaid": 5000000000
-                    }
+                    "Reasonable"
                 ]
             ],
             "deposit": 2007900000,
