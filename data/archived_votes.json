@@ -87,5 +87,68 @@
       }
     },
     "epoch": 1739798454
+  },
+  "1341035785272426527": {
+    "index": "1398",
+    "title": "Fine-tuned and Dedicated Onboarding Strategy into Polkadot",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798246
+  },
+  "1341035855586005043": {
+    "index": "1407",
+    "title": "Set Curators for Legal Bounty",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 1,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798263
+  },
+  "1341035952994386031": {
+    "index": "1413",
+    "title": "[Retroactive Funding] JAM GrayPaper Reader",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 2,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798286
   }
 }
