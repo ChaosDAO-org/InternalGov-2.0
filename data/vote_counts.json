@@ -94,7 +94,7 @@
       "Treasurer"
     ],
     "aye": 0,
-    "nay": 4,
+    "nay": 5,
     "recuse": 0,
     "users": {
       "1187317362551169045": {
@@ -111,6 +111,10 @@
       },
       "429359693576667145": {
         "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
         "vote_type": "nay"
       }
     },
@@ -280,7 +284,7 @@
     "origin": [
       "BigSpender"
     ],
-    "aye": 3,
+    "aye": 4,
     "nay": 0,
     "recuse": 1,
     "users": {
@@ -298,6 +302,10 @@
       },
       "961265753674358796": {
         "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
         "vote_type": "aye"
       }
     },
@@ -414,7 +422,7 @@
       "BigSpender"
     ],
     "aye": 0,
-    "nay": 6,
+    "nay": 7,
     "recuse": 0,
     "users": {
       "902124356841381890": {
@@ -439,6 +447,10 @@
       },
       "1187317362551169045": {
         "username": "marioschraepen_72989#0",
+        "vote_type": "nay"
+      },
+      "481710591052873728": {
+        "username": "rajraorane#0",
         "vote_type": "nay"
       }
     },
@@ -670,23 +682,6 @@
     },
     "epoch": 1740100608
   },
-  "1342549963175100528": {
-    "index": "1451",
-    "title": "SmallTipper",
-    "origin": [
-      "SmallTipper"
-    ],
-    "aye": 1,
-    "nay": 0,
-    "recuse": 0,
-    "users": {
-      "414770832062283787": {
-        "username": "wirednkod#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1740159255
-  },
   "1343371192232579133": {
     "index": "1453",
     "title": "Editorial Board in Spanish Cohort #2 Dec 2024 - May 2025",
@@ -694,11 +689,19 @@
       "SmallSpender"
     ],
     "aye": 0,
-    "nay": 1,
+    "nay": 3,
     "recuse": 0,
     "users": {
       "414770832062283787": {
         "username": "wirednkod#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
         "vote_type": "nay"
       }
     },

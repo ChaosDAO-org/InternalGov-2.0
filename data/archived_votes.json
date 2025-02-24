@@ -150,5 +150,22 @@
       }
     },
     "epoch": 1739798286
+  },
+  "1342549963175100528": {
+    "index": "1451",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740159255
   }
 }

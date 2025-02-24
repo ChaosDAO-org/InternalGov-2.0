@@ -92,8 +92,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "aye",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:01.133005+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -113,8 +113,8 @@
             "nay": 2,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:01.635790+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -131,11 +131,11 @@
         "decision_period_passed": false,
         "1st_vote": {
             "aye": 0,
-            "nay": 4,
+            "nay": 5,
             "recuse": 0,
             "vote_type": "nay",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:02.138390+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -176,8 +176,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:02.640901+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -197,8 +197,8 @@
             "nay": 1,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:03.143257+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -218,8 +218,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:03.645367+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -239,8 +239,8 @@
             "nay": 1,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:04.147363+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -260,8 +260,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:04.649883+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -281,8 +281,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:05.152225+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -302,8 +302,8 @@
             "nay": 1,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:05.654741+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -323,8 +323,8 @@
             "nay": 2,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:06.157107+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -344,8 +344,8 @@
             "nay": 1,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:06.659495+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -361,12 +361,12 @@
         "origin": "BigSpender",
         "decision_period_passed": false,
         "1st_vote": {
-            "aye": 3,
+            "aye": 4,
             "nay": 0,
             "recuse": 1,
-            "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "vote_type": "aye",
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:07.161575+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -386,8 +386,8 @@
             "nay": 4,
             "recuse": 0,
             "vote_type": "nay",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:07.663653+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -407,8 +407,8 @@
             "nay": 2,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:08.165622+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -428,8 +428,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:08.667807+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -449,8 +449,8 @@
             "nay": 0,
             "recuse": 1,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:09.170073+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -467,11 +467,11 @@
         "decision_period_passed": false,
         "1st_vote": {
             "aye": 0,
-            "nay": 6,
+            "nay": 7,
             "recuse": 0,
             "vote_type": "nay",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:09.673463+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -491,8 +491,8 @@
             "nay": 1,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:10.177439+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -512,8 +512,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:10.680053+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -533,8 +533,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:11.182335+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -554,8 +554,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:11.684832+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -575,8 +575,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:12.186717+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -596,8 +596,8 @@
             "nay": 2,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:12.688812+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -617,8 +617,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:13.191299+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -638,8 +638,8 @@
             "nay": 1,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:13.693311+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -680,8 +680,8 @@
             "nay": 0,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:14.195819+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -697,12 +697,12 @@
         "origin": "MediumSpender",
         "decision_period_passed": false,
         "1st_vote": {
-            "aye": "",
-            "nay": "",
-            "recuse": "",
-            "vote_type": "",
-            "extrinsic": "",
-            "timestamp": ""
+            "aye": 0,
+            "nay": 2,
+            "recuse": 0,
+            "vote_type": "abstain",
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:14.697889+00:00"
         },
         "2nd_vote": {
             "aye": "",
@@ -764,8 +764,8 @@
             "nay": 2,
             "recuse": 0,
             "vote_type": "abstain",
-            "extrinsic": "",
-            "timestamp": ""
+            "extrinsic": "0xe91941c8902046e5f829726d6ad3e9481a42bb223c7e37a067bb29bb7db029e6",
+            "timestamp": "2025-02-24 16:44:15.200425+00:00"
         },
         "2nd_vote": {
             "aye": "",
