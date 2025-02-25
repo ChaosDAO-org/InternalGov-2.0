@@ -765,25 +765,30 @@ class GovernanceMonitor(discord.Client):
         proposal_elapsed_time = int(current_time - (proposal_epoch / 1000))
 
         decision_period_seconds = origin["decision_period"] * SECONDS_IN_A_DAY
-        internal_vote_period = origin["internal_vote_period"] * SECONDS_IN_A_DAY
-        revote_period = origin["revote_period"] * SECONDS_IN_A_DAY
+        cast_1st_vote = origin["internal_vote_period"] * SECONDS_IN_A_DAY
+        cast_2nd_vote = origin["revote_period"] * SECONDS_IN_A_DAY
 
-        _1st_vote = proposal_elapsed_time >= internal_vote_period
-        _2nd_vote = proposal_elapsed_time >= revote_period
+        _1st_vote = proposal_elapsed_time >= cast_1st_vote
+        _2nd_vote = proposal_elapsed_time >= cast_2nd_vote
 
-        if proposal_elapsed_time < internal_vote_period and self.config.MIN_PARTICIPATION > 0:
+        if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0:
             total_votes = vote_data['aye'] + vote_data['nay']
             participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
-            one_day_before_voting = (internal_vote_period - proposal_elapsed_time) <= SECONDS_IN_A_DAY
+            one_day_before_voting = (cast_1st_vote - proposal_elapsed_time) <= SECONDS_IN_A_DAY
             if not participation['meets_minimum'] and one_day_before_voting:
                 minimum_required_voters = participation['min_required_voters']
                 voted_left_until_quorum = minimum_required_voters - total_votes
-                seconds_left_until = (internal_vote_period - proposal_elapsed_time)
+                seconds_left_until = (cast_1st_vote - proposal_elapsed_time)
                 d, h, m = await self.seconds_to_dhm(seconds_left_until)
 
                 voter_role = await self.create_or_get_role(self.get_guild(self.config.DISCORD_SERVER_ID), self.config.DISCORD_VOTER_ROLE)
                 thread_channel = self.get_channel(self.config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(thread_id))
-                await thread_channel.send(content=f":rotating_light: Insufficient participation: <@&{voter_role.id}>\n\nOut of {total_members} members, only {participation['total_vote_count']} voted. {voted_left_until_quorum} or more votes required! `MIN_PARTICIPATION={self.config.MIN_PARTICIPATION}%`\n\nTime left: {d} **d** {h} **h** {m} **mins** left until the first vote is cast on-chain.")
+                await thread_channel.send(content=f":rotating_light: <@&{voter_role.id}> - Insufficient participation\n\n"
+                                                  f"We're falling short on participation - {participation['total_vote_count']} out of {total_members} members have voted so far\n\n"
+                                                  f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum theshold, and right now we're only at: "
+                                                  f"`{participation['actual_participation_percentage']}%`\n"
+                                                  f"- {voted_left_until_quorum} or more votes needed\n\n"
+                                                  f":ballot_box: `{d}` **d** `{h}` **h** `{m}` **mins** left until the first vote is cast on-chain.")
 
         if proposal_elapsed_time >= decision_period_seconds:
             return 0, "Vote period has ended."
@@ -797,7 +802,7 @@ class GovernanceMonitor(discord.Client):
             return 2, vote
 
         if not _1st_vote:
-            return 99, f"Waiting for 1st vote conditions to be met. is {proposal_elapsed_time} > {internal_vote_period}?"
+            return 99, f"Waiting for 1st vote conditions to be met. is {proposal_elapsed_time} > {cast_1st_vote}?"
 
     async def on_error(self, event, *args, **kwargs):
         exc = sys.exc_info()
