@@ -204,7 +204,8 @@ class GovernanceMonitor(discord.Client):
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
 
-    def check_minimum_participation(self, total_members, total_vote_count, min_participation):
+    @staticmethod
+    def check_minimum_participation(total_members, total_vote_count, min_participation):
         """
         Check if the vote meets minimum participation requirements using ceiling for quorum.
 
@@ -262,10 +263,11 @@ class GovernanceMonitor(discord.Client):
             return {}
 
     @staticmethod
-    def load_governance_cache():
+    async def load_governance_cache():
         try:
-            with open("../data/governance.cache", "r") as file:
-                return json.load(file)
+            async with aiofiles.open("../data/governance.cache", "r") as file:
+                data = await file.read()
+                return json.loads(data)
         except FileNotFoundError:
             return {}
 
@@ -788,7 +790,8 @@ class GovernanceMonitor(discord.Client):
                                                   f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum theshold, and right now we're only at: "
                                                   f"`{participation['actual_participation_percentage']}%`\n"
                                                   f"- {voted_left_until_quorum} or more votes needed\n\n"
-                                                  f":ballot_box: `{d}` **d** `{h}` **h** `{m}` **mins** left until the first vote is cast on-chain.")
+                                                  f":ballot_box: `{d}` **d** `{h}` **h** `{m}` **mins** left until the proposal is {origin['internal_vote_period']} days old. "
+                                                  f"`Abstain` will be cast if the participation continues to be insufficient.")
 
         if proposal_elapsed_time >= decision_period_seconds:
             return 0, "Vote period has ended."

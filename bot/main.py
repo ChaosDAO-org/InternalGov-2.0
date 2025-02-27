@@ -252,7 +252,7 @@ async def autonomous_voting():
         vote_periods = await client.load_vote_periods(network=config.NETWORK_NAME.lower())
 
         total_members = await client.total_member_contributors(guild=config.DISCORD_SERVER_ID, role_name=config.DISCORD_VOTER_ROLE)
-        governance_cache = client.load_governance_cache()
+        governance_cache = await client.load_governance_cache()
         governance_cache_keys = governance_cache.keys()
 
         channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
