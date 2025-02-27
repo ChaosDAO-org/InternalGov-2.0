@@ -204,7 +204,8 @@ class GovernanceMonitor(discord.Client):
             return "The vote is currently inconclusive with {:.2%} **AYE**, {:.2%} **NAY**".format(
                 aye_percentage, nay_percentage)
 
-    def check_minimum_participation(self, total_members, total_vote_count, min_participation):
+    @staticmethod
+    def check_minimum_participation(total_members, total_vote_count, min_participation):
         """
         Check if the vote meets minimum participation requirements using ceiling for quorum.
 
@@ -213,8 +214,15 @@ class GovernanceMonitor(discord.Client):
             total_vote_count (int): Number of members who have voted
             min_participation (float): Required participation percentage (e.g., 15 for 15%)
 
-        Returns:
-            tuple: (bool: meets minimum requirement, float: actual participation percentage)
+        str: JSON string containing:
+            {
+                "meets_minimum": bool,
+                "total_members": int,
+                "total_vote_count": int,
+                "min_participation_required": float,
+                "min_required_voters": int,
+                "actual_participation_percentage": float
+            }
         """
         # Calculate minimum required voters using ceiling
         min_required_voters = ceil(total_members * (min_participation / 100))
@@ -225,12 +233,16 @@ class GovernanceMonitor(discord.Client):
         # Check if we meet the minimum
         meets_minimum = total_vote_count >= min_required_voters
 
-        self.logger.info(f"Members: {total_members} | "
-                         f"Votes: {total_vote_count} | "
-                         f"Min Required: {min_participation}% ({min_required_voters} voters) | "
-                         f"Current: {participation_percentage:.2f}% | "
-                         f"Meets Min: {meets_minimum}")
-        return meets_minimum, participation_percentage
+        result = {
+            "meets_minimum": meets_minimum,
+            "total_members": total_members,
+            "total_vote_count": total_vote_count,
+            "min_participation_required": min_participation,
+            "min_required_voters": min_required_voters,
+            "actual_participation_percentage": round(participation_percentage, 2)
+        }
+
+        return result
 
     @staticmethod
     async def load_vote_counts():
@@ -251,10 +263,11 @@ class GovernanceMonitor(discord.Client):
             return {}
 
     @staticmethod
-    def load_governance_cache():
+    async def load_governance_cache():
         try:
-            with open("../data/governance.cache", "r") as file:
-                return json.load(file)
+            async with aiofiles.open("../data/governance.cache", "r") as file:
+                data = await file.read()
+                return json.loads(data)
         except FileNotFoundError:
             return {}
 
@@ -654,6 +667,29 @@ class GovernanceMonitor(discord.Client):
             self.logger.error(f"HTTP error while creating role {role_name} in guild {guild.id}: {e}")
             raise  # You can raise the exception or return None based on your use case
 
+    @staticmethod
+    async def seconds_to_dhm(seconds):
+        """
+        Converts seconds into a formatted string showing days, hours and minutes.
+
+        Args:
+           seconds (int): Total number of seconds to convert
+
+        Returns:
+            tuple: Contains:
+                days (int): Number of complete days
+                hours (int): Remaining hours after days (0-23)
+                minutes (int): Remaining minutes after hours (0-59)
+                seconds (int): Remaining seconds after minutes (0-59)
+        """
+        days = seconds // (24 * 3600)
+        remaining_seconds = seconds % (24 * 3600)
+        hours = remaining_seconds // 3600
+        remaining_seconds = remaining_seconds % 3600
+        minutes = remaining_seconds // 60
+
+        return days, hours, minutes
+
     async def set_voting_button_lock_status(self, threads, lock: bool):
         if threads:
             self.logger.info(f"{len(threads)} threads to {'lock' if lock else 'unlock'}")
@@ -697,17 +733,16 @@ class GovernanceMonitor(discord.Client):
         except Exception as e:
             self.logger.error(f"An error occurred while locking threads: {str(e)}")
 
-    async def calculate_proxy_vote(self, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
+    async def calculate_proxy_vote(self, total_members: int, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
         """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
         total_votes = aye_votes + nay_votes
 
         # Default to abstain if the turnout internally is <= config.MIN_PARTICIPATION
         # Set to 0 to turn off this feature
         if self.config.MIN_PARTICIPATION > 0:
-            total_members = await self.total_member_contributors(guild=self.config.DISCORD_SERVER_ID, role_name=self.config.DISCORD_VOTER_ROLE)
-            meets_minimum, participation_percentage = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
+            participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes,  min_participation=self.config.MIN_PARTICIPATION)
 
-            if not meets_minimum:
+            if not participation['meets_minimum']:
                 self.logger.warning("Participation too low, defaulting to Abstain")
                 return "abstain"
 
@@ -724,33 +759,53 @@ class GovernanceMonitor(discord.Client):
         else:
             return "abstain"
 
-    async def determine_vote_action(self, vote_data: Dict[str, Any], origin: Dict[str, Any], proposal_epoch: int):
+    async def determine_vote_action(self, thread_id: int, total_members: int, vote_data: Dict[str, Any], origin: Dict[str, Any], proposal_epoch: int):
         """ Determine the appropriate vote action based on elapsed time since epoch and role periods. """
         SECONDS_IN_A_DAY = 86400
         current_time = int(time.time())
 
-        elapsed_time = int(current_time - (proposal_epoch / 1000))
+        proposal_elapsed_time = int(current_time - (proposal_epoch / 1000))
 
         decision_period_seconds = origin["decision_period"] * SECONDS_IN_A_DAY
-        internal_vote_period = origin["internal_vote_period"] * SECONDS_IN_A_DAY
-        revote_period = origin["revote_period"] * SECONDS_IN_A_DAY
+        cast_1st_vote = origin["internal_vote_period"] * SECONDS_IN_A_DAY
+        cast_2nd_vote = origin["revote_period"] * SECONDS_IN_A_DAY
 
-        _1st_vote = elapsed_time >= internal_vote_period
-        _2nd_vote = elapsed_time >= revote_period
+        _1st_vote = proposal_elapsed_time >= cast_1st_vote
+        _2nd_vote = proposal_elapsed_time >= cast_2nd_vote
 
-        if elapsed_time >= decision_period_seconds:
+        if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0:
+            total_votes = vote_data['aye'] + vote_data['nay']
+            participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
+            one_day_before_voting = (cast_1st_vote - proposal_elapsed_time) <= SECONDS_IN_A_DAY
+            if not participation['meets_minimum'] and one_day_before_voting:
+                minimum_required_voters = participation['min_required_voters']
+                voted_left_until_quorum = minimum_required_voters - total_votes
+                seconds_left_until = (cast_1st_vote - proposal_elapsed_time)
+                d, h, m = await self.seconds_to_dhm(seconds_left_until)
+
+                voter_role = await self.create_or_get_role(self.get_guild(self.config.DISCORD_SERVER_ID), self.config.DISCORD_VOTER_ROLE)
+                thread_channel = self.get_channel(self.config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(thread_id))
+                await thread_channel.send(content=f":rotating_light: <@&{voter_role.id}> - Insufficient participation\n\n"
+                                                  f"We're falling short on participation - {participation['total_vote_count']} out of {total_members} members have voted so far\n\n"
+                                                  f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum theshold, and right now we're only at: "
+                                                  f"`{participation['actual_participation_percentage']}%`\n"
+                                                  f"- {voted_left_until_quorum} or more votes needed\n\n"
+                                                  f":ballot_box: `{d}` **d** `{h}` **h** `{m}` **mins** left until the proposal is {origin['internal_vote_period']} days old. "
+                                                  f"`Abstain` will be cast if the participation continues to be insufficient.")
+
+        if proposal_elapsed_time >= decision_period_seconds:
             return 0, "Vote period has ended."
 
         if _1st_vote and not _2nd_vote:
-            vote = await self.calculate_proxy_vote(aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
+            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
             return 1, vote
 
         if _1st_vote and _2nd_vote:
-            vote = await self.calculate_proxy_vote(aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
+            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
             return 2, vote
 
         if not _1st_vote:
-            return 99, f"Waiting for 1st vote conditions to be met. is {elapsed_time} > {internal_vote_period}?"
+            return 99, f"Waiting for 1st vote conditions to be met. is {proposal_elapsed_time} > {cast_1st_vote}?"
 
     async def on_error(self, event, *args, **kwargs):
         exc = sys.exc_info()
