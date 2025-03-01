@@ -733,9 +733,9 @@ class GovernanceMonitor(discord.Client):
         except Exception as e:
             self.logger.error(f"An error occurred while locking threads: {str(e)}")
 
-    async def calculate_proxy_vote(self, total_members: int, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
+    async def calculate_proxy_vote(self, total_members: int, aye_votes: int, nay_votes: int, recuse_votes: int, threshold: float = 0.66) -> str:
         """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
-        total_votes = aye_votes + nay_votes
+        total_votes = aye_votes + nay_votes + recuse_votes
 
         # Default to abstain if the turnout internally is <= config.MIN_PARTICIPATION
         # Set to 0 to turn off this feature
@@ -774,7 +774,7 @@ class GovernanceMonitor(discord.Client):
         _2nd_vote = proposal_elapsed_time >= cast_2nd_vote
 
         if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0:
-            total_votes = vote_data['aye'] + vote_data['nay']
+            total_votes = vote_data['aye'] + vote_data['nay'] + vote_data['recuse']
             participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
             one_day_before_voting = (cast_1st_vote - proposal_elapsed_time) <= SECONDS_IN_A_DAY
             if not participation['meets_minimum'] and one_day_before_voting:
@@ -787,7 +787,7 @@ class GovernanceMonitor(discord.Client):
                 thread_channel = self.get_channel(self.config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(thread_id))
                 await thread_channel.send(content=f":rotating_light: <@&{voter_role.id}> - Insufficient participation\n\n"
                                                   f"We're falling short on participation - {participation['total_vote_count']} out of {total_members} members have voted so far\n\n"
-                                                  f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum theshold, and right now we're only at: "
+                                                  f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum threshold, and right now we're only at: "
                                                   f"`{participation['actual_participation_percentage']}%`\n"
                                                   f"- {voted_left_until_quorum} or more votes needed\n\n"
                                                   f":ballot_box: `{d}` **d** `{h}` **h** `{m}` **mins** left until the proposal is {origin['internal_vote_period']} days old. "
@@ -797,11 +797,11 @@ class GovernanceMonitor(discord.Client):
             return 0, "Vote period has ended."
 
         if _1st_vote and not _2nd_vote:
-            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
+            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'], recuse_votes=vote_data['recuse'])
             return 1, vote
 
         if _1st_vote and _2nd_vote:
-            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'])
+            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'], recuse_votes=vote_data['recuse'])
             return 2, vote
 
         if not _1st_vote:
