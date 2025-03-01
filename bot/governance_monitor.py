@@ -787,7 +787,7 @@ class GovernanceMonitor(discord.Client):
                 thread_channel = self.get_channel(self.config.DISCORD_FORUM_CHANNEL_ID).get_thread(int(thread_id))
                 await thread_channel.send(content=f":rotating_light: <@&{voter_role.id}> - Insufficient participation\n\n"
                                                   f"We're falling short on participation - {participation['total_vote_count']} out of {total_members} members have voted so far\n\n"
-                                                  f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum theshold, and right now we're only at: "
+                                                  f"We need at least `{self.config.MIN_PARTICIPATION}%` participation to meet our minimum threshold, and right now we're only at: "
                                                   f"`{participation['actual_participation_percentage']}%`\n"
                                                   f"- {voted_left_until_quorum} or more votes needed\n\n"
                                                   f":ballot_box: `{d}` **d** `{h}` **h** `{m}` **mins** left until the proposal is {origin['internal_vote_period']} days old. "
