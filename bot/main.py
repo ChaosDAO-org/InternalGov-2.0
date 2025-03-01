@@ -783,7 +783,7 @@ if __name__ == '__main__':
                     recuse = vote_counts.get(str(channel.id), {}).get('recuse', {})
                     origin = vote_counts.get(str(channel.id), {}).get('origin', {})
 
-                    vote = await client.calculate_proxy_vote(total_members=total_members, aye_votes=aye, nay_votes=nay)
+                    vote = await client.calculate_proxy_vote(total_members=total_members, aye_votes=aye, nay_votes=nay, recuse_votes=recuse)
                     role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
                     await asyncio.sleep(0.5)
 
