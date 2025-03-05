@@ -285,6 +285,13 @@ class GovernanceMonitor(discord.Client):
         async with aiofiles.open("../data/vote_counts.json", "w") as file:
             await file.write(json.dumps(self.vote_counts, indent=4))
 
+    @staticmethod
+    async def save_member_records(members):
+        member_data = [{"id": member.id, "username": member.name, "display name": member.display_name} for member in members]
+
+        async with aiofiles.open("../data/members.json", "w") as file:
+            await file.write(json.dumps(member_data, indent=4))
+
     async def set_buttons_lock_status(self, channel, message_ids, lock_status):
         self.logger.info(f"Setting buttons lock status to {lock_status} for channel ID {channel} and message IDs {message_ids}")
         self.logger.info(f"Channel type: {type(channel)}, attributes: {dir(channel)}")
@@ -631,15 +638,59 @@ class GovernanceMonitor(discord.Client):
 
         return governance_tag
 
-    async def total_member_contributors(self, guild, role_name):
+    async def fetch_and_save_members(self, guild, role_name):
+        """
+        Fetch members with a specific role from a guild and save their records.
 
+        Args:
+            guild (int or discord.Guild): The guild ID or guild object to query.
+            role_name (str): The name of the role to fetch members from.
+
+        Returns:
+            list: A list of member IDs who have the specified role.
+
+        Note:
+            This function requires the bot to have the 'members' intent enabled.
+            The function also calls self.save_member_records() to persist member data.
+        """
         try:
             guild = self.get_guild(guild)
             existing_role = discord.utils.get(guild.roles, name=role_name)
-            total_members = guild.get_role(existing_role.id).members
+            members = guild.get_role(existing_role.id).members
 
             if existing_role:
-                member_count = len(total_members)
+                await self.save_member_records(members=members)
+
+                member_ids = [member.id for member in members]
+                return member_ids
+        except discord.Forbidden:
+            self.logger.error(f"Permission error: Unable to fetch members from {role_name} in guild {guild.id}")
+            raise
+        except discord.HTTPException as e:
+            self.logger.error(f"HTTP error while fetching members from {role_name} in guild {guild.id}: {e}")
+            raise
+
+    async def get_total_members(self, guild, role_name):
+        """
+        Retrieve the total number of members with a specific role in a guild.
+
+        Args:
+            guild (int or discord.Guild): The guild ID or guild object to query.
+            role_name (str): The name of the role to count members for.
+
+        Returns:
+            int: The number of members with the specified role.
+
+        Note:
+            This function requires the bot to have the 'members' intent enabled.
+        """
+        try:
+            guild = self.get_guild(guild)
+            existing_role = discord.utils.get(guild.roles, name=role_name)
+            members = guild.get_role(existing_role.id).members
+
+            if existing_role:
+                member_count = len(members)
                 return member_count
         except discord.Forbidden:
             self.logger.error(f"Permission error: Unable to get total members from {role_name} in guild {guild.id}")
@@ -733,14 +784,15 @@ class GovernanceMonitor(discord.Client):
         except Exception as e:
             self.logger.error(f"An error occurred while locking threads: {str(e)}")
 
-    async def calculate_proxy_vote(self, total_members: int, aye_votes: int, nay_votes: int, recuse_votes: int, threshold: float = 0.66) -> str:
+    async def calculate_proxy_vote(self, aye_votes: int, nay_votes: int, recuse_votes: int, threshold: float = 0.66) -> str:
         """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
-        total_votes = aye_votes + nay_votes + recuse_votes
+        total_votes = aye_votes + nay_votes
 
         # Default to abstain if the turnout internally is <= config.MIN_PARTICIPATION
         # Set to 0 to turn off this feature
         if self.config.MIN_PARTICIPATION > 0:
-            participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes,  min_participation=self.config.MIN_PARTICIPATION)
+            total_members = await self.get_total_members(guild=self.config.DISCORD_SERVER_ID, role_name=self.config.DISCORD_VOTER_ROLE)
+            participation = self.check_minimum_participation(total_members=total_members, total_vote_count=aye_votes + nay_votes + recuse_votes, min_participation=self.config.MIN_PARTICIPATION)
 
             if not participation['meets_minimum']:
                 self.logger.warning("Participation too low, defaulting to Abstain")
@@ -759,7 +811,7 @@ class GovernanceMonitor(discord.Client):
         else:
             return "abstain"
 
-    async def determine_vote_action(self, thread_id: int, total_members: int, vote_data: Dict[str, Any], origin: Dict[str, Any], proposal_epoch: int):
+    async def determine_vote_action(self, thread_id: int, vote_data: Dict[str, Any], origin: Dict[str, Any], proposal_epoch: int):
         """ Determine the appropriate vote action based on elapsed time since epoch and role periods. """
         SECONDS_IN_A_DAY = 86400
         current_time = int(time.time())
@@ -774,6 +826,7 @@ class GovernanceMonitor(discord.Client):
         _2nd_vote = proposal_elapsed_time >= cast_2nd_vote
 
         if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0:
+            total_members = await self.get_total_members(guild=self.config.DISCORD_SERVER_ID, role_name=self.config.DISCORD_VOTER_ROLE)
             total_votes = vote_data['aye'] + vote_data['nay'] + vote_data['recuse']
             participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
             one_day_before_voting = (cast_1st_vote - proposal_elapsed_time) <= SECONDS_IN_A_DAY
@@ -797,11 +850,11 @@ class GovernanceMonitor(discord.Client):
             return 0, "Vote period has ended."
 
         if _1st_vote and not _2nd_vote:
-            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'], recuse_votes=vote_data['recuse'])
+            vote = await self.calculate_proxy_vote(aye_votes=vote_data['aye'], nay_votes=vote_data['nay'], recuse_votes=vote_data['recuse'])
             return 1, vote
 
         if _1st_vote and _2nd_vote:
-            vote = await self.calculate_proxy_vote(total_members=total_members, aye_votes=vote_data['aye'], nay_votes=vote_data['nay'], recuse_votes=vote_data['recuse'])
+            vote = await self.calculate_proxy_vote(aye_votes=vote_data['aye'], nay_votes=vote_data['nay'], recuse_votes=vote_data['recuse'])
             return 2, vote
 
         if not _1st_vote:
