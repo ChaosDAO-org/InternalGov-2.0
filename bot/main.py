@@ -246,7 +246,7 @@ async def autonomous_voting():
         await client.wait_until_ready()
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
         await client.disable_command(command_name='forcevote', guild_id=config.DISCORD_SERVER_ID)
-        await client.fetch_and_save_members(guild=config.DISCORD_SERVER_ID, role_name=config.DISCORD_VOTER_ROLE)
+        await client.get_voting_members(guild=config.DISCORD_SERVER_ID, role_name=config.DISCORD_VOTER_ROLE, save_records=True)
         vote_counts = await client.load_vote_counts()
         onchain_votes = await client.load_onchain_votes()
         onchain_votes_length = len(str(onchain_votes))
