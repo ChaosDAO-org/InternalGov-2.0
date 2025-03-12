@@ -25,7 +25,9 @@ class SubstrateAPI:
             try:
                 if not self.substrate:
                     self.logger.info(f"{caller_info} - Initializing SubstrateInterface object: {wss}")
-                    self.substrate = SubstrateInterface(url=wss)
+                    self.substrate = SubstrateInterface(url=wss, ws_options={
+                        'timeout': 5
+                    })
 
                     await asyncio.wait_for(
                         asyncio.to_thread(
