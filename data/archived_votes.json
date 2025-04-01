@@ -167,5 +167,1706 @@
       }
     },
     "epoch": 1740159255
+  },
+  "1341035737788710985": {
+    "index": "1388",
+    "title": "Technical & Marketing Partnership - Polkadot & Team Vitality to revolutionize esports fan engagement thanks to Web3!",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798235
+  },
+  "1341036417794576416": {
+    "index": "1435",
+    "title": "DON'T VOTE or ADD DECISION DEPOSIT, ALLOW IT TIMEOUT.",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798397
+  },
+  "1341036464619913269": {
+    "index": "1437",
+    "title": "Don't vote here. Vote on #1436 instead",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798408
+  },
+  "1342303983955349575": {
+    "index": "1450",
+    "title": "Tip for Managing Polkadot Portugal Channels",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1740100608
+  },
+  "1343990264632447127": {
+    "index": "1454",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
+        "vote_type": "aye"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740502649
+  },
+  "1341036559109066784": {
+    "index": "1441",
+    "title": "Polkadot Community Foundation: Conditions on transferring funds to Centrifuge-related instruments",
+    "origin": [
+      "WishForChange"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "834394687346966590": {
+        "username": "zsofi_m#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798431
+  },
+  "1341036588494225419": {
+    "index": "1442",
+    "title": "Please ignore",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798438
+  },
+  "1344805634671116328": {
+    "index": "1460",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740697048
+  },
+  "1344352679224283171": {
+    "index": "1457",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 6,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "173828910453096448": {
+        "username": "krayt78#0",
+        "vote_type": "aye"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740589056
+  },
+  "1341036610988277831": {
+    "index": "1443",
+    "title": "None",
+    "origin": [
+      "ReferendumCanceller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798443
+  },
+  "1341036633092522055": {
+    "index": "1444",
+    "title": "None",
+    "origin": [
+      "ReferendumKiller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798448
+  },
+  "1341035808760528896": {
+    "index": "1401",
+    "title": "Tip for Six",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 1,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798252
+  },
+  "1341036441269960705": {
+    "index": "1436",
+    "title": "[Whitelisted Caller] Update schedulerParams.lookahead configuration parameter to 3",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798403
+  },
+  "1341036223279530044": {
+    "index": "1424",
+    "title": "Emergency Response Plan for Securing 200,000 DOT",
+    "origin": [
+      "Root"
+    ],
+    "aye": 1,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798351
+  },
+  "1344352654549319701": {
+    "index": "1456",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 3,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
+        "vote_type": "aye"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740589050
+  },
+  "1344986832168816792": {
+    "index": "1461",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1740740249
+  },
+  "1344715043069231157": {
+    "index": "1459",
+    "title": "Polkadot Runtime Upgrade to v1.4.1",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 3,
+    "nay": 0,
+    "recuse": 1,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "aye"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "recuse"
+      }
+    },
+    "epoch": 1740675450
+  },
+  "1345802202341703712": {
+    "index": "1467",
+    "title": "Retroactive Tip For Solo Content Creation-3",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 1,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "219856741205016576": {
+        "username": "juanirios99#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740934649
+  },
+  "1341035903459659828": {
+    "index": "1411",
+    "title": "Spanish Bounty V3",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 3,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "219856741205016576": {
+        "username": "juanirios99#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798275
+  },
+  "1341896298894196848": {
+    "index": "1448",
+    "title": "Investment in High-Performance AI Infrastructure for Community Access",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 0,
+    "nay": 8,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "nay"
+      },
+      "389129955482533889": {
+        "username": "recrafter#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "nay"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "nay"
+      },
+      "690342375431995613": {
+        "username": "luiz_lvj#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1740003409
+  },
+  "1341036078848802837": {
+    "index": "1418",
+    "title": "[Whitelisted Caller] Increasing nDelayTranches from 89 to 213",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798317
+  },
+  "1341035878922977402": {
+    "index": "1410",
+    "title": "RegionX - Coretime Marketplace Production Deployment Phase 1",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 8,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "aye"
+      },
+      "389129955482533889": {
+        "username": "recrafter#0",
+        "vote_type": "aye"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798269
+  },
+  "1346798767176810516": {
+    "index": "1473",
+    "title": "Tip: Strindbergman (ETHDEVNER)",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1741172248
+  },
+  "1346436383325290516": {
+    "index": "1470",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 1,
+    "users": {
+      "219856741205016576": {
+        "username": "juanirios99#0",
+        "vote_type": "aye"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "aye"
+      },
+      "757783770861535255": {
+        "username": "facundofarall#0",
+        "vote_type": "aye"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
+        "vote_type": "aye"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "recuse"
+      }
+    },
+    "epoch": 1741085849
+  },
+  "1346436406045708318": {
+    "index": "1471",
+    "title": "SmallTipper",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 5,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "219856741205016576": {
+        "username": "juanirios99#0",
+        "vote_type": "aye"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "aye"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "757783770861535255": {
+        "username": "facundofarall#0",
+        "vote_type": "aye"
+      },
+      "900725271878058016": {
+        "username": "justadev#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741085855
+  },
+  "1341036103653916753": {
+    "index": "1419",
+    "title": "None",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798322
+  },
+  "1341036127217254401": {
+    "index": "1420",
+    "title": "SQD (fka Subsquid) - Public data indexing Infrastructure for Polkadot and Kusama (Q2 2024)",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1739798328
+  },
+  "1341036149338013739": {
+    "index": "1421",
+    "title": "Volmex Protocol Integration with Polkadot DEX Ecosystem",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 3,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798333
+  },
+  "1341036172344037470": {
+    "index": "1422",
+    "title": "Polkadot Anti-Scam Team 2025 Top-up",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798339
+  },
+  "1341036535012917248": {
+    "index": "1440",
+    "title": "Giant Squid Phase 2",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798425
+  },
+  "1347704742226296842": {
+    "index": "1479",
+    "title": "Polkadot/ Kusama Asset Hub Liquidity for Bridge Fee Swaps",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1741388250
+  },
+  "1341036271119761490": {
+    "index": "1426",
+    "title": "Polkadot Decoded 2024 post-event report",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 2,
+    "nay": 7,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "nay"
+      },
+      "389129955482533889": {
+        "username": "recrafter#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "aye"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "nay"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798362
+  },
+  "1341036322348863518": {
+    "index": "1428",
+    "title": "Polkadot Growth Initiative  (Revised)",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 4,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "nay"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798374
+  },
+  "1341036198734467103": {
+    "index": "1423",
+    "title": "ParaXerve NFT Marketplace Development",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 1,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798345
+  },
+  "1345847502917603410": {
+    "index": "1468",
+    "title": "Upgrade Snowbridge Gateway Contract",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "757783770861535255": {
+        "username": "facundofarall#0",
+        "vote_type": "aye"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      },
+      "1179804872615403551": {
+        "username": "tobiasdemeco#0",
+        "vote_type": "aye"
+      },
+      "481710591052873728": {
+        "username": "rajraorane#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740945449
+  },
+  "1344443245253361777": {
+    "index": "1458",
+    "title": "Parallel Finance Round Two; Is Polkadot Tech-fellows over-involved?",
+    "origin": [
+      "WishForChange"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1740610648
+  },
+  "1341036395086741597": {
+    "index": "1434",
+    "title": "Please vote Nay",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 1,
+    "nay": 9,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "389129955482533889": {
+        "username": "recrafter#0",
+        "vote_type": "nay"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "nay"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "nay"
+      },
+      "481710591052873728": {
+        "username": "rajraorane#0",
+        "vote_type": "nay"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "nay"
+      },
+      "690342375431995613": {
+        "username": "luiz_lvj#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798392
+  },
+  "1341036031256039506": {
+    "index": "1416",
+    "title": "Polkadot Community Foundation: Allow the Marketing Bounty to Execute Formal Contracts through the Polkadot Community Foundation",
+    "origin": [
+      "WishForChange"
+    ],
+    "aye": 1,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798305
+  },
+  "1341036054815183002": {
+    "index": "1417",
+    "title": "Closing Bounty 49. Technical Support Bounty.",
+    "origin": [
+      "Treasurer"
+    ],
+    "aye": 5,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "aye"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "1182953283111890964": {
+        "username": "paulinecohenv#0",
+        "vote_type": "aye"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798311
+  },
+  "1341036371615158273": {
+    "index": "1433",
+    "title": "Vehicle Data on Asset Hub (We're All Gonna Own It)",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 7,
+    "nay": 0,
+    "recuse": 2,
+    "users": {
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "recuse"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "548618495383044129": {
+        "username": "danicuki#0",
+        "vote_type": "aye"
+      },
+      "690342375431995613": {
+        "username": "luiz_lvj#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "799575445896298558": {
+        "username": "daiagi#0",
+        "vote_type": "recuse"
+      },
+      "1179804872615403551": {
+        "username": "tobiasdemeco#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798386
+  },
+  "1341036702604460133": {
+    "index": "1447",
+    "title": "SQD (fka Subsquid) - Public data indexing Infrastructure for Polkadot and Kusama (Q2 2024)",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798465
+  },
+  "1341035927505469464": {
+    "index": "1412",
+    "title": "Polkadot + Brave Wallet: Driving Adoption Through Native Integration",
+    "origin": [
+      "Treasurer"
+    ],
+    "aye": 0,
+    "nay": 5,
+    "recuse": 0,
+    "users": {
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "389129955482533889": {
+        "username": "recrafter#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798280
+  },
+  "1348248321202061313": {
+    "index": "1482",
+    "title": "Motorsport Sponsoring Superbike / Polkadot Racesuit",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 0,
+    "nay": 6,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "nay"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "nay"
+      },
+      "325717384130199552": {
+        "username": "isubotic#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1741517849
+  },
+  "1341036512204161046": {
+    "index": "1439",
+    "title": "Polkadot DeFi Singularity",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798420
+  },
+  "1345213326086373537": {
+    "index": "1464",
+    "title": "Research about Computational Efficiency of AI Models on the Polkadot Blockchain + Workshops",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 1,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "recuse"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1740794250
+  },
+  "1344216757564608543": {
+    "index": "1455",
+    "title": "Statescan maintenance proposal from 2023.10 to 2025.03",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 2,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740556649
+  },
+  "1348203029916291124": {
+    "index": "1481",
+    "title": "VOTE NAY - Wrong category- [Retroactive Funding] JAM SDK Implementation of reusable service",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 0,
+    "nay": 3,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1741507051
+  },
+  "1341036346759970847": {
+    "index": "1432",
+    "title": "Propose Curators OG Rust Bounty",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 3,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798380
+  },
+  "1341036248541696061": {
+    "index": "1425",
+    "title": "Peer3 SDK - real time peer-to-peer smart contracts",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 1,
+    "users": {
+      "517258144628342785": {
+        "username": "luka99#0",
+        "vote_type": "recuse"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "173828910453096448": {
+        "username": "krayt78#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1739798357
+  },
+  "1348701303337123870": {
+    "index": "1484",
+    "title": "[Whitelisted Caller] Increase validator set size to 600",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "444930820315283456": {
+        "username": "jslusser#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741625848
+  },
+  "1348565415432818759": {
+    "index": "1483",
+    "title": "[Retroactive Funding] JAM SDK Implementation of reusable service",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1741593450
+  },
+  "1350241461676937216": {
+    "index": "1491",
+    "title": "Provision of Snowbridge-Wrapped USDT & USDC Liquidity to Facilitate Fee Swaps",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 1,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "757783770861535255": {
+        "username": "facundofarall#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1741993051
+  },
+  "1346119291958988893": {
+    "index": "1469",
+    "title": "Please vote NAY",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 3,
+    "recuse": 0,
+    "users": {
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "nay"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1741010249
+  },
+  "1351555106675363911": {
+    "index": "1493",
+    "title": "Provision of Snowbridge ETH Liquidity to Facilitate Fee Swaps",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1742306248
+  },
+  "1347387646439194645": {
+    "index": "1478",
+    "title": "First full fledged NFT collection on Polkadot with PVM",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1741312648
+  },
+  "1342168098425405481": {
+    "index": "1449",
+    "title": "[Small Spender] Namaste Polkadot: Education and community for Polkadot India (#1449)",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1740068211
+  },
+  "1341036488640430160": {
+    "index": "1438",
+    "title": "PolkaPulse: DeFi Dashboard for Polkadot Parachains",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1739798414
+  },
+  "1345077424324345876": {
+    "index": "1462",
+    "title": "Polkadot-API 2025 Development Funding through Polkadot Community Foundation",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 11,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "557195378831917085": {
+        "username": "cj13th#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "aye"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "aye"
+      },
+      "219856741205016576": {
+        "username": "juanirios99#0",
+        "vote_type": "aye"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "aye"
+      },
+      "757783770861535255": {
+        "username": "facundofarall#0",
+        "vote_type": "aye"
+      },
+      "690342375431995613": {
+        "username": "luiz_lvj#0",
+        "vote_type": "aye"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740761848
+  },
+  "1343371192232579133": {
+    "index": "1453",
+    "title": "Editorial Board in Spanish Cohort #2 Dec 2024 - May 2025",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 1,
+    "nay": 3,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "902124356841381890": {
+        "username": "chris.casini#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740355051
+  },
+  "1349063721372225628": {
+    "index": "1488",
+    "title": "Laura Shin's Unchained",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1741712256
+  },
+  "1345122725026468054": {
+    "index": "1463",
+    "title": "Polkassembly Social Contract 2025",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 3,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "aye"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1740772649
+  },
+  "1347251757524455536": {
+    "index": "1476",
+    "title": "JUST 2.0 Retroactive Compensation for Contributions to the Polkadot Ecosystem",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 3,
+    "nay": 1,
+    "recuse": 2,
+    "users": {
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "nay"
+      },
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "recuse"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "recuse"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741280250
+  },
+  "1347115860438941706": {
+    "index": "1475",
+    "title": "Subscan-PVM Integration: Building a Unified Explorer for the Polkadot Ecosystem",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      },
+      "1179804872615403551": {
+        "username": "tobiasdemeco#0",
+        "vote_type": "aye"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741247849
+  },
+  "1347885931754950722": {
+    "index": "1480",
+    "title": "Set PoV size limit to 10 Mb",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 2,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "757783770861535255": {
+        "username": "facundofarall#0",
+        "vote_type": "aye"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741431449
+  },
+  "1349018394057379911": {
+    "index": "1486",
+    "title": "[Runtime 1.4.2] Upgrade Polkadot Asset Hub and Collectives",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 4,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741701449
+  },
+  "1347342356378026116": {
+    "index": "1477",
+    "title": "Funding for ReactiveDOT & related developments",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 2,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "aye"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1741301850
+  },
+  "1354408958109945856": {
+    "index": "1508",
+    "title": "[Big Tipper] Referendum #1508",
+    "origin": [
+      "BigTipper"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1742986659
+  },
+  "1345439813888639158": {
+    "index": "1466",
+    "title": "Polkadot Cloud Website Development (Phase 1: Q2 2025)",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 3,
+    "nay": 3,
+    "recuse": 0,
+    "users": {
+      "414770832062283787": {
+        "username": "wirednkod#0",
+        "vote_type": "nay"
+      },
+      "136215798111928320": {
+        "username": "cardotrejos#0",
+        "vote_type": "aye"
+      },
+      "961265753674358796": {
+        "username": "replghost#0",
+        "vote_type": "aye"
+      },
+      "1187317362551169045": {
+        "username": "marioschraepen_72989#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1740848249
   }
 }
