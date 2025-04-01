@@ -119,7 +119,6 @@ async def check_governance():
 
                     # Send an initial results message in the thread
                     initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
-
                     channel_thread = await guild.fetch_channel(new_proposal_thread.message.id)
                     client.vote_counts[str(new_proposal_thread.message.id)] = {
                         "index": index,
@@ -247,12 +246,13 @@ async def autonomous_voting():
         await client.wait_until_ready()
         await task_handler.stop_tasks(coroutine_task=[sync_embeds, recheck_proposals])
         await client.disable_command(command_name='forcevote', guild_id=config.DISCORD_SERVER_ID)
+        await client.get_voting_members(guild=config.DISCORD_SERVER_ID, role_name=config.DISCORD_VOTER_ROLE, save_records=True)
         vote_counts = await client.load_vote_counts()
         onchain_votes = await client.load_onchain_votes()
         onchain_votes_length = len(str(onchain_votes))
         vote_periods = await client.load_vote_periods(network=config.NETWORK_NAME.lower())
 
-        governance_cache = client.load_governance_cache()
+        governance_cache = await client.load_governance_cache()
         governance_cache_keys = governance_cache.keys()
 
         channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
@@ -279,8 +279,9 @@ async def autonomous_voting():
 
                 proposal_block_submitted = governance_cache[proposal_index]['Ongoing']['submitted']
                 proposal_block_epoch = await substrate.get_block_epoch(block_number=proposal_block_submitted)
-                logging.info(f"Checking Discord vote results for: {proposal_index}")
-                cast, vote_type = await client.determine_vote_action(vote_data=vote_data, origin=internal_vote_periods, proposal_epoch=proposal_block_epoch)
+                logging.info(f"Checking ref: #{proposal_index}")
+
+                cast, vote_type = await client.determine_vote_action(thread_id=thread_id, vote_data=vote_data, origin=internal_vote_periods, proposal_epoch=proposal_block_epoch)
                 logging.info(f"Result: {vote_type}")
 
                 # If the proposal already exists in the results, use the existing 1st_vote data
@@ -780,7 +781,7 @@ if __name__ == '__main__':
                     recuse = vote_counts.get(str(channel.id), {}).get('recuse', {})
                     origin = vote_counts.get(str(channel.id), {}).get('origin', {})
 
-                    vote = await client.calculate_proxy_vote(aye_votes=aye, nay_votes=nay)
+                    vote = await client.calculate_proxy_vote(aye_votes=aye, nay_votes=nay, recuse_votes=recuse)
                     role = await client.create_or_get_role(interaction.guild, config.EXTRINSIC_ALERT)
                     await asyncio.sleep(0.5)
 
