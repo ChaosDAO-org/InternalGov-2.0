@@ -1,20 +1,17 @@
-# Use postgres/example user/password credentials
-version: '3.1'
-
 services:
-
-  db:
-    image: postgres
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: always
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    env_file:
+      - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-      
-volumes:
-  postgres_data:
+      - ./data:/app/data
+      - ./assets:/app/assets
+    # Add logging configuration to see all output
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
