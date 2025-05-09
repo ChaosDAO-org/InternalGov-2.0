@@ -61,7 +61,7 @@ class RoleReactionManager:
             self.logger.error(f"Error saving reaction data: {e}")
     
     async def create_gov_notification_thread(self, guild_id, channel_id):
-        """Create a thread for government notifications if it doesn't exist"""
+        """Create a thread for governance notifications if it doesn't exist"""
         try:
             # Check if thread already exists
             if "gov_notification_thread" in self.reaction_data:
@@ -121,7 +121,6 @@ class RoleReactionManager:
             messages = [msg async for msg in thread.history(limit=1, oldest_first=True)]
             if messages:
                 first_message = messages[0]
-                await first_message.pin()
                 
                 # Use the persistent view for the buttons
                 view = self.create_role_buttons()
@@ -144,6 +143,9 @@ class RoleReactionManager:
                 
                 # Don't lock the thread (would disable buttons)
                 self.logger.info(f"Created notification thread {thread.id}")
+            
+                # Pin the thread itself
+                await thread.edit(pinned=True)
                 
                 # Update thread content to indicate messages will be deleted
                 thread_content = ("# Governance Notification Role\n\n"
@@ -201,7 +203,7 @@ class RoleReactionManager:
             
             # Now send the followup message
             try:
-                await interaction.followup.send(f"You now have the {role.name} role and will receive notifications for new government proposals.", ephemeral=True)
+                await interaction.followup.send(f"You now have the {role.name} role and will receive notifications for new governance proposals.", ephemeral=True)
             except Exception as e:
                 self.logger.error(f"Error sending followup message: {e}")
         except Exception as e:
@@ -235,7 +237,7 @@ class RoleReactionManager:
             
             # Now send the followup message
             try:
-                await interaction.followup.send(f"You no longer have the {role.name} role and won't receive notifications for new government proposals.", ephemeral=True)
+                await interaction.followup.send(f"You no longer have the {role.name} role and won't receive notifications for new governance proposals.", ephemeral=True)
             except Exception as e:
                 self.logger.error(f"Error sending followup message: {e}")
         except Exception as e:
