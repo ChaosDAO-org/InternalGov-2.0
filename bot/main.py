@@ -14,11 +14,14 @@ from utils.button_handler import ButtonHandler, ExternalLinkButton
 from utils.task_handler import TaskHandler
 from utils.argument_parser import ArgumentParser
 from utils.permission_check import PermissionCheck
+from utils.role_reaction import RoleReactionManager
 from discord import app_commands, Embed
 from discord.ext import tasks
 
 
 task_handler = TaskHandler()
+role_manager = None
+notification_thread_created = False
 
 
 @tasks.loop(hours=3)
@@ -523,9 +526,16 @@ async def sync_embeds():
             # It will edit the thread setting archived=False making the thread
             # visible for the bot to synchronise.
             if sync_thread is None:
-                logging.info(f"Unable to see thread {message_id} using get_channel() - Attempting to fetch_channel and set archived=False")
-                sync_thread = await client.fetch_channel(int(message_id))
-                await sync_thread.edit(archived=False)
+                try:
+                    logging.info(f"Unable to see thread {message_id} using get_channel() - Attempting to fetch_channel and set archived=False")
+                    sync_thread = await client.fetch_channel(int(message_id))
+                    await sync_thread.edit(archived=False)
+                except discord.NotFound:
+                    logging.warning(f"Thread {message_id} not found - it may have been deleted. Skipping synchronization.")
+                    continue
+                except Exception as e:
+                    logging.error(f"Error retrieving thread {message_id}: {e}")
+                    continue
 
             if sync_thread is not None:
                 logging.info(f"Synchronizing {sync_thread.name}")
@@ -740,9 +750,27 @@ if __name__ == '__main__':
 
     @client.event
     async def on_ready():
+        global role_manager, notification_thread_created
         try:
             for server in client.guilds:
                 await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID)
+            
+            # Only create the notification thread once per session
+            if not notification_thread_created:
+                # Initialize the role reaction manager
+                try:
+                    role_manager = RoleReactionManager(client, config)
+                    logging.info("Role reaction manager initialized successfully")
+                    
+                    # Create/find the gov notification thread
+                    thread = await role_manager.create_gov_notification_thread(config.DISCORD_SERVER_ID, config.DISCORD_FORUM_CHANNEL_ID)
+                    if thread:
+                        logging.info(f"Using gov notification thread with ID: {thread.id}")
+                        notification_thread_created = True
+                    else:
+                        logging.error("Failed to create or find gov notification thread")
+                except Exception as e:
+                    logging.error(f"Error setting up role reaction system: {e}")
 
             if config.READ_ONLY:
                 await task_handler.start_tasks([check_governance])
@@ -757,6 +785,12 @@ if __name__ == '__main__':
             logging.error(f"An error occurred on on_ready(): {error}")
             await task_handler.stop_tasks([check_governance, sync_embeds, autonomous_voting, recheck_proposals])
             await task_handler.start_tasks([check_governance])
+            
+    @client.event
+    async def on_message(message):
+        # Forward message events to role manager for moderation
+        if role_manager:
+            await role_manager.on_message(message)
 
     # Slash command(s) available when solo mode is NOT enabled in the .env config
     # Commands:
@@ -952,6 +986,33 @@ if __name__ == '__main__':
         await client.set_voting_button_lock_status(thread_ids_list, lock_status)
         await interaction.followup.send(f'The following thread(s) have been {action.name}d: {thread_ids_list}', ephemeral=False)
 
+
+    # Add event handlers for reactions
+    @client.event
+    async def on_raw_reaction_add(payload):
+        if role_manager:
+            await role_manager.handle_reaction(payload)
+    
+    @client.tree.command(name='create_role_thread',
+                         description='Create/recreate the thread for government notification role',
+                         guild=discord.Object(id=config.DISCORD_SERVER_ID))
+    async def create_role_thread(interaction: discord.Interaction):
+        user_id = interaction.user.id
+        member = await interaction.guild.fetch_member(user_id)
+        roles = member.roles
+        
+        sufficient_permissions = await client.check_permissions(interaction=interaction, required_role=config.DISCORD_ADMIN_ROLE, user_id=user_id, user_roles=roles)
+        if not sufficient_permissions:
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        if role_manager:
+            thread = await role_manager.create_gov_notification_thread(config.DISCORD_SERVER_ID, config.DISCORD_FORUM_CHANNEL_ID)
+            if thread:
+                await interaction.followup.send(f"Created role notification thread: {thread.mention}", ephemeral=True)
+            else:
+                await interaction.followup.send("Failed to create role notification thread. Check logs for details.", ephemeral=True)
 
     try:
         config.initialize_environment_files()
