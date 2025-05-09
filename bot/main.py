@@ -755,22 +755,23 @@ if __name__ == '__main__':
             for server in client.guilds:
                 await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID)
             
-            # Only create the notification thread once per session
-            if not notification_thread_created:
-                # Initialize the role reaction manager
-                try:
-                    role_manager = RoleReactionManager(client, config)
-                    logging.info("Role reaction manager initialized successfully")
-                    
-                    # Create/find the gov notification thread
-                    thread = await role_manager.create_gov_notification_thread(config.DISCORD_SERVER_ID, config.DISCORD_FORUM_CHANNEL_ID)
-                    if thread:
-                        logging.info(f"Using gov notification thread with ID: {thread.id}")
-                        notification_thread_created = True
-                    else:
-                        logging.error("Failed to create or find gov notification thread")
-                except Exception as e:
-                    logging.error(f"Error setting up role reaction system: {e}")
+            # Initialize the role manager
+            try:
+                role_manager = RoleReactionManager(client, config)
+                logging.info("Role reaction manager initialized successfully")
+                
+                # Store role_manager reference in client for interaction handling
+                client._role_manager = role_manager
+                
+                # Create/find the gov notification thread
+                thread = await role_manager.create_gov_notification_thread(config.DISCORD_SERVER_ID, config.DISCORD_FORUM_CHANNEL_ID)
+                if thread:
+                    logging.info(f"Using gov notification thread with ID: {thread.id}")
+                    notification_thread_created = True
+                else:
+                    logging.error("Failed to create or find gov notification thread")
+            except Exception as e:
+                logging.error(f"Error setting up role reaction system: {e}")
 
             if config.READ_ONLY:
                 await task_handler.start_tasks([check_governance])
@@ -780,7 +781,6 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             logging.warning("KeyboardInterrupt caught, cleaning up...")
             await task_handler.stop_tasks([check_governance, sync_embeds, autonomous_voting, recheck_proposals])
-
         except Exception as error:
             logging.error(f"An error occurred on on_ready(): {error}")
             await task_handler.stop_tasks([check_governance, sync_embeds, autonomous_voting, recheck_proposals])
@@ -987,7 +987,8 @@ if __name__ == '__main__':
         await interaction.followup.send(f'The following thread(s) have been {action.name}d: {thread_ids_list}', ephemeral=False)
 
 
-    # Add event handlers for reactions
+    # We don't need the setup_hook or tree_ready event here anymore, as it's in the GovernanceMonitor class
+    
     @client.event
     async def on_raw_reaction_add(payload):
         if role_manager:

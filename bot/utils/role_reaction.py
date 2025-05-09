@@ -7,6 +7,22 @@ from utils.logger import Logger
 
 logger = Logger()
 
+# Define the persistent view for role reaction buttons
+class RoleButtonView(View):
+    def __init__(self, bot, config):
+        super().__init__(timeout=None)  # No timeout for persistent view
+        self.bot = bot
+        self.config = config
+        self.logger = logger
+        
+        # Add the buttons with custom_ids that will persist across restarts
+        add_button = Button(style=discord.ButtonStyle.success, label="Get Notifications", emoji="🔔", custom_id="add_gov_role_button")
+        remove_button = Button(style=discord.ButtonStyle.secondary, label="Remove Notifications", emoji="🔕", custom_id="remove_gov_role_button")
+        
+        # Add items to the view
+        self.add_item(add_button)
+        self.add_item(remove_button)
+
 class RoleReactionManager:
     def __init__(self, bot, config):
         self.bot = bot
@@ -14,6 +30,9 @@ class RoleReactionManager:
         self.logger = logger
         self.reaction_data_file = "../data/reaction_roles.json"
         self.reaction_data = self.load_reaction_data()
+        
+        # Setup persistent view
+        self.setup_persistent_view()
         
     def load_reaction_data(self):
         """Load reaction role data from file"""
@@ -104,9 +123,13 @@ class RoleReactionManager:
                 first_message = messages[0]
                 await first_message.pin()
                 
-                # Create buttons instead of reactions
+                # Use the persistent view for the buttons
                 view = self.create_role_buttons()
                 await first_message.edit(content=first_message.content, view=view)
+                
+                # Save the message ID for persistence across restarts
+                self.bot.persistent_view_message_ids = getattr(self.bot, 'persistent_view_message_ids', [])
+                self.bot.persistent_view_message_ids.append(first_message.id)
                 
                 # Save thread data
                 self.reaction_data["gov_notification_thread"] = {
@@ -136,85 +159,91 @@ class RoleReactionManager:
             self.logger.error(f"Error creating notification thread: {e}")
             return None
     
+    def setup_persistent_view(self):
+        """Setup persistent view for the bot"""
+        # Create persistent view
+        view = RoleButtonView(self.bot, self.config)
+        self.bot.add_view(view)
+        
+        # If we have a stored message_id, add a view specifically for that message
+        if "gov_notification_thread" in self.reaction_data and "message_id" in self.reaction_data["gov_notification_thread"]:
+            message_id = self.reaction_data["gov_notification_thread"]["message_id"]
+            self.logger.info(f"Registering persistent view for message ID: {message_id}")
+            # Add a message-specific view
+            specific_view = RoleButtonView(self.bot, self.config)
+            self.bot.add_view(specific_view, message_id=int(message_id))
+                
+    async def handle_add_role(self, interaction):
+        """Handle add role button interaction"""
+        try:
+            # Get data
+            thread_data = self.reaction_data.get("gov_notification_thread", {})
+            guild = self.bot.get_guild(thread_data.get("guild_id", self.config.DISCORD_SERVER_ID))
+            if not guild:
+                await interaction.response.send_message("Error: Server not found", ephemeral=True)
+                return
+            
+            # Get role
+            role = discord.utils.get(guild.roles, name=self.config.TAG_ROLE_NAME)
+            if not role:
+                await interaction.response.send_message(f"Error: Role {self.config.TAG_ROLE_NAME} not found", ephemeral=True)
+                return
+            
+            try:
+                # First acknowledge the interaction to prevent timeout
+                await interaction.response.defer(ephemeral=True)
+            except discord.errors.InteractionResponded:
+                self.logger.info("Interaction already responded to")
+            
+            # Add role
+            await interaction.user.add_roles(role)
+            self.logger.info(f"Added role {role.name} to {interaction.user.display_name}")
+            
+            # Now send the followup message
+            try:
+                await interaction.followup.send(f"You now have the {role.name} role and will receive notifications for new government proposals.", ephemeral=True)
+            except Exception as e:
+                self.logger.error(f"Error sending followup message: {e}")
+        except Exception as e:
+            self.logger.error(f"Error in add button callback: {e}")
+    
+    async def handle_remove_role(self, interaction):
+        """Handle remove role button interaction"""
+        try:
+            # Get data
+            thread_data = self.reaction_data.get("gov_notification_thread", {})
+            guild = self.bot.get_guild(thread_data.get("guild_id", self.config.DISCORD_SERVER_ID))
+            if not guild:
+                await interaction.response.send_message("Error: Server not found", ephemeral=True)
+                return
+            
+            # Get role
+            role = discord.utils.get(guild.roles, name=self.config.TAG_ROLE_NAME)
+            if not role:
+                await interaction.response.send_message(f"Error: Role {self.config.TAG_ROLE_NAME} not found", ephemeral=True)
+                return
+            
+            try:
+                # First acknowledge the interaction to prevent timeout
+                await interaction.response.defer(ephemeral=True)
+            except discord.errors.InteractionResponded:
+                self.logger.info("Interaction already responded to")
+            
+            # Remove role
+            await interaction.user.remove_roles(role)
+            self.logger.info(f"Removed role {role.name} from {interaction.user.display_name}")
+            
+            # Now send the followup message
+            try:
+                await interaction.followup.send(f"You no longer have the {role.name} role and won't receive notifications for new government proposals.", ephemeral=True)
+            except Exception as e:
+                self.logger.error(f"Error sending followup message: {e}")
+        except Exception as e:
+            self.logger.error(f"Error in remove button callback: {e}")
+            
     def create_role_buttons(self):
         """Create buttons for role management"""
-        view = View(timeout=None)
-        
-        add_button = Button(style=discord.ButtonStyle.success, label="Get Notifications", emoji="🔔")
-        remove_button = Button(style=discord.ButtonStyle.secondary, label="Remove Notifications", emoji="🔕")
-        
-        async def add_button_callback(interaction):
-            try:
-                # Get data
-                thread_data = self.reaction_data["gov_notification_thread"]
-                guild = self.bot.get_guild(thread_data["guild_id"])
-                if not guild:
-                    await interaction.response.send_message("Error: Server not found", ephemeral=True)
-                    return
-                
-                # Get role
-                role = discord.utils.get(guild.roles, name=thread_data["role_name"])
-                if not role:
-                    await interaction.response.send_message(f"Error: Role {thread_data['role_name']} not found", ephemeral=True)
-                    return
-                
-                try:
-                    # First acknowledge the interaction to prevent timeout
-                    await interaction.response.defer(ephemeral=True)
-                except discord.errors.InteractionResponded:
-                    self.logger.info("Interaction already responded to")
-                
-                # Add role
-                await interaction.user.add_roles(role)
-                self.logger.info(f"Added role {role.name} to {interaction.user.display_name}")
-                
-                # Now send the followup message
-                try:
-                    await interaction.followup.send(f"You now have the {role.name} role and will receive notifications for new government proposals.", ephemeral=True)
-                except Exception as e:
-                    self.logger.error(f"Error sending followup message: {e}")
-            except Exception as e:
-                self.logger.error(f"Error in add button callback: {e}")
-        
-        async def remove_button_callback(interaction):
-            try:
-                # Get data
-                thread_data = self.reaction_data["gov_notification_thread"]
-                guild = self.bot.get_guild(thread_data["guild_id"])
-                if not guild:
-                    await interaction.response.send_message("Error: Server not found", ephemeral=True)
-                    return
-                
-                # Get role
-                role = discord.utils.get(guild.roles, name=thread_data["role_name"])
-                if not role:
-                    await interaction.response.send_message(f"Error: Role {thread_data['role_name']} not found", ephemeral=True)
-                    return
-                
-                try:
-                    # First acknowledge the interaction to prevent timeout
-                    await interaction.response.defer(ephemeral=True)
-                except discord.errors.InteractionResponded:
-                    self.logger.info("Interaction already responded to")
-                
-                # Remove role
-                await interaction.user.remove_roles(role)
-                self.logger.info(f"Removed role {role.name} from {interaction.user.display_name}")
-                
-                # Now send the followup message
-                try:
-                    await interaction.followup.send(f"You no longer have the {role.name} role and won't receive notifications for new government proposals.", ephemeral=True)
-                except Exception as e:
-                    self.logger.error(f"Error sending followup message: {e}")
-            except Exception as e:
-                self.logger.error(f"Error in remove button callback: {e}")
-        
-        add_button.callback = add_button_callback
-        remove_button.callback = remove_button_callback
-        
-        view.add_item(add_button)
-        view.add_item(remove_button)
-        return view
+        return RoleButtonView(self.bot, self.config)
 
     async def handle_reaction(self, payload):
         """Legacy method kept for compatibility"""

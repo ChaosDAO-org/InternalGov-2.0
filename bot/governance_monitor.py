@@ -33,8 +33,34 @@ class GovernanceMonitor(discord.Client):
         self.vote_counts = loop.run_until_complete(self.load_vote_counts())
 
     async def setup_hook(self):
+        # This runs when the bot starts up
         self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
+        
+        # Store original interaction handler
+        self._original_on_interaction = self.on_interaction
+        
+        # Override on_interaction with custom handler
+        async def new_on_interaction(interaction):
+            if interaction.type == discord.InteractionType.component:
+                custom_id = interaction.data.get("custom_id", "")
+                
+                # Get role manager from client (will be set later in on_ready)
+                role_manager = getattr(self, "_role_manager", None)
+                
+                # Handle role buttons
+                if custom_id == "add_gov_role_button" and role_manager:
+                    await role_manager.handle_add_role(interaction)
+                    return
+                elif custom_id == "remove_gov_role_button" and role_manager:
+                    await role_manager.handle_remove_role(interaction)
+                    return
+            
+            # For all other interactions, call the original handler
+            await self._original_on_interaction(interaction)
+        
+        # Replace the interaction handler
+        self.on_interaction = new_on_interaction
 
     def get_asset_price_v2(self, asset_id, currencies='usd'):
         """
