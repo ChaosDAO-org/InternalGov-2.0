@@ -163,23 +163,30 @@ async def check_governance():
                         try:
                             role = await client.create_or_get_role(guild, config.TAG_ROLE_NAME)
                             if role:
+                                # Check if the title is None before tagging DOT-GOV role
+                                tag_content = "" if title == "None" else f"||<@&{role.id}>||"
+                                
                                 if config.READ_ONLY:
                                     # Only send notification tag without voting instructions
                                     instructions = await channel_thread.send(content=
-                                                          f"||<@&{role.id}>||"
+                                                          f"{tag_content}"
                                                           f"\n**ANNOUNCEMENT:**"
                                                           f"\nA new proposal has been created."
                                                           )
                                 else:
                                     # Send full voting instructions
                                     instructions = await channel_thread.send(content=
-                                                          f"||<@&{role.id}>||"
+                                                          f"{tag_content}"
                                                           f"\n**INSTRUCTIONS:**"
                                                           f"\n- Vote **AYE** if you want to see this proposal pass"
                                                           f"\n- Vote **NAY** if you want to see this proposal fail"
                                                           f"\n- Vote **RECUSE** if and **ONLY** if you have a conflict of interest with this proposal"
                                                           )
-                                logging.info(f"Vote results message added instruction message added for {index}")
+                                
+                                if title == "None":
+                                    logging.info(f"Created thread for proposal {index} without DOT-GOV tag because title is None")
+                                else:
+                                    logging.info(f"Vote results message added instruction message added for {index}")
                         except Exception as error:
                             logging.error(f"An unexpected error occurred: {error}")
 
@@ -688,7 +695,17 @@ async def recheck_proposals():
                         client=client
                     )
                     thread_channel = channel.get_thread(int(message_id))
+                    
+                    # Add notification about title change
                     await thread_channel.send(content=f'Before the thread title was changed, it was:\n**{title_from_vote_counts}**')
+                    
+                    # If the title was previously "None" and now has a valid title, add the DOT-GOV tag
+                    if title_from_vote_counts == "None" and title_from_api != "None":
+                        role = await client.create_or_get_role(guild, config.TAG_ROLE_NAME)
+                        if role:
+                            tag_notification = await thread_channel.send(content=f"||<@&{role.id}>|| This proposal now has a title")
+                            logging.info(f"Added DOT-GOV tag for proposal {proposal_index} that now has a title")
+                    
                     logging.info(f"Title updated from {title_from_vote_counts} -> {title_from_api} in vote_counts.json")
                     logging.info(f"Discord thread successfully amended")
                 except Exception as e:
