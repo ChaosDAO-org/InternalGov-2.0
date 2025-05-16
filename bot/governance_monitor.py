@@ -770,6 +770,9 @@ class GovernanceMonitor(discord.Client):
         """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
         total_votes = aye_votes + nay_votes
 
+        if self.config.THRESHOLD > 0:
+            threshold = self.config.THRESHOLD
+
         # Default to abstain if the turnout internally is <= config.MIN_PARTICIPATION
         # Set to 0 to turn off this feature
         if self.config.MIN_PARTICIPATION > 0:
