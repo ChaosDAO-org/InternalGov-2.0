@@ -26,7 +26,7 @@ class Config:
             self.ANONYMOUS_MODE = bool(strtobool(os.getenv('DISCORD_ANONYMOUS_MODE', ''))) if os.getenv('DISCORD_ANONYMOUS_MODE') is not None else self.raise_error("Missing ANONYMOUS_MODE")
 
             # Network Settings
-            self.NETWORK_NAME = f"{os.getenv('NETWORK_NAME')}" or self.raise_error("Missing NETWORK_NAME")
+            self.NETWORK_NAME = f"{os.getenv('NETWORK_NAME')}".lower() or self.raise_error("Missing NETWORK_NAME")
             self.SYMBOL = os.getenv('SYMBOL') or self.raise_error("Missing SYMBOL")
             self.TOKEN_DECIMAL = float(os.getenv('TOKEN_DECIMAL') or self.raise_error("Missing TOKEN_DECIMAL"))
             self.SUBSTRATE_WSS = os.getenv('SUBSTRATE_WSS') or self.raise_error("Missing SUBSTRATE_WSS")
