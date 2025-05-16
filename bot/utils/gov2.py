@@ -37,8 +37,9 @@ class OpenGovernance2:
               response came from.
         """
         urls = [
-            f"https://api.polkassembly.io/api/v1/posts/on-chain-post?postId={referendum_id}&proposalType=referendums_v2",
             f"https://{network}.subsquare.io/api/gov2/referendums/{referendum_id}",
+            f"hhttps://hydration.polkassembly.io//api/v1/posts/on-chain-post?postId={referendum_id}&proposalType=referendums_v2",
+            
         ]
 
         headers = {"x-network": network}

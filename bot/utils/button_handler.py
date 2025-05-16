@@ -26,5 +26,9 @@ class ExternalLinkButton(View):
         self.network_name = network_name
         # External link buttons on row 1
         self.add_item(Button(label="Subsquare", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.subsquare.io/referenda/referendum/{self.index}"))
-        self.add_item(Button(label="Polkassembly", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.polkassembly.io/referenda/{self.index}"))
+        
+        # Only add Polkassembly button if the network is not Hydration
+        if self.network_name.lower() != "hydration":
+            self.add_item(Button(label="Polkassembly", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.polkassembly.io/referenda/{self.index}"))
+            
         self.add_item(Button(label="Subscan", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.subscan.io/referenda_v2/{self.index}"))

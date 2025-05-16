@@ -75,6 +75,10 @@ class GovernanceMonitor(discord.Client):
             dict: A dictionary containing the prices in the specified currencies, or None
                   if an error occurred or the asset ID was not found.
         """
+        # Special case for Hydration network
+        if asset_id.lower() == "hydration":
+            asset_id = "hydradx"
+            
         url = f"https://api.coingecko.com/api/v3/simple/price?ids={asset_id}&vs_currencies={currencies}"
         self.logger.info("Fetching price from CoinGecko")
         retry_strategy = Retry(  # Retry strategy
