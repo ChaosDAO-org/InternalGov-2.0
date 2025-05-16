@@ -1,154 +1,659 @@
 {
-  "1345213348798664794": {
-    "index": "1465",
-    "title": "OpenZeppelin Support for Polkadot Hub and Polkadot Cloud in 2025",
+  "1362625212570538134": {
+    "index": "1531",
+    "title": "The operating cost for the research organization Polkadot Ecology Research Institute for 2025/4-2026/3",
     "origin": [
-      "BigSpender"
+      "MediumSpender"
     ],
-    "aye": 4,
-    "nay": 1,
+    "aye": 0,
+    "nay": 6,
+    "recuse": 0,
+    "users": {
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "301446467468525569": {
+        "username": "yungbeef4.2#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      },
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "nay"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "nay"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1744945567
+  },
+  "1362851696157524028": {
+    "index": "1533",
+    "title": "Faze x Vitality - Unifying ecosystem efforts through Esport - Metaproposal",
+    "origin": [
+      "Treasurer"
+    ],
+    "aye": 0,
+    "nay": 3,
     "recuse": 1,
     "users": {
-      "961265753674358796": {
-        "username": "replghost#0",
-        "vote_type": "recuse"
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
       },
-      "389129955482533889": {
-        "username": "recrafter#0",
-        "vote_type": "aye"
+      "699100116702855220": {
+        "username": "j3rga#0",
+        "vote_type": "recuse"
       },
       "429359693576667145": {
         "username": ".wariomx#0",
         "vote_type": "nay"
       },
-      "1179804872615403551": {
-        "username": "tobiasdemeco#0",
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1744999565
+  },
+  "1364900784617033728": {
+    "index": "1538",
+    "title": "Bifrost 1M DOT liquidity loan for vDOT liquidity for one year; repay in full with approximately 6% interest.",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 6,
+    "nay": 0,
+    "recuse": 1,
+    "users": {
+      "699100116702855220": {
+        "username": "j3rga#0",
         "vote_type": "aye"
       },
-      "902124356841381890": {
-        "username": "chris.casini#0",
+      "1321217759799017482": {
+        "username": "davidcgv#0",
         "vote_type": "aye"
       },
-      "1187317362551169045": {
-        "username": "marioschraepen_72989#0",
+      "301446467468525569": {
+        "username": "yungbeef4.2#0",
+        "vote_type": "aye"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "aye"
+      },
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "aye"
+      },
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "recuse"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
         "vote_type": "aye"
       }
     },
-    "epoch": 1740794255
+    "epoch": 1745488106
   },
-  "1346572275679367232": {
-    "index": "1472",
-    "title": "VOTE NAY! Polkadot Blockchain Academy, PBA Campus 7, The JAM Course launch, University partnerships expansion, ongoing PBA-X evolution, Alumni program. 9 months funding from April to December.",
+  "1365942645104447649": {
+    "index": "1539",
+    "title": "JAM China Academy (Educational Roadshow)",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 7,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "aye"
+      },
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "aye"
+      },
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "aye"
+      },
+      "699100116702855220": {
+        "username": "j3rga#0",
+        "vote_type": "nay"
+      },
+      "1314562869769015307": {
+        "username": "cr.eative.dev_28173#0",
+        "vote_type": "aye"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "aye"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "aye"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1745736505
+  },
+  "1366169136727724052": {
+    "index": "1540",
+    "title": "Continuation Operations for 1 year - Spanish BD Team, now IBERLABS",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 1,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1745790504
+  },
+  "1366350336079433750": {
+    "index": "1541",
+    "title": "Polkadot Storage Phase 3",
     "origin": [
       "BigSpender"
     ],
-    "aye": 1,
-    "nay": 6,
-    "recuse": 11,
+    "aye": 6,
+    "nay": 0,
+    "recuse": 0,
     "users": {
-      "690342375431995613": {
-        "username": "luiz_lvj#0",
+      "565746238562238474": {
+        "username": "pandres95#0",
         "vote_type": "aye"
       },
-      "389129955482533889": {
-        "username": "recrafter#0",
-        "vote_type": "recuse"
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "aye"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "aye"
+      },
+      "559754666137747486": {
+        "username": "sumeetweb#0",
+        "vote_type": "aye"
+      },
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "aye"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1745833705
+  },
+  "1366486228924633129": {
+    "index": "1542",
+    "title": "Polkadot GIGAHydration Campaign",
+    "origin": [
+      "Treasurer"
+    ],
+    "aye": 3,
+    "nay": 7,
+    "recuse": 0,
+    "users": {
+      "301446467468525569": {
+        "username": "yungbeef4.2#0",
+        "vote_type": "aye"
+      },
+      "699100116702855220": {
+        "username": "j3rga#0",
+        "vote_type": "nay"
       },
       "429359693576667145": {
         "username": ".wariomx#0",
-        "vote_type": "recuse"
-      },
-      "902124356841381890": {
-        "username": "chris.casini#0",
-        "vote_type": "recuse"
-      },
-      "1182953283111890964": {
-        "username": "paulinecohenv#0",
-        "vote_type": "recuse"
-      },
-      "834394687346966590": {
-        "username": "zsofi_m#0",
         "vote_type": "nay"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "aye"
+      },
+      "425457825498660864": {
+        "username": "hette__#0",
+        "vote_type": "nay"
+      },
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "aye"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "nay"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1745866106
+  },
+  "1366712722263244842": {
+    "index": "1543",
+    "title": "Substrate Asset Game Engine (SAGE) revised",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 5,
+    "nay": 0,
+    "recuse": 1,
+    "users": {
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "aye"
+      },
+      "600076939453268018": {
+        "username": "driemworks#0",
+        "vote_type": "aye"
+      },
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "aye"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "aye"
+      },
+      "496685464347082753": {
+        "username": "rostadev#0",
+        "vote_type": "recuse"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1745920105
+  },
+  "1366758020213903460": {
+    "index": "1544",
+    "title": "PolkaBiz Retroactive Treasury Request January - April 2025",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 8,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "699100116702855220": {
+        "username": "j3rga#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "867200030221533184": {
+        "username": "nomadbitcoin#0",
+        "vote_type": "aye"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "aye"
+      },
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "aye"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "aye"
+      },
+      "517258144628342785": {
+        "username": "luka99#0",
+        "vote_type": "aye"
+      },
+      "850595139139534849": {
+        "username": "barathkanna#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1745930905
+  },
+  "1366939219054039048": {
+    "index": "1545",
+    "title": "AIWeb3 Chinese Unit(\u7231Web3 \u4e2d\u6587\u793e\u533a) renew operation May. 2025 - April. 2026",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 3,
+    "nay": 0,
+    "recuse": 1,
+    "users": {
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "recuse"
+      },
+      "1225513589394378872": {
+        "username": "owahyudi#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1745974106
+  },
+  "1367120405755854879": {
+    "index": "1546",
+    "title": "[Whitelisted Caller] PLEASE VOTE NAY! Upgrade Polkadot to v1.5.0",
+    "origin": [
+      "WhitelistedCaller"
+    ],
+    "aye": 3,
+    "nay": 2,
+    "recuse": 0,
+    "users": {
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "nay"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "aye"
       },
       "207236182592061442": {
         "username": "crypdough.eth#0",
         "vote_type": "nay"
       },
-      "414770832062283787": {
-        "username": "wirednkod#0",
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "aye"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1746017304
+  },
+  "1367437499294810174": {
+    "index": "1547",
+    "title": "Please Vote NAY - Polkassembly BUG messed up the amount",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 5,
+    "recuse": 0,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
         "vote_type": "nay"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "nay"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1746092905
+  },
+  "1367437530491785309": {
+    "index": "1548",
+    "title": "Please vote NAY",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 4,
+    "recuse": 0,
+    "users": {
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "nay"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1746092913
+  },
+  "1367482793810202647": {
+    "index": "1549",
+    "title": "KAGOME \u2013 the C++ implementation of Polkadot Host milestone 4",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 1,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "aye"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1746103705
+  },
+  "1367799881904816180": {
+    "index": "1550",
+    "title": "This was created accidentally , please ignore. Sorry for the inconvenience.",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 0,
+    "nay": 6,
+    "recuse": 0,
+    "users": {
+      "690257335599628309": {
+        "username": "0xpasta#0",
+        "vote_type": "nay"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
+        "vote_type": "nay"
+      },
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "nay"
+      },
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "nay"
+      },
+      "177546433933606913": {
+        "username": "wolfenheimm#0",
+        "vote_type": "nay"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1746179304
+  },
+  "1368977645190119424": {
+    "index": "1553",
+    "title": "Texas Blockchain Council: Re-up and continued presence for Polkadot",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 2,
+    "nay": 2,
+    "recuse": 1,
+    "users": {
+      "429359693576667145": {
+        "username": ".wariomx#0",
+        "vote_type": "recuse"
       },
       "850595139139534849": {
         "username": "barathkanna#0",
+        "vote_type": "nay"
+      },
+      "1081318801414574081": {
+        "username": "andrzej.sulkowski#0",
+        "vote_type": "aye"
+      },
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1746460105
+  },
+  "1369475925653323816": {
+    "index": "1555",
+    "title": "Volmex Integration with Polkadot DEX Ecosystem",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 1,
+    "recuse": 0,
+    "users": {
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      }
+    },
+    "epoch": 1746578904
+  },
+  "1370064810439606439": {
+    "index": "1557",
+    "title": "Google Drive Document Integrity and Certification System for Secure Proposals",
+    "origin": [
+      "SmallSpender"
+    ],
+    "aye": 0,
+    "nay": 4,
+    "recuse": 0,
+    "users": {
+      "1321217759799017482": {
+        "username": "davidcgv#0",
+        "vote_type": "nay"
+      },
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "nay"
+      },
+      "127611081546792960": {
+        "username": "apocalam#0",
         "vote_type": "nay"
       },
       "565746238562238474": {
         "username": "pandres95#0",
-        "vote_type": "recuse"
-      },
-      "953486602192158831": {
-        "username": "snowmead#0",
-        "vote_type": "recuse"
-      },
-      "481710591052873728": {
-        "username": "rajraorane#0",
-        "vote_type": "recuse"
-      },
-      "1110085556358090782": {
-        "username": "khudeja.#0",
-        "vote_type": "recuse"
-      },
-      "1179804872615403551": {
-        "username": "tobiasdemeco#0",
-        "vote_type": "recuse"
-      },
-      "1187317362551169045": {
-        "username": "marioschraepen_72989#0",
-        "vote_type": "nay"
-      },
-      "961265753674358796": {
-        "username": "replghost#0",
-        "vote_type": "recuse"
-      },
-      "557195378831917085": {
-        "username": "cj13th#0",
-        "vote_type": "recuse"
-      },
-      "867200030221533184": {
-        "username": "nomadbitcoin#0",
         "vote_type": "nay"
       }
     },
-    "epoch": 1741118249
+    "epoch": 1746719305
   },
-  "1346934682142507008": {
-    "index": "1474",
-    "title": "Polkadot Fast-Grants Bounty Curator Candidacy",
+  "1370064836226187325": {
+    "index": "1558",
+    "title": "Supporting the Launch of Polkadot Hub: Campaign to Onboard Web2 Developers in LATAM and Beyond",
     "origin": [
       "MediumSpender"
     ],
-    "aye": 3,
+    "aye": 2,
     "nay": 0,
     "recuse": 0,
     "users": {
-      "136215798111928320": {
-        "username": "cardotrejos#0",
+      "565746238562238474": {
+        "username": "pandres95#0",
         "vote_type": "aye"
       },
-      "961265753674358796": {
-        "username": "replghost#0",
-        "vote_type": "aye"
-      },
-      "850595139139534849": {
-        "username": "barathkanna#0",
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
         "vote_type": "aye"
       }
     },
-    "epoch": 1741204653
+    "epoch": 1746719311
   },
-  "1348791902119530679": {
-    "index": "1485",
-    "title": "Funding for Public RPC Providers via Bounty 31",
+  "1370472505789382686": {
+    "index": "1559",
+    "title": "Kick-start Campaign for RISC-V Smart Home Devices, Secured by Polkadot",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 2,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "467291448254005259": {
+        "username": "matjazonline#0",
+        "vote_type": "aye"
+      },
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1746816507
+  },
+  "1370789582739869848": {
+    "index": "1560",
+    "title": "Milestone 2: EasyA x Polkadot: In-person hackathons and in-app Polkadot 2.0 crash course (#360DaysOfPolkadot)",
     "origin": [
       "MediumSpender"
     ],
@@ -156,350 +661,147 @@
     "nay": 0,
     "recuse": 0,
     "users": {
+      "1165649893805805570": {
+        "username": "codingshthefounder#0",
+        "vote_type": "aye"
+      },
       "565746238562238474": {
         "username": "pandres95#0",
         "vote_type": "aye"
       },
-      "902124356841381890": {
-        "username": "chris.casini#0",
+      "1321217759799017482": {
+        "username": "davidcgv#0",
         "vote_type": "aye"
       },
-      "961265753674358796": {
-        "username": "replghost#0",
-        "vote_type": "aye"
-      },
-      "444930820315283456": {
-        "username": "jslusser#0",
+      "467291448254005259": {
+        "username": "matjazonline#0",
         "vote_type": "aye"
       }
     },
-    "epoch": 1741647449
+    "epoch": 1746892104
   },
-  "1349063695539507343": {
-    "index": "1487",
-    "title": "Paseo - Developer Testnet Bounty Top-up Request",
+  "1371061377371996182": {
+    "index": "1561",
+    "title": "Referendum: Community Building Fund for Bend-PVM - Attracting Developer Contributors to the PolkaVM Ecosystem (500 DOT)",
     "origin": [
-      "BigSpender"
+      "BigTipper"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1746956905
+  },
+  "1371514360727339159": {
+    "index": "1562",
+    "title": "DotMemo v2: Enhanced Features for On-Chain Event Memories on Polkadot",
+    "origin": [
+      "MediumSpender"
     ],
     "aye": 3,
     "nay": 0,
     "recuse": 0,
     "users": {
-      "850595139139534849": {
-        "username": "barathkanna#0",
+      "565746238562238474": {
+        "username": "pandres95#0",
         "vote_type": "aye"
       },
-      "127611081546792960": {
-        "username": "apocalam#0",
+      "1321217759799017482": {
+        "username": "davidcgv#0",
         "vote_type": "aye"
       },
-      "961265753674358796": {
-        "username": "replghost#0",
+      "467291448254005259": {
+        "username": "matjazonline#0",
         "vote_type": "aye"
       }
     },
-    "epoch": 1741712249
+    "epoch": 1747064905
   },
-  "1349290186135310379": {
-    "index": "1489",
-    "title": "PolkaGate MetaMask Snap: Retroactive Funding Proposal (Oct 2024 - Jan 2025)",
+  "1371831451120832602": {
+    "index": "1563",
+    "title": "N3MUS \u2013 Powering Gamer Onboarding & Cross-Parachain Tournaments on Polkadot",
     "origin": [
       "MediumSpender"
     ],
     "aye": 0,
-    "nay": 1,
+    "nay": 0,
     "recuse": 0,
-    "users": {
-      "429359693576667145": {
-        "username": ".wariomx#0",
-        "vote_type": "nay"
-      }
-    },
-    "epoch": 1741766249
+    "users": {},
+    "epoch": 1747140505
   },
-  "1350196163055190150": {
-    "index": "1490",
-    "title": "[Medium Spender] Referendum #1490",
+  "1371876783032500285": {
+    "index": "1564",
+    "title": "Funding Proposal: Bounty Hub",
     "origin": [
       "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1747151313
+  },
+  "1372510926162493453": {
+    "index": "1565",
+    "title": "Untitled Post",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1747302505
+  },
+  "1372556242207244318": {
+    "index": "1566",
+    "title": "Small Tip for subway2023",
+    "origin": [
+      "SmallTipper"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1747313309
+  },
+  "1372601526509502547": {
+    "index": "1567",
+    "title": "Marketing and PR Proposal for Polkadot Brand Awareness in APAC by PANews",
+    "origin": [
+      "SmallSpender"
     ],
     "aye": 1,
     "nay": 0,
     "recuse": 0,
     "users": {
-      "961265753674358796": {
-        "username": "replghost#0",
+      "565746238562238474": {
+        "username": "pandres95#0",
         "vote_type": "aye"
       }
     },
-    "epoch": 1741982251
+    "epoch": 1747324106
   },
-  "1351464509885386772": {
-    "index": "1492",
-    "title": "[PROPOSAL] OpenGuild - Accelerate Polkadot Builder Activation in SEA & Broader Asia",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 1,
-    "nay": 0,
-    "recuse": 0,
-    "users": {
-      "1187317362551169045": {
-        "username": "marioschraepen_72989#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1742284648
-  },
-  "1351736302172639232": {
-    "index": "1494",
-    "title": "[Do not vote]",
-    "origin": [
-      "WhitelistedCaller"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742349448
-  },
-  "1351872202580037706": {
-    "index": "1495",
-    "title": "None",
-    "origin": [
-      "ReferendumKiller"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742381849
-  },
-  "1351872229633163349": {
-    "index": "1496",
-    "title": "None",
-    "origin": [
-      "ReferendumCanceller"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742381856
-  },
-  "1351917496034267208": {
-    "index": "1497",
-    "title": "***revised proposal***Polkadot Blockchain Academy, PBA Campus 7, The JAM Course launch, University pilot, ongoing PBA-X evolution, Alumni program.",
-    "origin": [
-      "BigSpender"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742392648
-  },
-  "1352008094003236915": {
-    "index": "1498",
-    "title": "[Whitelisted Caller] Register Polkadot Native Assets on Ethereum",
-    "origin": [
-      "WhitelistedCaller"
-    ],
-    "aye": 1,
-    "nay": 0,
-    "recuse": 0,
-    "users": {
-      "127611081546792960": {
-        "username": "apocalam#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1742414249
-  },
-  "1352325183930892480": {
-    "index": "1499",
-    "title": "Retroactive Funding Proposal: Bounty Manager V2.0",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742489849
-  },
-  "1353457646006571143": {
-    "index": "1500",
-    "title": "Sponsorship Hybrid driver  PORSCHE SUPER CUP - PORSCHE BENELUX",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 0,
-    "nay": 1,
-    "recuse": 0,
-    "users": {
-      "850595139139534849": {
-        "username": "barathkanna#0",
-        "vote_type": "nay"
-      }
-    },
-    "epoch": 1742759849
-  },
-  "1353729433998983170": {
-    "index": "1501",
-    "title": "Renewal of treasury USDT and USDC Acquisition",
+  "1372646839572234271": {
+    "index": "1568",
+    "title": "please ignore",
     "origin": [
       "Root"
     ],
-    "aye": 1,
-    "nay": 0,
-    "recuse": 0,
-    "users": {
-      "565746238562238474": {
-        "username": "pandres95#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1742824648
-  },
-  "1353774733229035660": {
-    "index": "1502",
-    "title": "Reimbursement for corrupted staking ledgers",
-    "origin": [
-      "SmallSpender"
-    ],
     "aye": 0,
     "nay": 0,
     "recuse": 0,
     "users": {},
-    "epoch": 1742835448
+    "epoch": 1747334909
   },
-  "1354046526825042041": {
-    "index": "1503",
-    "title": "Decentralized High Performance Object Storage (MinIO)",
-    "origin": [
-      "SmallSpender"
-    ],
-    "aye": 1,
-    "nay": 0,
-    "recuse": 0,
-    "users": {
-      "565746238562238474": {
-        "username": "pandres95#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1742900249
-  },
-  "1354091821801799803": {
-    "index": "1504",
-    "title": "PolkaBiz Business Mentorship & Ecosystem Support",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 3,
-    "nay": 0,
-    "recuse": 3,
-    "users": {
-      "414770832062283787": {
-        "username": "wirednkod#0",
-        "vote_type": "recuse"
-      },
-      "1187317362551169045": {
-        "username": "marioschraepen_72989#0",
-        "vote_type": "recuse"
-      },
-      "565746238562238474": {
-        "username": "pandres95#0",
-        "vote_type": "aye"
-      },
-      "902124356841381890": {
-        "username": "chris.casini#0",
-        "vote_type": "recuse"
-      },
-      "850595139139534849": {
-        "username": "barathkanna#0",
-        "vote_type": "aye"
-      },
-      "782849129855320104": {
-        "username": "chief_100#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1742911048
-  },
-  "1354137122608517244": {
-    "index": "1505",
-    "title": "SportStake Development & EU Marketing Funding Proposal",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742921849
-  },
-  "1354182428763095231": {
-    "index": "1506",
-    "title": "Fuelarts x BitBasel | The Artists & Collectors Polkadot Hub to onboard 2000+ new & engaged users, 300+ projects and 10K+ transactions",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742932650
-  },
-  "1354408934882021520": {
-    "index": "1507",
-    "title": "[Small Tipper] Referendum #1507",
-    "origin": [
-      "SmallTipper"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742986654
-  },
-  "1354408994403258378": {
-    "index": "1509",
-    "title": "Substrate Asset Game Engine (SAGE)",
-    "origin": [
-      "MediumSpender"
-    ],
-    "aye": 0,
-    "nay": 0,
-    "recuse": 0,
-    "users": {},
-    "epoch": 1742986668
-  },
-  "1354952522330148955": {
-    "index": "1510",
-    "title": "Set Snowbridge-wrapped USDC & USDT as sufficient assets, set their ED to $0.01, and set their metadata on Asset Hub",
-    "origin": [
-      "WhitelistedCaller"
-    ],
-    "aye": 2,
-    "nay": 0,
-    "recuse": 0,
-    "users": {
-      "127611081546792960": {
-        "username": "apocalam#0",
-        "vote_type": "aye"
-      },
-      "565746238562238474": {
-        "username": "pandres95#0",
-        "vote_type": "aye"
-      }
-    },
-    "epoch": 1743116255
-  },
-  "1356220853196554322": {
-    "index": "1511",
-    "title": "SmallTipper",
+  "1372646862741573704": {
+    "index": "1569",
+    "title": "TIP: Cyphertux's work on Wallet Drain co-ordination",
     "origin": [
       "SmallTipper"
     ],
@@ -512,11 +814,28 @@
         "vote_type": "aye"
       }
     },
-    "epoch": 1743418649
+    "epoch": 1747334915
   },
-  "1356311453313011764": {
-    "index": "1512",
-    "title": "None",
+  "1372692121290670251": {
+    "index": "1570",
+    "title": "NFT Mozaic\u2019s MVP Grants Program",
+    "origin": [
+      "BigSpender"
+    ],
+    "aye": 1,
+    "nay": 0,
+    "recuse": 0,
+    "users": {
+      "565746238562238474": {
+        "username": "pandres95#0",
+        "vote_type": "aye"
+      }
+    },
+    "epoch": 1747345705
+  },
+  "1372692145068310678": {
+    "index": "1571",
+    "title": "Untitled Post",
     "origin": [
       "SmallTipper"
     ],
@@ -524,6 +843,18 @@
     "nay": 0,
     "recuse": 0,
     "users": {},
-    "epoch": 1743440249
+    "epoch": 1747345711
+  },
+  "1372828017872601168": {
+    "index": "1572",
+    "title": "Retroactive Fund - Optimizing Polkadot Multisig: Mimir\u2019s Enhanced Features & Ecosystem Integration",
+    "origin": [
+      "MediumSpender"
+    ],
+    "aye": 0,
+    "nay": 0,
+    "recuse": 0,
+    "users": {},
+    "epoch": 1747378105
   }
 }
