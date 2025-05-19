@@ -67,13 +67,13 @@ async def check_governance():
         logging.info(f"Checking active proposals from {config.NETWORK_NAME} against vote_counts.json to archive threads where the proposal is no longer active")
         active_proposals = await substrate.ongoing_referendums_idx()
         threads_to_lock = CacheManager.delete_executed_keys_and_archive(json_file_path='../data/vote_counts.json', active_proposals=active_proposals, archive_filename='../data/archived_votes.json')
-        if threads_to_lock:
+        if threads_to_lock and not config.READ_ONLY:  # Only lock threads if not in READ_ONLY mode
             try:
                 await client.lock_threads(threads_to_lock, client.user)
             except Exception as e:
                 logging.error(f"Failed to lock threads: {threads_to_lock}. Error: {e}")
         else:
-            logging.info("No threads to lock")
+            logging.info("No threads to lock or in READ_ONLY mode")
 
         if not new_referendums:
             logging.info("No new proposals have been found since last checking")
