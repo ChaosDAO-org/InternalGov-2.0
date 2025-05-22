@@ -810,7 +810,7 @@ class GovernanceMonitor(discord.Client):
         _1st_vote = proposal_elapsed_time >= cast_1st_vote
         _2nd_vote = proposal_elapsed_time >= cast_2nd_vote
 
-        if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0:
+        if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0 and not self.config.READ_ONLY:
             members_ids, total_members = await self.get_voting_members(guild=self.config.DISCORD_SERVER_ID, role_name=self.config.DISCORD_VOTER_ROLE)
             total_votes = vote_data['aye'] + vote_data['nay'] + vote_data['recuse']
             participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)
