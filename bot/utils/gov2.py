@@ -38,7 +38,7 @@ class OpenGovernance2:
         """
         urls = [
             f"https://api.polkassembly.io/api/v1/posts/on-chain-post?postId={referendum_id}&proposalType=referendums_v2",
-            f"https://{network}.subsquare.io/api/gov2/referendums/{referendum_id}",
+            f"https://{network}-api.subsquare.io/gov2/referendums/{referendum_id}",
         ]
 
         headers = {"x-network": network}
