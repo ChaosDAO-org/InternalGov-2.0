@@ -552,7 +552,7 @@ class GovernanceMonitor(discord.Client):
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
                 async for message in thread.history(oldest_first=True):
-                    if message.author == self.user and message.content.startswith("👍 AYE:"):
+                    if message.author == self.user and message.content.startswith("👍 AYE:") or message.content.startswith("View proposal details using the links below."):
                         results_message = message
                         break
                 else:
