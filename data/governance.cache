@@ -1,4 +1,23 @@
 {
+<<<<<<< HEAD
+    "1531": {
+        "Ongoing": {
+            "alarm": [
+                26080536,
+                [
+                    26080536,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": 26080536,
+                "since": 25627443
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "149FXUmHgg75z4sk2LzFDyctNLHhzf2YxGMFHT7TakkbeQ7F"
+            },
+=======
     "520": {
         "Ongoing": {
             "alarm": [
@@ -10,15 +29,1257 @@
             ],
             "deciding": null,
             "decision_deposit": null,
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
             "enactment": {
                 "After": 14400
             },
             "in_queue": false,
             "origin": {
+<<<<<<< HEAD
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x7eb2aac8112e988bbf4265ea9a3388f762ab6b3f1966d33cc42c8082a2283722",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "149FXUmHgg75z4sk2LzFDyctNLHhzf2YxGMFHT7TakkbeQ7F"
+            },
+            "submitted": 25625043,
+            "tally": {
+                "ayes": 278198083264432360,
+                "nays": 267843779640955553,
+                "support": 51494008805057532
+            },
+            "track": 33
+        }
+    },
+    "1533": {
+        "Ongoing": {
+            "alarm": [
+                26038170,
+                [
+                    26038170,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25634970
+            },
+            "decision_deposit": {
+                "amount": 10000000000000,
+                "who": "1CRmVRcQymMpot855oKDq76kF19jJezMMkGcrvHh1ozEqXa"
+            },
+            "enactment": {
+                "After": 14400
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "Treasurer"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xf76e1e06c25cc467dc3c6f523155890632f7a302baa559bb3b6626cfaa84c875",
+                    "len": 43
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "122TV2pzU6s26ZuyfUgGtCopfLLpisA5sfGcCty1miYemRmQ"
+            },
+            "submitted": 25633770,
+            "tally": {
+                "ayes": 3032250000000,
+                "nays": 617268940460490330,
+                "support": 156192674203699
+            },
+            "track": 11
+        }
+    },
+    "1535": {
+        "Ongoing": {
+            "alarm": [
+                26030089,
+                [
+                    26030089,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25689462
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "15FvxWCgCfZVvXzL6WbkfntzNVftTkF1BbZCUS1sf7u4hG2B"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x426e44a10c0c5f6011f93849058c52b551a690183e5bdbcd3138fa67db0ecc64",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "15FvxWCgCfZVvXzL6WbkfntzNVftTkF1BbZCUS1sf7u4hG2B"
+            },
+            "submitted": 25687062,
+            "tally": {
+                "ayes": 186345128899905334,
+                "nays": 132943698165314073,
+                "support": 38864664842949594
+            },
+            "track": 33
+        }
+    },
+    "1538": {
+        "Ongoing": {
+            "alarm": [
+                26033338,
+                [
+                    26033338,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25717138
+            },
+            "decision_deposit": {
+                "amount": 4000000000000,
+                "who": "133VgJJgp1s9wxLqgCFxYx6T873hZQNchJM9tmbU6NkYaaqW"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "BigSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xfe6825b1431a5d13282787407474e4676281a14d6c09b626720f7be2267cba4b",
+                    "len": 43
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "133VgJJgp1s9wxLqgCFxYx6T873hZQNchJM9tmbU6NkYaaqW"
+            },
+            "submitted": 25714738,
+            "tally": {
+                "ayes": 399416645454383293,
+                "nays": 688914555616323,
+                "support": 108171858900176355
+            },
+            "track": 34
+        }
+    },
+    "1539": {
+        "Ongoing": {
+            "alarm": [
+                26076621,
+                [
+                    26076621,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25756993
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "167rjWHghVwBJ52mz8sNkqr5bKu5vpchbc9CBoieBhVX714h"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xff09af8a8074a63e0e65049cd29fa0693005bbc949eceed6afe941c8bf6c2779",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "167rjWHghVwBJ52mz8sNkqr5bKu5vpchbc9CBoieBhVX714h"
+            },
+            "submitted": 25754593,
+            "tally": {
+                "ayes": 270124921205801938,
+                "nays": 132614507782809474,
+                "support": 55201796024272388
+            },
+            "track": 33
+        }
+    },
+    "1540": {
+        "Ongoing": {
+            "alarm": [
+                26105819,
+                [
+                    26105819,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25767172
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "1HPKZzzd9nyr2DdvtPxytNMZm3Ld5nh3BBY4Ecgg9JxgL7G"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x821a7748c54adefa874b9c4c13c3a4f0c49c245fcf69a9ce93394af510faa267",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "13tsQdPC7Q5Sboxd9vcJbE72muR7bdqmzDLKjGW12cWbzNjr"
+            },
+            "submitted": 25764772,
+            "tally": {
+                "ayes": 201663115827409313,
+                "nays": 154256431461076827,
+                "support": 40321321407355035
+            },
+            "track": 33
+        }
+    },
+    "1541": {
+        "Ongoing": {
+            "alarm": [
+                26082716,
+                [
+                    26082716,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25773779
+            },
+            "decision_deposit": {
+                "amount": 4000000000000,
+                "who": "131MpMXeuKG6L27Ye23uzWr739KFbbrCBdiv39XZtnTCPwQB"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "BigSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x02cb9cf2c6ce10c03f18ed50052a441ea33fc9472c99f0df4a129bd7000794fa",
+                    "len": 61
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "131MpMXeuKG6L27Ye23uzWr739KFbbrCBdiv39XZtnTCPwQB"
+            },
+            "submitted": 25771379,
+            "tally": {
+                "ayes": 413920802222149153,
+                "nays": 137596177613026324,
+                "support": 119776949287529895
+            },
+            "track": 34
+        }
+    },
+    "1542": {
+        "Ongoing": {
+            "alarm": [
+                26173000,
+                [
+                    26173000,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25777503
+            },
+            "decision_deposit": {
+                "amount": 10000000000000,
+                "who": "1Rp3mJJUxPD1nJ6gf179scdejMSSJb46eYoFyEktR6DYt6z"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "Treasurer"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x8c4d6cebccf104717cffb5da2d201a1c29f7645a34f7235b49e6c3689011de6b",
+                    "len": 43
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "149AQApEw4Xe1DxWesqywiuGQHazbETMgWgT89WjEYFAc29y"
+            },
+            "submitted": 25776303,
+            "tally": {
+                "ayes": 394417158556187016,
+                "nays": 256859648071489324,
+                "support": 149300156703429698
+            },
+            "track": 11
+        }
+    },
+    "1543": {
+        "Ongoing": {
+            "alarm": [
+                26230007,
+                [
+                    26230007,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25826807
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "14MVAs6jPc7bPW33fC7eTwz4Zf1pD3KWW4tQtrHWUd9w1Phx"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xb786d768cdc34f060f04f4dc6d39b859e8df2193864ef1ee07a64d4039e01cc2",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "1WmPE1X9Ykpb7QcVamPtUSRjEZy2GMDeTm5N72DyXYiqMCo"
+            },
+            "submitted": 25785504,
+            "tally": {
+                "ayes": 139197425506786592,
+                "nays": 142499054453338028,
+                "support": 25236425049830852
+            },
+            "track": 33
+        }
+    },
+    "1544": {
+        "Ongoing": {
+            "alarm": [
+                26120801,
+                [
+                    26120801,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25789555
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "12zT4mjRRAc1vD8M3rhpQjmU6BABN4jvUUYqrvbUdd85nRTy"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x51b3e55979558b746fe5109f6ec6983afb6173da1be2013fbae0adff6494b69f",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "12zT4mjRRAc1vD8M3rhpQjmU6BABN4jvUUYqrvbUdd85nRTy"
+            },
+            "submitted": 25787155,
+            "tally": {
+                "ayes": 260127121710228475,
+                "nays": 69167252131085815,
+                "support": 45915493823683617
+            },
+            "track": 33
+        }
+    },
+    "1545": {
+        "Ongoing": {
+            "alarm": [
+                26207874,
+                [
+                    26207874,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25804674
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "1got2QxVB1mdnWHZ5onsNaHD7u8R6G3B9wGmC5a43iCXHjr"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x07e806377bd49fb3c6d46e38a13d12bf5231abccd2bdd62ab0d60de9642df6bc",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "1got2QxVB1mdnWHZ5onsNaHD7u8R6G3B9wGmC5a43iCXHjr"
+            },
+            "submitted": 25793817,
+            "tally": {
+                "ayes": 713559357312796,
+                "nays": 202065514549342755,
+                "support": 1002394296022367
+            },
+            "track": 33
+        }
+    },
+    "1546": {
+        "Ongoing": {
+            "alarm": [
+                26205962,
+                [
+                    26205962,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25802762
+            },
+            "decision_deposit": {
+                "amount": 100000000000000,
+                "who": "13sDzot2hwoEAzXJiNe3cBiMEq19XRqrS3DMAxt9jiSNKMkA"
+            },
+            "enactment": {
+                "At": 26001449
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "WhitelistedCaller"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xe2d24d679084048d5a14236365c58f958993f896a95aa4069b3addd924c23e79",
+                    "len": 36
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "13QdJvnJgfoitjrxESwrCWTaLMN8KvXxufDUucXM6EWGuxqh"
+            },
+            "submitted": 25802000,
+            "tally": {
+                "ayes": 316673125835184616,
+                "nays": 426827549281750144,
+                "support": 107203559812205508
+            },
+            "track": 1
+        }
+    },
+    "1547": {
+        "Ongoing": {
+            "alarm": [
+                26220027,
+                [
+                    26220027,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25816827
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "16JVrgg7t6m5UXAtDBM7jYp9XjAxALRVFP6GuKVFmi9HLw8d"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xe06ae61606bb7cfef2760521c8442c1abda800d74f332a1cce025ddf3998de11",
+                    "len": 43
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "16JVrgg7t6m5UXAtDBM7jYp9XjAxALRVFP6GuKVFmi9HLw8d"
+            },
+            "submitted": 25814427,
+            "tally": {
+                "ayes": 0,
+                "nays": 334852295884050091,
+                "support": 50110174203699
+            },
+            "track": 33
+        }
+    },
+    "1548": {
+        "Ongoing": {
+            "alarm": [
+                26220218,
+                [
+                    26220218,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25817018
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "16JVrgg7t6m5UXAtDBM7jYp9XjAxALRVFP6GuKVFmi9HLw8d"
+            },
+            "enactment": {
+                "After": 14400
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x12402009c393a4536e78c3dfefe1ed01018142870f9827da131a9f30faad9e19",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "16JVrgg7t6m5UXAtDBM7jYp9XjAxALRVFP6GuKVFmi9HLw8d"
+            },
+            "submitted": 25814618,
+            "tally": {
+                "ayes": 600000000000,
+                "nays": 334970843884050091,
+                "support": 50320174203699
+            },
+            "track": 33
+        }
+    },
+    "1549": {
+        "Ongoing": {
+            "alarm": [
+                26221312,
+                [
+                    26221312,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25818112
+            },
+            "decision_deposit": {
+                "amount": 4000000000000,
+                "who": "1ZVYsze5Ls3osofU6wWSp5dphr62Rj7YiL4NsXiZU3a298F"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "BigSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x403aa506e70331f3a0edad959858f67eab4710199d4d47048b14d003c4fd0349",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "1ZVYsze5Ls3osofU6wWSp5dphr62Rj7YiL4NsXiZU3a298F"
+            },
+            "submitted": 25815712,
+            "tally": {
+                "ayes": 83372299516587284,
+                "nays": 136443390540155976,
+                "support": 16878177419602898
+            },
+            "track": 34
+        }
+    },
+    "1550": {
+        "Ongoing": {
+            "alarm": [
+                26029982,
+                [
+                    26029982,
+                    0
+                ]
+            ],
+            "deciding": null,
+            "decision_deposit": null,
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "BigSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x6c811f0b8a30f7d3b9d9660f11251e024edc3d60585abb791ca5e46b5cdb87d0",
+                    "len": 43
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "12zT4mjRRAc1vD8M3rhpQjmU6BABN4jvUUYqrvbUdd85nRTy"
+            },
+            "submitted": 25828382,
+            "tally": {
+                "ayes": 0,
+                "nays": 205680252303349983,
+                "support": 50110174203699
+            },
+            "track": 34
+        }
+    },
+    "1553": {
+        "Ongoing": {
+            "alarm": [
+                26175927,
+                [
+                    26175927,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25877643
+            },
+            "decision_deposit": {
+                "amount": 1000000000000,
+                "who": "12wnTQnY3qUTCofi792fTdf9HpQQ6jmyxrVdwyT6X2Jed4Yg"
+            },
+            "enactment": {
+                "After": 14400
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x3f52ca8785f2b564d75205d8623061f342b52a1523324e989bfcee113d2cbb99",
+                    "len": 123
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "12wnTQnY3qUTCofi792fTdf9HpQQ6jmyxrVdwyT6X2Jed4Yg"
+            },
+            "submitted": 25875243,
+            "tally": {
+                "ayes": 245314882307339982,
+                "nays": 84255414955098482,
+                "support": 41842553250384242
+            },
+            "track": 32
+        }
+    },
+    "1555": {
+        "Ongoing": {
+            "alarm": [
+                26337297,
+                [
+                    26337297,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25934097
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "1vPJUHUEGUruTuLvaowxJouoEhnx4UbQU2hfCiG4wa7FPYh"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xb831a31b8d65b52fb9c1775292662fe22379fb236cf9a602bd5ecdf28835b066",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "12xV2cqUKWgPdqtNURmYjG9Aueayco3kmKCvVn1SPWAv2G7a"
+            },
+            "submitted": 25893579,
+            "tally": {
+                "ayes": 13421980119168720,
+                "nays": 129602739821409474,
+                "support": 4256272365890899
+            },
+            "track": 33
+        }
+    },
+    "1557": {
+        "Ongoing": {
+            "alarm": [
+                26337087,
+                [
+                    26337087,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25933887
+            },
+            "decision_deposit": {
+                "amount": 1000000000000,
+                "who": "1HPKZzzd9nyr2DdvtPxytNMZm3Ld5nh3BBY4Ecgg9JxgL7G"
+            },
+            "enactment": {
+                "After": 14400
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xcbd2ff226bbeac7ff12851f32aa46f57f1b61aefb6fdfaab0fc6a4742b487d32",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "15XYpbsSTukHuqM5hLfmJQvpuG4XWPLFZUzZMCfwoTm5spE6"
+            },
+            "submitted": 25917296,
+            "tally": {
+                "ayes": 7542520000000000,
+                "nays": 194934755485378572,
+                "support": 2638271174203699
+            },
+            "track": 32
+        }
+    },
+    "1558": {
+        "Ongoing": {
+            "alarm": [
+                26327032,
+                [
+                    26327032,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25923832
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "15wyV9jTKuNqU112iifFjxGQwFE1CeyFyxWJXH8qBCD5Pr2B"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x18f2a7dabd199f6315a6db2a14060f0209313f1184ce09220ee21b6834f0e466",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "15wyV9jTKuNqU112iifFjxGQwFE1CeyFyxWJXH8qBCD5Pr2B"
+            },
+            "submitted": 25918182,
+            "tally": {
+                "ayes": 7554020000000000,
+                "nays": 73077543169685815,
+                "support": 2568430174203699
+            },
+            "track": 33
+        }
+    },
+    "1559": {
+        "Ongoing": {
+            "alarm": [
+                26339502,
+                [
+                    26339502,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25936302
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "14XoNmYA6i2nj6ymZj5iKKo4Gqx9fYeGiFbpBxwKjmNvtrcT"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xaaef6f72606cfe27ce8a9c162b72a570ee89ee8995b00cc83b4dd0f144298d19",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "14XoNmYA6i2nj6ymZj5iKKo4Gqx9fYeGiFbpBxwKjmNvtrcT"
+            },
+            "submitted": 25933902,
+            "tally": {
+                "ayes": 3993065586189660,
+                "nays": 62936990000000000,
+                "support": 877294586190690
+            },
+            "track": 33
+        }
+    },
+    "1560": {
+        "Ongoing": {
+            "alarm": [
+                26352288,
+                [
+                    26352288,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25949088
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "14M94kYk31k2hY8MpnfNPRviJ4VcsFFjBhq7V2Fs9DzCVhXc"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x7b32385a89327e7af2fa85e0ed765c5ca807e623b1376a405191e3142898c4d5",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "14M94kYk31k2hY8MpnfNPRviJ4VcsFFjBhq7V2Fs9DzCVhXc"
+            },
+            "submitted": 25946688,
+            "tally": {
+                "ayes": 91023102274849,
+                "nays": 602444000000000,
+                "support": 91024102274849
+            },
+            "track": 33
+        }
+    },
+    "1561": {
+        "Ongoing": {
+            "alarm": [
+                26159229,
+                [
+                    26159229,
+                    0
+                ]
+            ],
+            "deciding": null,
+            "decision_deposit": null,
+            "enactment": {
+                "After": 0
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "BigTipper"
+            },
+            "proposal": {
+                "Inline": "\"\u0001\u0005\u0001"
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "12pMEU98o7nquB8MHW6PWKuXTeqXBvWeQMsdJNhp5UFZpfEm"
+            },
+            "submitted": 25957629,
+            "tally": {
+                "ayes": 78800000000,
+                "nays": 142179639027720261,
+                "support": 50149974203699
+            },
+            "track": 31
+        }
+    },
+    "1562": {
+        "Ongoing": {
+            "alarm": [
+                26369338,
+                [
+                    26369338,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25984672
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "15VmrRmgPhKMfBanjS5ei4dCcVL54GMLCfnVRryynSYzvyys"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x24c74ef11ad87aa645cb041880aeeb14c0c4cdb00fe74445eca4ee6c2bad0a96",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "15VmrRmgPhKMfBanjS5ei4dCcVL54GMLCfnVRryynSYzvyys"
+            },
+            "submitted": 25974923,
+            "tally": {
+                "ayes": 60591971200000000,
+                "nays": 1010000000000,
+                "support": 10231548000000000
+            },
+            "track": 33
+        }
+    },
+    "1563": {
+        "Ongoing": {
+            "alarm": [
+                26395129,
+                [
+                    26395129,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25991929
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "13dePGJmM3SDMhndSsoAEV1V43dXD8Vtv4p2qShaP3sd9S5M"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xa4a44b7c2f17989d9652fa9eca6e51c7166f24ef5f21a41a67a213c4507bf13d",
+                    "len": 42
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "13dePGJmM3SDMhndSsoAEV1V43dXD8Vtv4p2qShaP3sd9S5M"
+            },
+            "submitted": 25986345,
+            "tally": {
+                "ayes": 0,
+                "nays": 1211000000000,
+                "support": 1000000000
+            },
+            "track": 33
+        }
+    },
+    "1564": {
+        "Ongoing": {
+            "alarm": [
+                26395003,
+                [
+                    26395003,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 25991837
+            },
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "143A8aK5Sdiyw8eHMbGKRWz1VdKg75BG2SRVXTFwyHjuujCE"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "MediumSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x71e82088e4b660fbdbb1a86afc65f8e35ffe04680cc9932e6b0a479be0a7901d",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "143A8aK5Sdiyw8eHMbGKRWz1VdKg75BG2SRVXTFwyHjuujCE"
+            },
+            "submitted": 25989437,
+            "tally": {
+                "ayes": 17900119168720,
+                "nays": 1411100000000,
+                "support": 18001191687200
+            },
+            "track": 33
+        }
+    },
+    "1565": {
+        "Ongoing": {
+            "alarm": [
+                26059295,
+                [
+                    26059295,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 26014421
+            },
+            "decision_deposit": {
+                "amount": 10000000000,
+                "who": "15vryhxgdenKgKahng3G2amX5PFFuT2mzpNduiyTVn9TMSDp"
+            },
+            "enactment": {
+                "After": 10
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallTipper"
+            },
+            "proposal": {
+                "Inline": "0x1303070040b743ba0068bfacb91b354ab547cdff024d71b2302b1d07740b7eb2357e4efa44122d272a"
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "14Sbk1RvKa9x7k8CThWoEYKA21LDduRbcivnzkDdm2WnDutM"
+            },
+            "submitted": 26014192,
+            "tally": {
+                "ayes": 183491677481163386,
+                "nays": 0,
+                "support": 31239125811633860
+            },
+            "track": 30
+        }
+    },
+    "1566": {
+        "Ongoing": {
+            "alarm": [
+                26069956,
+                [
+                    26069956,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 26015006
+            },
+            "decision_deposit": {
+                "amount": 10000000000,
+                "who": "15YVkRJDgNHzmxkUiLJWnjKCtCcCsiqpCVay9nLhF1hRKycS"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallTipper"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x931f92a0190667637df8ed643f2e5fef58bddcf3c10efe10eb7fb774184bfd02",
+                    "len": 41
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "15YVkRJDgNHzmxkUiLJWnjKCtCcCsiqpCVay9nLhF1hRKycS"
+            },
+            "submitted": 26014929,
+            "tally": {
+                "ayes": 123075097444357393,
+                "nays": 0,
+                "support": 20941569443573939
+            },
+            "track": 30
+        }
+    },
+    "1567": {
+        "Ongoing": {
+            "alarm": [
+                26423190,
+                [
+                    26423190,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 26020158
+            },
+            "decision_deposit": {
+                "amount": 1000000000000,
+                "who": "15TAnjASahuvhxT2sMLr6XhB2oCPZk1Kxa9nrXdKUNVL3pMB"
+            },
+            "enactment": {
+                "After": 14400
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x9f8318853d2836acec1d524f326e75a2762ac47323aa349641cdd37aaf2b3dec",
+                    "len": 60
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "15TAnjASahuvhxT2sMLr6XhB2oCPZk1Kxa9nrXdKUNVL3pMB"
+            },
+            "submitted": 26017758,
+            "tally": {
+                "ayes": 0,
+                "nays": 0,
+                "support": 50000000000000
+            },
+            "track": 32
+        }
+    },
+    "1568": {
+        "Ongoing": {
+            "alarm": [
+                26220146,
+                [
+                    26220146,
+                    0
+                ]
+            ],
+            "deciding": null,
+            "decision_deposit": null,
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+=======
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
                 "system": "Root"
             },
             "proposal": {
                 "Lookup": {
+<<<<<<< HEAD
+                    "hash": "0xce507c4c8c3a6e379a652dce6454c1a093099b44ba224a7d50fcde9575039130",
+                    "len": 4
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "1bKS4WUb6xDb8oentCsSfFiTmAPiGByRTUcZ4J1zwaTs5JL"
+            },
+            "submitted": 26018546,
+            "tally": {
+                "ayes": 0,
+                "nays": 0,
+                "support": 50000000000000
+=======
                     "hash": "0x3bbc76c3476d0a4dbff2995d815035d9cb890fe2de0feba7b3a9befb04cef4aa",
                     "len": 28
                 }
@@ -32,26 +1293,167 @@
                 "ayes": 111050000000000,
                 "nays": 36300093892874305,
                 "support": 1212050000000000
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
             },
             "track": 0
         }
     },
+<<<<<<< HEAD
+    "1569": {
+        "Ongoing": {
+            "alarm": [
+                26115945,
+                [
+                    26115945,
+=======
     "521": {
         "Ongoing": {
             "alarm": [
                 28423150,
                 [
                     28423150,
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
                     0
                 ]
             ],
             "deciding": {
                 "confirming": null,
+<<<<<<< HEAD
+                "since": 26019181
+            },
+            "decision_deposit": {
+                "amount": 10000000000,
+                "who": "15vryhxgdenKgKahng3G2amX5PFFuT2mzpNduiyTVn9TMSDp"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallTipper"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0x1d2a40146b55a6c7b3dede20093618d4a06b505891879dd99fa3f4f1c8dc9879",
+                    "len": 41
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "12s37eSMQPEN5cuVyBxk2UypUHntwumqBHy7sJkoKpZ1v3HV"
+            },
+            "submitted": 26019165,
+            "tally": {
+                "ayes": 844629089106387,
+                "nays": 0,
+                "support": 1049720891063882
+            },
+            "track": 30
+        }
+    },
+    "1570": {
+        "Ongoing": {
+            "alarm": [
+                26425470,
+                [
+                    26425470,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 26022724
+            },
+            "decision_deposit": {
+                "amount": 4000000000000,
+                "who": "1bKS4WUb6xDb8oentCsSfFiTmAPiGByRTUcZ4J1zwaTs5JL"
+            },
+            "enactment": {
+                "After": 100
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "BigSpender"
+            },
+            "proposal": {
+                "Lookup": {
+                    "hash": "0xce507c4c8c3a6e379a652dce6454c1a093099b44ba224a7d50fcde9575039130",
+                    "len": 4
+                }
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "1bKS4WUb6xDb8oentCsSfFiTmAPiGByRTUcZ4J1zwaTs5JL"
+            },
+            "submitted": 26020324,
+            "tally": {
+                "ayes": 1200000000000000,
+                "nays": 5700000000000,
+                "support": 450000000000000
+            },
+            "track": 34
+        }
+    },
+    "1571": {
+        "Ongoing": {
+            "alarm": [
+                26092268,
+                [
+                    26092268,
+                    0
+                ]
+            ],
+            "deciding": {
+                "confirming": null,
+                "since": 26021571
+            },
+            "decision_deposit": {
+                "amount": 10000000000,
+                "who": "15vryhxgdenKgKahng3G2amX5PFFuT2mzpNduiyTVn9TMSDp"
+            },
+            "enactment": {
+                "After": 10
+            },
+            "in_queue": false,
+            "origin": {
+                "Origins": "SmallTipper"
+            },
+            "proposal": {
+                "Inline": "0x1303070040b743ba0068bfacb91b354ab547cdff024d71b2302b1d07740b7eb2357e4efa44122d272a"
+            },
+            "submission_deposit": {
+                "amount": 10000000000,
+                "who": "14Sbk1RvKa9x7k8CThWoEYKA21LDduRbcivnzkDdm2WnDutM"
+            },
+            "submitted": 26021285,
+            "tally": {
+                "ayes": 62876500000000000,
+                "nays": 0,
+                "support": 10701025000000000
+            },
+            "track": 30
+        }
+    },
+    "1572": {
+        "Ongoing": {
+            "alarm": [
+                26029305,
+                [
+                    26029305,
+                    0
+                ]
+            ],
+            "deciding": null,
+            "decision_deposit": {
+                "amount": 2000000000000,
+                "who": "12KXpejnUXsvmUpgQe5Jc5uQZ1efD4UrXf3F4cfTP8N21XEB"
+=======
                 "since": 28222327
             },
             "decision_deposit": {
                 "amount": 33333333333000,
                 "who": "JFArxqV6rqPSwBok3zQDnj5jL6vwsZQDwYXXqb1cFygnYVt"
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
             },
             "enactment": {
                 "After": 14400
@@ -62,11 +1464,21 @@
             },
             "proposal": {
                 "Lookup": {
+<<<<<<< HEAD
+                    "hash": "0x4b6f7e3a9a998b31b52ee6c711f312c4c12999830d190809b90c1d625a3b12d0",
+=======
                     "hash": "0xc38eb5cf8e8fdc6aeec313ef1c53bd2ecd8adf1dbb78ab3b4adbb2efc0a6b4d1",
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
                     "len": 60
                 }
             },
             "submission_deposit": {
+<<<<<<< HEAD
+                "amount": 10000000000,
+                "who": "14pa3BAYZLPvZfRDjWEfZXZWBVU45E67HUQEUxNCrdXGoata"
+            },
+            "submitted": 26026905,
+=======
                 "amount": 33333333333,
                 "who": "Fa21tofAVF6jAR95K8NSbfLfiW3dabpdvfJVy492idMtF8R"
             },
@@ -222,12 +1634,17 @@
                 "who": "Eywpus7TFZBCrft3WhtxJzRdKeiSHo1HYKk8yox1whFUcMW"
             },
             "submitted": 28281956,
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
             "tally": {
                 "ayes": 0,
                 "nays": 0,
                 "support": 0
             },
+<<<<<<< HEAD
+            "track": 33
+=======
             "track": 1
+>>>>>>> 5ea141985a1ba5c410c463d8390f6d720ef32803
         }
     }
 }
