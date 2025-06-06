@@ -42,7 +42,7 @@ class Config:
             self.DISCORD_PROXY_BALANCE_ALERT = int(os.getenv('DISCORD_PROXY_BALANCE_ALERT') or self.raise_error("Missing DISCORD_PROXY_BALANCE_ALERT"))
             self.PROXY_BALANCE_ALERT = float(os.getenv('PROXY_BALANCE_ALERT') or self.raise_error("Missing PROXY_BALANCE_ALERT"))
             self.MIN_PARTICIPATION = float(os.getenv('MIN_PARTICIPATION') or self.raise_error("Missing MIN_PARTICIPATION"))
-            self.THRESHOLD = float(os.getenv('THRESHOLD') or self.raise_error("Missing THRESHOLD"))
+            self.THRESHOLD = float(os.getenv('THRESHOLD', '0'))
             self.READ_ONLY = bool(strtobool(os.getenv('READ_ONLY', 'False')))
 
         except ValueError as e:

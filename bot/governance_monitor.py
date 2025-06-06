@@ -159,8 +159,7 @@ class GovernanceMonitor(discord.Client):
 
         return items_with_title_none
 
-    @staticmethod
-    def calculate_vote_result(aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
+    def calculate_vote_result(self, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
         """
         Calculate and return the result of a vote based on the numbers of 'aye', 'nay' votes,
         and a specified threshold.
@@ -188,6 +187,9 @@ class GovernanceMonitor(discord.Client):
 
         """
         total_votes = aye_votes + nay_votes
+
+        if self.config.THRESHOLD > 0:
+            threshold = self.config.THRESHOLD
 
         # Handle the edge case where total_votes is zero
         if total_votes == 0:
