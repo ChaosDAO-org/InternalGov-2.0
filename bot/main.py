@@ -79,7 +79,7 @@ async def check_governance():
         if new_referendums:
             logging.info(f"{len(new_referendums)} new proposal(s) found")
             channel = client.get_channel(config.DISCORD_FORUM_CHANNEL_ID)
-            current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
+            current_price = await client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
             # go through each referendum if more than 1 was submitted in the given scheduled time
             for index, values in new_referendums.items():
@@ -118,7 +118,10 @@ async def check_governance():
                         continue
 
                     # Send an initial results message in the thread
-                    initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
+                    if config.READ_ONLY:
+                        initial_results_message = "View proposal details using the links below."
+                    else:
+                        initial_results_message = "👍 AYE: 0    |    👎 NAY: 0    |    ⛔️ RECUSE: 0"
                     channel_thread = await guild.fetch_channel(new_proposal_thread.message.id)
                     client.vote_counts[str(new_proposal_thread.message.id)] = {
                         "index": index,
@@ -132,14 +135,15 @@ async def check_governance():
                     }
                     await asyncio.sleep(0.5)
                     await client.save_vote_counts()
-                    external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                    external_links = ExternalLinkButton(index, config.NETWORK_NAME, config.EXPLORER_URL)
                     results_message = await channel_thread.send(content=initial_results_message, view=external_links)
 
                     # results_message_id = results_message.id
                     await asyncio.sleep(0.5)
                     message_id = new_proposal_thread.message.id
-                    voting_buttons = ButtonHandler(client, message_id)
-                    await new_proposal_thread.message.edit(view=voting_buttons)
+                    if not config.READ_ONLY:
+                        voting_buttons = ButtonHandler(client, message_id)
+                        await new_proposal_thread.message.edit(view=voting_buttons)
 
                     await asyncio.sleep(0.5)
                     await new_proposal_thread.message.pin()
@@ -156,7 +160,16 @@ async def check_governance():
                         try:
                             role = await client.create_or_get_role(guild, config.TAG_ROLE_NAME)
                             if role:
-                                instructions = await channel_thread.send(content=
+                                if config.READ_ONLY:
+                                    # Only send notification tag without voting instructions
+                                    instructions = await channel_thread.send(content=
+                                                          f"||<@&{role.id}>||"
+                                                          f"\n**ANNOUNCEMENT:**"
+                                                          f"\nA new proposal has been created."
+                                                          )
+                                else:
+                                    # Send full voting instructions
+                                    instructions = await channel_thread.send(content=
                                                           f"||<@&{role.id}>||"
                                                           f"\n**INSTRUCTIONS:**"
                                                           f"\n- Vote **AYE** if you want to see this proposal pass"
@@ -206,7 +219,7 @@ async def check_governance():
     finally:
         if not exception_occurred:
             await substrate.close()
-            if config.SOLO_MODE is False:
+            if config.SOLO_MODE is False and not config.READ_ONLY:
                 await task_handler.start_tasks(coroutine_task=[autonomous_voting, sync_embeds, recheck_proposals])
             if config.SOLO_MODE is True:
                 logging.info("Solo mode is enabled. To automatically vote using settings in /data/vote_periods, set SOLO_MODE=True in the .env config file")
@@ -403,7 +416,7 @@ async def autonomous_voting():
                 # Craft extrinsic receipt as Discord Embed
                 extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast', description=f'{vote_scheme.emoji} {vote_type.upper()} on proposal **#{proposal_index}**',
                                         timestamp=datetime.now(timezone.utc))
-                extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})',
+                extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.EXPLORER_URL}/extrinsic/{extrinsic_hash})',
                                           inline=True)
                 extrinsic_embed.add_field(name=f'Origin', value=f"{data['origin']}", inline=True)
                 extrinsic_embed.add_field(name=f'Vote count', value=f'{vote_count} out of 2', inline=True)
@@ -418,7 +431,7 @@ async def autonomous_voting():
                 extrinsic_embed.set_footer(text="A second vote is initiated only if the first vote's result is disputed or missed")
 
                 # Send Embed
-                external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME)
+                external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME, config.EXPLORER_URL)
                 extrinsic_receipt_message = await discord_thread.send(content=f'<@&{role.id}>', embed=extrinsic_embed, view=external_links)
                 await extrinsic_receipt_message.pin()
 
@@ -427,13 +440,13 @@ async def autonomous_voting():
                     if message.type == discord.MessageType.pins_add:
                         await message.delete()
 
-                if config.DISCORD_SUMMARIZER_CHANNEL_ID:
+                if config.DISCORD_SUMMARIZER_CHANNEL_ID and not config.READ_ONLY:
                     try:
                         logging.info(f"Creating thread for summarizing vote on {proposal_index}")
                         summary_notification_role = await client.create_or_get_role(guild, config.DISCORD_SUMMARY_ROLE)
                         internal_thread = vote_counts[data['thread_id']]
                         summary_channel = client.get_channel(config.DISCORD_SUMMARIZER_CHANNEL_ID)
-                        external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME)
+                        external_links = ExternalLinkButton(proposal_index, config.NETWORK_NAME, config.EXPLORER_URL)
                         await summary_channel.create_thread(name=f"{proposal_index}: {internal_thread['title'][:config.DISCORD_TITLE_MAX_LENGTH].strip()}",
                                                             content=f"<@&{summary_notification_role.id}>\n<#{data['thread_id']}>",
                                                             embed=extrinsic_embed,
@@ -491,7 +504,7 @@ async def sync_embeds():
         await task_handler.stop_tasks([recheck_proposals])
         referendum_info = await substrate.referendumInfoFor()
         json_data = CacheManager.load_data_from_cache('../data/vote_counts.json')
-        current_price = client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
+        current_price = await client.get_asset_price_v2(asset_id=config.NETWORK_NAME)
 
         if json_data:
             index_msgid = await discord_format.find_msgid_by_index(referendum_info, json_data)
@@ -526,8 +539,8 @@ async def sync_embeds():
                     general_info = await discord_format.add_fields_to_embed(general_info_embed, referendum_info[index])
                     await message.edit(embed=general_info)
 
-                    # Add voting buttons if no components found on message
-                    if not message.components:
+                    # Add voting buttons if no components found on message and not in read-only mode
+                    if not message.components and not config.READ_ONLY:
                         voting_buttons = ButtonHandler(client, message_id)
                         await message.edit(view=voting_buttons)
 
@@ -579,9 +592,9 @@ async def sync_embeds():
                                 logging.warning("Unable to retrieve call")
 
                     # Add hyperlinks to results if no components found on message
-                    if message.author == client.user and message.content.startswith("👍 AYE:") and not message.components:
+                    if message.author == client.user and ((message.content.startswith("👍 AYE:") and not config.READ_ONLY) or (message.content.startswith("View proposal details") and config.READ_ONLY)) and not message.components:
                         logging.info("Adding missing hyperlink buttons")
-                        external_links = ExternalLinkButton(index, config.NETWORK_NAME)
+                        external_links = ExternalLinkButton(index, config.NETWORK_NAME, config.EXPLORER_URL)
                         await message.edit(view=external_links)
                         break
 
@@ -731,7 +744,10 @@ if __name__ == '__main__':
             for server in client.guilds:
                 await permission_checker.check_permissions(server, config.DISCORD_FORUM_CHANNEL_ID)
 
-            await task_handler.start_tasks([check_governance])
+            if config.READ_ONLY:
+                await task_handler.start_tasks([check_governance])
+            else:
+                await task_handler.start_tasks([check_governance])
 
         except KeyboardInterrupt:
             logging.warning("KeyboardInterrupt caught, cleaning up...")
@@ -745,7 +761,7 @@ if __name__ == '__main__':
     # Slash command(s) available when solo mode is NOT enabled in the .env config
     # Commands:
     #   + /forcevote
-    if config.SOLO_MODE is False:
+    if config.SOLO_MODE is False and not config.READ_ONLY:
         @client.tree.command(name='forcevote',
                              description='This command works only in threads with an active vote and when SOLO_MODE '
                                          'is disabled.',
@@ -802,7 +818,7 @@ if __name__ == '__main__':
 
                     extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
                                             description=f'{vote_scheme.emoji} {vote.upper()} on proposal **#{proposal_index}**', timestamp=datetime.now(timezone.utc))
-                    extrinsic_embed.add_field(name='Extrinsic hash',value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
+                    extrinsic_embed.add_field(name='Extrinsic hash',value=f'[{short_extrinsic_hash}](https://{config.EXPLORER_URL}/extrinsic/{extrinsic_hash})', inline=True)
                     extrinsic_embed.add_field(name=f'Origin', value=f"{origin[0]}", inline=True)
                     extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
                     extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
@@ -836,7 +852,7 @@ if __name__ == '__main__':
     # Slash command(s) available when solo mode IS enabled in the .env config
     # Commands:
     #   + /vote <referendum> <conviction> <decision>
-    if config.SOLO_MODE is True:
+    if config.SOLO_MODE is True and not config.READ_ONLY:
         @client.tree.command(name='vote',
                              description='This command works in or out of threads with an active vote and only when '
                                          'SOLO_MODE is enabled.',
@@ -888,7 +904,7 @@ if __name__ == '__main__':
 
                 extrinsic_embed = Embed(color=vote_scheme.color, title=f'An on-chain vote has been cast',
                                         description=f'{vote_scheme.emoji} {decision.value.upper()} on proposal **#{referendum}**', timestamp=datetime.now(timezone.utc))
-                extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.NETWORK_NAME}.subscan.io/extrinsic/{extrinsic_hash})', inline=True)
+                extrinsic_embed.add_field(name='Extrinsic hash', value=f'[{short_extrinsic_hash}](https://{config.EXPLORER_URL}/extrinsic/{extrinsic_hash})', inline=True)
                 extrinsic_embed.add_field(name=f'Executed by', value=f'<@{interaction.user.id}>', inline=True)
                 extrinsic_embed.add_field(name='\u200b', value='\u200b', inline=False)
                 extrinsic_embed.add_field(name=f'Decision', value=f"{decision.value.upper()}", inline=True)

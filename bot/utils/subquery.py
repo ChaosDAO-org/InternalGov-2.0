@@ -14,6 +14,39 @@ class SubstrateAPI:
         self.config = config
         self.logger = Logger()
         self.substrate = None
+        self.relay_chain = None
+        self.people_chain = None
+
+    async def connect_relay_chain(self):
+        """
+        Establishes a dedicated connection to the relay chain.
+        """
+        if self.relay_chain and self.relay_chain.websocket.connected:
+            # Already connected, just verify it's working
+            try:
+                self.relay_chain.websocket.ping('ping')
+                return self.relay_chain
+            except:
+                # Connection is dead, reset it
+                self.relay_chain.close()
+                self.relay_chain = None
+
+        # Create new connection
+        try:
+            self.logger.info(f"Initializing relay chain connection: {self.config.RELAY_WSS}")
+            self.relay_chain = SubstrateInterface(url=self.config.RELAY_WSS, ws_options={'timeout': 10})
+
+            await asyncio.wait_for(
+                asyncio.to_thread(self.relay_chain.init_runtime),
+                timeout=60
+            )
+
+            self.logger.info(f"Relay chain connected: {self.relay_chain.runtime_version}")
+            return self.relay_chain
+
+        except Exception as error:
+            self.logger.error(f"Failed to connect to relay chain: {error}")
+            raise
 
     async def connect(self, wss):
         """Establishes & restores WebSocket connection to the Substrate RPC node with retry mechanism.
@@ -26,7 +59,7 @@ class SubstrateAPI:
                 if not self.substrate:
                     self.logger.info(f"{caller_info} - Initializing SubstrateInterface object: {wss}")
                     self.substrate = SubstrateInterface(url=wss, ws_options={
-                        'timeout': 5
+                        'timeout':10
                     })
 
                     await asyncio.wait_for(
@@ -880,7 +913,7 @@ class SubstrateAPI:
             self.logger.error(f"Error fetching time_until_block: {e}")
             raise e
 
-    async def get_block_epoch(self, block_number: int) -> int:
+    async def get_block_epoch(self, block_number: int, use_relay: bool = True) -> int:
         """
         Retrieves the timestamp (epoch) of a specific block.
 
@@ -895,29 +928,32 @@ class SubstrateAPI:
             Exception: If an error occurs while fetching the block hash or timestamp.
         """
         try:
-            await self.connect(wss=self.config.SUBSTRATE_WSS)
+            if use_relay:
+                await self.connect_relay_chain()
+                connection = self.relay_chain
+            else:
+                await self.connect(self.config.SUBSTRATE_WSS)
+                connection = self.substrate
 
             block_hash = await asyncio.wait_for(
-                asyncio.to_thread(self.substrate.get_block_hash, block_id=block_number),
+                asyncio.to_thread(connection.get_block_hash, block_id=block_number),
                 timeout=60
             )
 
             epoch = await asyncio.wait_for(
                 asyncio.to_thread(
-                    self.substrate.query,
+                    connection.query,
                     module='Timestamp',
                     storage_function='Now',
                     block_hash=block_hash
                 ),
                 timeout=60
             )
-
             return epoch.value
 
         except asyncio.TimeoutError:
             self.logger.error("Timeout while fetching block epoch.")
             raise
-
         except Exception as e:
             self.logger.error(f"Error fetching block epoch: {e}")
             raise

@@ -36,7 +36,7 @@ class GovernanceMonitor(discord.Client):
         self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
 
-    def get_asset_price_v2(self, asset_id, currencies='usd'):
+    async def get_asset_price_v2(self, asset_id, currencies='usd'):
         """
         Fetches the price of an asset in the specified currencies from the CoinGecko API.
 
@@ -159,8 +159,7 @@ class GovernanceMonitor(discord.Client):
 
         return items_with_title_none
 
-    @staticmethod
-    def calculate_vote_result(aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
+    def calculate_vote_result(self, aye_votes: int, nay_votes: int, threshold: float = 0.66) -> str:
         """
         Calculate and return the result of a vote based on the numbers of 'aye', 'nay' votes,
         and a specified threshold.
@@ -188,6 +187,9 @@ class GovernanceMonitor(discord.Client):
 
         """
         total_votes = aye_votes + nay_votes
+
+        if self.config.THRESHOLD > 0:
+            threshold = self.config.THRESHOLD
 
         # Handle the edge case where total_votes is zero
         if total_votes == 0:
@@ -552,14 +554,14 @@ class GovernanceMonitor(discord.Client):
                 # Update the results message
                 thread = await self.fetch_channel(interaction.channel_id)
                 async for message in thread.history(oldest_first=True):
-                    if message.author == self.user and message.content.startswith("👍 AYE:"):
+                    if message.author == self.user and message.content.startswith("👍 AYE:") or message.content.startswith("View proposal details using the links below."):
                         results_message = message
                         break
                 else:
                     results_message = await thread.send("👍 AYE: 0    |    👎 NAY: 0    |    ☯ RECUSE: 0")
 
                 proposal_index = self.vote_counts[message_id]['index']
-                external_links = ExternalLinkButton(proposal_index, self.config.NETWORK_NAME)
+                external_links = ExternalLinkButton(proposal_index, self.config.NETWORK_NAME, self.config.EXPLORER_URL)
 
                 new_results_message = f"👍 AYE: {self.vote_counts[message_id]['aye']}    |    👎 NAY: {self.vote_counts[message_id]['nay']}    |    ☯ RECUSE: {self.vote_counts[message_id]['recuse']}\n" \
                                       f"{self.calculate_vote_result(aye_votes=self.vote_counts[message_id]['aye'], nay_votes=self.vote_counts[message_id]['nay'])}"
@@ -770,6 +772,9 @@ class GovernanceMonitor(discord.Client):
         """ Calculate and return the result of a vote based on 'aye' and 'nay' counts. """
         total_votes = aye_votes + nay_votes
 
+        if self.config.THRESHOLD > 0:
+            threshold = self.config.THRESHOLD
+
         # Default to abstain if the turnout internally is <= config.MIN_PARTICIPATION
         # Set to 0 to turn off this feature
         if self.config.MIN_PARTICIPATION > 0:
@@ -807,7 +812,7 @@ class GovernanceMonitor(discord.Client):
         _1st_vote = proposal_elapsed_time >= cast_1st_vote
         _2nd_vote = proposal_elapsed_time >= cast_2nd_vote
 
-        if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0:
+        if proposal_elapsed_time < cast_1st_vote and self.config.MIN_PARTICIPATION > 0 and not self.config.READ_ONLY:
             members_ids, total_members = await self.get_voting_members(guild=self.config.DISCORD_SERVER_ID, role_name=self.config.DISCORD_VOTER_ROLE)
             total_votes = vote_data['aye'] + vote_data['nay'] + vote_data['recuse']
             participation = self.check_minimum_participation(total_members=total_members, total_vote_count=total_votes, min_participation=self.config.MIN_PARTICIPATION)

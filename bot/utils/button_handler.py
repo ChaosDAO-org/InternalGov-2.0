@@ -20,11 +20,12 @@ class ButtonHandler(View):
 
 
 class ExternalLinkButton(View):
-    def __init__(self, index, network_name):
+    def __init__(self, index, network_name, explorer):
         super().__init__(timeout=5.0)  # Initialize the parent class
         self.index = index
         self.network_name = network_name
+        self.explorer = explorer
         # External link buttons on row 1
         self.add_item(Button(label="Subsquare", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.subsquare.io/referenda/referendum/{self.index}"))
         self.add_item(Button(label="Polkassembly", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.polkassembly.io/referenda/{self.index}"))
-        self.add_item(Button(label="Subscan", style=discord.ButtonStyle.url, url=f"https://{self.network_name}.subscan.io/referenda_v2/{self.index}"))
+        self.add_item(Button(label="Subscan", style=discord.ButtonStyle.url, url=f"https://{self.explorer}/referenda_v2/{self.index}"))

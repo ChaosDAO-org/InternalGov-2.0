@@ -29,8 +29,10 @@ class Config:
             self.NETWORK_NAME = f"{os.getenv('NETWORK_NAME')}" or self.raise_error("Missing NETWORK_NAME")
             self.SYMBOL = os.getenv('SYMBOL') or self.raise_error("Missing SYMBOL")
             self.TOKEN_DECIMAL = float(os.getenv('TOKEN_DECIMAL') or self.raise_error("Missing TOKEN_DECIMAL"))
+            self.EXPLORER_URL = f"{os.getenv('EXPLORER_URL')}" or self.raise_error("Missing EXPLORER_URL")
             self.SUBSTRATE_WSS = os.getenv('SUBSTRATE_WSS') or self.raise_error("Missing SUBSTRATE_WSS")
-            self.PEOPLE_WSS = os.getenv('PEOPLE_WSS')
+            self.RELAY_WSS = os.getenv('RELAY_WSS') or self.raise_error("Missing RELAY_WSS")
+            self.PEOPLE_WSS = os.getenv('PEOPLE_WSS') or self.raise_error("Missing PEOPLE_WSS")
 
             # Wallet Settings
             self.SOLO_MODE = bool(strtobool(os.getenv('SOLO_MODE', ''))) if os.getenv('SOLO_MODE') is not None else self.raise_error("Missing SOLO_MODE")
@@ -42,6 +44,8 @@ class Config:
             self.DISCORD_PROXY_BALANCE_ALERT = int(os.getenv('DISCORD_PROXY_BALANCE_ALERT') or self.raise_error("Missing DISCORD_PROXY_BALANCE_ALERT"))
             self.PROXY_BALANCE_ALERT = float(os.getenv('PROXY_BALANCE_ALERT') or self.raise_error("Missing PROXY_BALANCE_ALERT"))
             self.MIN_PARTICIPATION = float(os.getenv('MIN_PARTICIPATION') or self.raise_error("Missing MIN_PARTICIPATION"))
+            self.THRESHOLD = float(os.getenv('THRESHOLD', '0'))
+            self.READ_ONLY = bool(strtobool(os.getenv('READ_ONLY', 'False')))
 
         except ValueError as e:
             print(f"Error: {e}")
